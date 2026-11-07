@@ -1,0 +1,20 @@
+@* The fixed version of ClickableCard: a disclosure button with aria-expanded and aria-controls. *@
+<div class="card">
+    <h3>
+        <button type="button" class="disclosure" aria-expanded="@(expanded ? "true" : "false")" aria-controls="@panelId" @onclick="Toggle">@Title</button>
+    </h3>
+    <div id="@panelId" hidden="@(!expanded)">
+        <p>@Details</p>
+    </div>
+</div>
+
+@code {
+    private readonly string panelId = $"card-panel-{Guid.NewGuid():N}";
+    private bool expanded;
+
+    [Parameter] public string Title { get; set; } = "Card";
+
+    [Parameter] public string Details { get; set; } = string.Empty;
+
+    private void Toggle() => expanded = !expanded;
+}

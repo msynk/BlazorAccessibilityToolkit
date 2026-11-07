@@ -1,0 +1,28 @@
+@* Asynchronous operation with a status message in a live region that exists before the update. *@
+<div class="save">
+    <button type="button" class="primary" aria-disabled="@(saving ? "true" : "false")" @onclick="SaveAsync">@Text</button>
+    <p role="status" class="status">@status</p>
+</div>
+
+@code {
+    private bool saving;
+    private string status = string.Empty;
+
+    [Parameter] public string Text { get; set; } = "Save changes";
+
+    [Parameter] public Func<Task>? OnSave { get; set; }
+
+    private async Task SaveAsync()
+    {
+        if (saving)
+        {
+            return;
+        }
+
+        saving = true;
+        status = "Saving…";
+        await (OnSave?.Invoke() ?? Task.Delay(150));
+        saving = false;
+        status = "Changes saved";
+    }
+}

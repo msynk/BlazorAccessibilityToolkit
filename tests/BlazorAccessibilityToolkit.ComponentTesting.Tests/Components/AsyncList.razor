@@ -1,0 +1,17 @@
+@if (items is null)
+{
+    <p role="status">Loading…</p>
+}
+else
+{
+    <ul>@foreach (var item in items) { <li><a href="/items/@item">@item</a></li> }</ul>
+    <a href="/more"></a>
+}
+@code {
+    private string[]? items;
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.Delay(20);
+        items = ["One", "Two"];
+    }
+}

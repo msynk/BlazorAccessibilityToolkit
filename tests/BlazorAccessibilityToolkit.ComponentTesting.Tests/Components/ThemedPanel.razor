@@ -1,0 +1,12 @@
+@inject GreetingService Greetings
+<section aria-labelledby="panel-title">
+    <h2 id="panel-title">@Title</h2>
+    <p class="theme">@Theme</p>
+    <p class="greeting">@Greetings.Greet()</p>
+    @ChildContent
+</section>
+@code {
+    [Parameter] public string Title { get; set; } = "Panel";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [CascadingParameter] public string? Theme { get; set; }
+}

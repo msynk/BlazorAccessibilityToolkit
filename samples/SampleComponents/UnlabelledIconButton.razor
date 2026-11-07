@@ -1,0 +1,8 @@
+@* INTENTIONAL DEFECT (used by regression tests): icon-only button without an accessible name. *@
+<button type="button" class="icon-button" @onclick="OnClick">
+    <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 16 16"><path d="M2 2h12v12H2z" fill="currentColor" /></svg>
+</button>
+
+@code {
+    [Parameter] public EventCallback OnClick { get; set; }
+}

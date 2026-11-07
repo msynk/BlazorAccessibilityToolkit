@@ -1,0 +1,6 @@
+<button type="button" class="icon-button" aria-label="@Label" @onclick="OnClick"><span class="icon" aria-hidden="true">@Icon</span></button>
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string Icon { get; set; } = "★";
+    [Parameter] public EventCallback OnClick { get; set; }
+}

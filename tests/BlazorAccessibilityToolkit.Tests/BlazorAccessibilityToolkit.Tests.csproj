@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit\BlazorAccessibilityToolkit.csproj" />
+    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Cli\BlazorAccessibilityToolkit.Cli.csproj" />
+    <!-- Referenced only to snapshot their public API surface. -->
+    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.ComponentTesting\BlazorAccessibilityToolkit.ComponentTesting.csproj" />
+    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Playwright\BlazorAccessibilityToolkit.Playwright.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

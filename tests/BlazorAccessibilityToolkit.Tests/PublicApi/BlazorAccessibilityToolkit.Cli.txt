@@ -1,0 +1,2 @@
+static class BlazorAccessibilityToolkit.Cli.CliApp
+  static System.Int32 Run(System.String[] args, System.IO.TextWriter output, System.IO.TextWriter error)

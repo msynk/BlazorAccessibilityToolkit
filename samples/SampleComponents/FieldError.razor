@@ -1,0 +1,11 @@
+@* Error text referenced by the aria-describedby attribute of its field. Rendered only when there are messages. *@
+@if (Messages.Count > 0)
+{
+    <p id="@Id" class="field-error">@string.Join(" ", Messages)</p>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = string.Empty;
+
+    [Parameter] public IReadOnlyList<string> Messages { get; set; } = [];
+}

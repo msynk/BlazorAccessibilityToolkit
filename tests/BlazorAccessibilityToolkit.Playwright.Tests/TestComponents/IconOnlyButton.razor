@@ -1,0 +1,4 @@
+@* Regression fixture: icon-only button without an accessible name, and a clickable div. *@
+<button type="button" class="icon" @onclick="() => clicks++"><span class="glyph" aria-hidden="true">✕</span></button>
+<div class="card" @onclick="() => clicks++">Open details</div>
+@code { private int clicks; }

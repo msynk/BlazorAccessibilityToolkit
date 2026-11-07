@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Accessibility fixtures for Razor components rendered with bUnit: Razor-aware markup rules (Blazor event handler semantics, ValidationMessage association ...), component-level attribution from the render tree, and optional browser engines (axe-core via BlazorAccessibilityToolkit.Playwright) for the rendered markup.</Description>
+    <RootNamespace>BlazorAccessibilityToolkit.ComponentTesting</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="bunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorAccessibilityToolkit\BlazorAccessibilityToolkit.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,6 @@
+- tablist "Sections":
+  - tab "Profile" [selected]
+  - tab "Notifications"
+  - tab "Privacy"
+- tabpanel "Profile":
+  - paragraph: Name and photo.

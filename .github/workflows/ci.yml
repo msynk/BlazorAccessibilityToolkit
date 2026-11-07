@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  test:
+    name: Test (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # SARIF upload to code scanning
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    env:
+      BLAZOR_A11Y_BROWSER: ${{ matrix.browser }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        run: dotnet build BlazorAccessibilityToolkit.slnx -c Release
+
+      - name: Install Playwright browser
+        run: pwsh tests/BlazorAccessibilityToolkit.Playwright.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps ${{ matrix.browser }}
+
+      - name: Toolkit tests
+        run: >
+          dotnet test BlazorAccessibilityToolkit.slnx -c Release --no-build -m:1
+          --filter "FullyQualifiedName!~SampleApp"
+          --logger "trx;LogFilePrefix=toolkit" --results-directory TestResults
+
+      # The sample tests write one result file per audit; the CLI turns them into reports and the CI gate.
+      - name: Sample accessibility tests
+        env:
+          BLAZOR_A11Y_RESULTS_DIR: ${{ github.workspace }}/a11y-results
+        run: |
+          dotnet test samples/SampleApp.ComponentTests -c Release --no-build --logger "trx;LogFilePrefix=components" --results-directory TestResults
+          dotnet test samples/SampleApp.EndToEndTests -c Release --no-build --logger "trx;LogFilePrefix=e2e" --results-directory TestResults
+
+      - name: Accessibility gate
+        run: >
+          dotnet run --project src/BlazorAccessibilityToolkit.Cli -c Release --no-build --
+          report
+          --input a11y-results
+          --baseline samples/a11y-baseline.json
+          --manual-review samples/a11y/manual/modal-dialog.json
+          --output a11y-report
+          --source-root samples
+          --sarif-fallback-uri samples/SampleApp.EndToEndTests/PageTests.cs
+
+      # Optional: show findings in GitHub code scanning (requires code scanning to be enabled for the repository).
+      - name: Upload SARIF
+        if: always() && matrix.browser == 'chromium' && hashFiles('a11y-report/accessibility.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: a11y-report/accessibility.sarif
+          category: accessibility
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.browser }}
+          path: TestResults
+
+      - name: Upload accessibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-report-${{ matrix.browser }}
+          path: a11y-report
+          if-no-files-found: warn
+
+  pack:
+    name: Pack
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Pack
+        run: |
+          for project in src/*/*.csproj; do
+            dotnet pack "$project" -c Release -o artifacts/packages
+          done
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: artifacts/packages

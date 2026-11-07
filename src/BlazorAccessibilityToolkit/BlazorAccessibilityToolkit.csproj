@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Core contracts, findings, WCAG metadata, baselines, suppressions, quality gates, manual-review checklists and report writers (console, JSON, JUnit, SARIF, HTML) for the Blazor Accessibility Toolkit. No browser or test-framework dependency.</Description>
+    <RootNamespace>BlazorAccessibilityToolkit</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="BlazorAccessibilityToolkit.ComponentTesting" />
+    <InternalsVisibleTo Include="BlazorAccessibilityToolkit.Playwright" />
+    <InternalsVisibleTo Include="BlazorAccessibilityToolkit.Cli" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,12 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+TestResults/
+artifacts/
+*.received.aria.yml
+a11y-results/
+.idea/
+a11y-report/
+performance.txt

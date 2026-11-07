@@ -1,0 +1,35 @@
+static class BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixture
+  static BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> For<TComponent>()
+sealed class BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent>
+  BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> WithAuthorization(System.Action<Bunit.TestDoubles.BunitAuthorizationContext> configure)
+  BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> WithCascadingValue<TValue>(TValue value, System.String name = null)
+  BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> WithChildContent(Microsoft.AspNetCore.Components.RenderFragment content)
+  BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> WithChildContent(System.String markup)
+  BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> WithContext(System.Action<Bunit.BunitContext> configure)
+  BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> WithEngine(BlazorAccessibilityToolkit.Engines.IMarkupAuditEngine engine)
+  BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> WithName(System.String name)
+  BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> WithOptions(BlazorAccessibilityToolkit.AccessibilityAuditOptions options)
+  BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> WithParameter<TValue>(System.Linq.Expressions.Expression<System.Func<TComponent, TValue>> parameter, TValue value)
+  BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> WithParameters(System.Action<Bunit.ComponentParameterCollectionBuilder<TComponent>> parameters)
+  BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> WithServices(System.Action<Bunit.BunitServiceProvider> services)
+  BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixtureBuilder<TComponent> WithSettings(BlazorAccessibilityToolkit.ComponentTesting.ComponentAuditSettings settings)
+  System.Threading.Tasks.Task<BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixture<TComponent>> BuildAsync()
+sealed class BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixture<TComponent>
+  BlazorAccessibilityToolkit.ComponentTesting.ComponentAuditSettings Settings { get; }
+  Bunit.BunitContext Context { get; }
+  Bunit.IRenderedComponent<TComponent> Component { get; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityAudit> Audits { get; }
+  System.String Name { get; }
+  System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditAsync(System.String state = null, BlazorAccessibilityToolkit.AccessibilityAuditOptions options = null, System.Threading.CancellationToken cancellationToken = null)
+  System.Threading.Tasks.ValueTask DisposeAsync()
+sealed class BlazorAccessibilityToolkit.ComponentTesting.ComponentAuditSettings
+  BlazorAccessibilityToolkit.AccessibilityAuditOptions Options { get; init; }
+  BlazorAccessibilityToolkit.ComponentTesting.ComponentAuditSettings WithEngine(BlazorAccessibilityToolkit.Engines.IMarkupAuditEngine engine)
+  BlazorAccessibilityToolkit.Engines.MarkupDocumentOptions Document { get; init; }
+  System.Boolean BrowserlessFallbackRules { get; init; }
+  System.Boolean RazorRules { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Engines.IMarkupAuditEngine> Engines { get; init; }
+  ctor()
+  static BlazorAccessibilityToolkit.ComponentTesting.ComponentAuditSettings Default { get; }
+static class BlazorAccessibilityToolkit.ComponentTesting.ComponentAudits
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditAccessibilityAsync<TComponent>(Bunit.IRenderedComponent<TComponent> cut, System.String state = null, BlazorAccessibilityToolkit.ComponentTesting.ComponentAuditSettings settings = null, System.String scenario = null, System.Threading.CancellationToken cancellationToken = null)

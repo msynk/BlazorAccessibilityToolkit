@@ -1,0 +1,17 @@
+@* Accessible variant: the input references its error message. *@
+<EditForm EditContext="editContext" OnValidSubmit="() => { }">
+    <DataAnnotationsValidator />
+    <label for="email">Email</label>
+    <InputText id="email" @bind-Value="model.Email" aria-describedby="@(HasError ? "email-error" : null)" />
+    @if (HasError)
+    {
+        <div id="email-error" class="validation-message">@string.Join(" ", editContext.GetValidationMessages(() => model.Email!))</div>
+    }
+    <button type="submit">Sign up</button>
+</EditForm>
+@code {
+    private readonly SignupForm.Model model = new();
+    private EditContext editContext = null!;
+    private bool HasError => editContext.GetValidationMessages(() => model.Email!).Any();
+    protected override void OnInitialized() => editContext = new EditContext(model);
+}

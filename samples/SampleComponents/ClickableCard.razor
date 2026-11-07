@@ -1,0 +1,18 @@
+@* INTENTIONAL DEFECT (used by regression tests): a clickable <div> that keyboard users cannot reach or activate. *@
+<div class="card" @onclick="Toggle">
+    <h3>@Title</h3>
+    @if (expanded)
+    {
+        <p>@Details</p>
+    }
+</div>
+
+@code {
+    private bool expanded;
+
+    [Parameter] public string Title { get; set; } = "Card";
+
+    [Parameter] public string Details { get; set; } = string.Empty;
+
+    private void Toggle() => expanded = !expanded;
+}

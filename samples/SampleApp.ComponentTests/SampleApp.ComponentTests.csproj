@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!-- Web SDK + executable test project (xUnit v3): required by the interactive component host. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsTestProject>true</IsTestProject>
+    <!-- This project has no .razor files, so ask the Web SDK for the Blazor framework script (blazor.web.js) explicitly. -->
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SampleComponents\SampleComponents.csproj" />
+    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.ComponentTesting\BlazorAccessibilityToolkit.ComponentTesting.csproj" />
+    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Playwright\BlazorAccessibilityToolkit.Playwright.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The component stylesheet, so markup audits measure real colors. -->
+    <Content Include="..\SampleComponents\wwwroot\components.css" Link="assets\components.css" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="BlazorAccessibilityToolkit" />
+  </ItemGroup>
+</Project>

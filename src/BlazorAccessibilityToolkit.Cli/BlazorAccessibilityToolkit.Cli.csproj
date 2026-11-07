@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <Description>Command-line tool for CI: aggregates Blazor Accessibility Toolkit audit results, compares them with a baseline, applies failure thresholds and writes console, JSON, JUnit, SARIF and HTML reports with meaningful exit codes.</Description>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>blazor-a11y</ToolCommandName>
+    <PackageId>BlazorAccessibilityToolkit.Cli</PackageId>
+    <RootNamespace>BlazorAccessibilityToolkit.Cli</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorAccessibilityToolkit\BlazorAccessibilityToolkit.csproj" />
+  </ItemGroup>
+</Project>

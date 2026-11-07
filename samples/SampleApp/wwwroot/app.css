@@ -1,0 +1,9 @@
+.skip-link { position: absolute; left: -10000px; top: 0; }
+.skip-link:focus { left: 1rem; top: 1rem; background: #fff; padding: 0.5rem; z-index: 10; }
+header, main, footer { padding: 1rem 2rem; }
+header { border-bottom: 1px solid #8a8a8a; }
+header nav ul { list-style: none; display: flex; gap: 1rem; padding: 0; margin: 0; }
+header nav a.active { font-weight: 700; }
+.brand { font-weight: 700; margin: 0 0 0.5rem; }
+footer { border-top: 1px solid #8a8a8a; color: #4a4a4a; }
+main:focus { outline: none; }

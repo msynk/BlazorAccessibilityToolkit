@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0",
+  "fingerprintVersion": "v1",
+  "entries": [
+    {
+      "fingerprint": "03e735bbdca03f44024698311ad93b57",
+      "ruleId": "button-name",
+      "engine": "axe-core",
+      "status": "Violation",
+      "audit": "UnlabelledIconButton",
+      "component": "SampleComponents.UnlabelledIconButton",
+      "scenario": "UnlabelledIconButton",
+      "selector": "button",
+      "count": 1
+    },
+    {
+      "fingerprint": "1f1f0d7c6168de7bde78c96eda51cd1f",
+      "ruleId": "button-name",
+      "engine": "axe-core",
+      "status": "Violation",
+      "audit": "/legacy",
+      "scenario": "page",
+      "state": "loaded",
+      "selector": "button",
+      "count": 1
+    },
+    {
+      "fingerprint": "4d6d941fe928b31034585165b1dcdee2",
+      "ruleId": "blazor-click-handler-semantics",
+      "engine": "blazor-a11y",
+      "status": "PotentialIssue",
+      "audit": "ClickableCard",
+      "component": "SampleComponents.ClickableCard",
+      "scenario": "ClickableCard",
+      "selector": "div.card",
+      "count": 1
+    }
+  ]
+}

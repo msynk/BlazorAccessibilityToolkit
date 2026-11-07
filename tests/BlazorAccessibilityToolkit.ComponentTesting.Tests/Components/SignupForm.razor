@@ -1,0 +1,15 @@
+@* Typical Blazor form: ValidationMessage output is not associated with the input. *@
+<EditForm Model="model" OnValidSubmit="() => { }">
+    <DataAnnotationsValidator />
+    <label for="email">Email</label>
+    <InputText id="email" @bind-Value="model.Email" />
+    <ValidationMessage For="() => model.Email" />
+    <button type="submit">Sign up</button>
+</EditForm>
+@code {
+    private readonly Model model = new();
+    public sealed class Model
+    {
+        [Required] public string? Email { get; set; }
+    }
+}

@@ -1,0 +1,9 @@
+<div class="card" @onclick="Noop">Clickable card</div>
+<div role="button" tabindex="0" class="no-keys" @onclick="Noop">Role button without keys</div>
+<div role="button" tabindex="0" class="good" @onclick="Noop" @onkeydown="Keys">Good custom button</div>
+<button type="button" @onclick="Noop"><span @onclick="Noop">Inside native button</span></button>
+<div class="backdrop" aria-hidden="true" @onclick="Noop"></div>
+@code {
+    private void Noop() { }
+    private void Keys(KeyboardEventArgs e) { }
+}

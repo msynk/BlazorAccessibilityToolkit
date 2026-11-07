@@ -1,0 +1,78 @@
+@* WAI-ARIA tabs with automatic activation, roving tabindex, arrow keys, Home and End. *@
+<div class="tabs">
+    <div role="tablist" aria-label="@Label">
+        @for (var i = 0; i < Items.Count; i++)
+        {
+            var index = i;
+            var selected = index == selectedIndex;
+            <button type="button" role="tab" id="@TabId(index)" aria-selected="@(selected ? "true" : "false")" aria-controls="@PanelId(index)"
+                    tabindex="@(selected ? 0 : -1)" @ref="tabs[index]" @onclick="() => Select(index, focus: false)" @onkeydown="e => OnKeyDown(e, index)">@Items[index].Title</button>
+        }
+    </div>
+    @for (var i = 0; i < Items.Count; i++)
+    {
+        var index = i;
+        <div role="tabpanel" id="@PanelId(index)" aria-labelledby="@TabId(index)" tabindex="0" hidden="@(index != selectedIndex)">
+            @Items[index].Content
+        </div>
+    }
+</div>
+
+@code {
+    private readonly string prefix = $"tabs-{Guid.NewGuid():N}";
+    private ElementReference[] tabs = [];
+    private int selectedIndex;
+    private bool focusSelected;
+
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public IReadOnlyList<TabItem> Items { get; set; } = [];
+
+    protected override void OnParametersSet()
+    {
+        if (tabs.Length != Items.Count)
+        {
+            tabs = new ElementReference[Items.Count];
+        }
+
+        selectedIndex = Math.Clamp(selectedIndex, 0, Math.Max(0, Items.Count - 1));
+    }
+
+    private string TabId(int index) => $"{prefix}-tab-{index}";
+
+    private string PanelId(int index) => $"{prefix}-panel-{index}";
+
+    private void Select(int index, bool focus)
+    {
+        selectedIndex = index;
+        focusSelected = focus;
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e, int index)
+    {
+        var target = e.Key switch
+        {
+            "ArrowRight" => (index + 1) % Items.Count,
+            "ArrowLeft" => (index - 1 + Items.Count) % Items.Count,
+            "Home" => 0,
+            "End" => Items.Count - 1,
+            _ => -1,
+        };
+
+        if (target >= 0)
+        {
+            Select(target, focus: true);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusSelected)
+        {
+            focusSelected = false;
+            await tabs[selectedIndex].FocusAsync();
+        }
+    }
+
+    public sealed record TabItem(string Title, RenderFragment Content);
+}

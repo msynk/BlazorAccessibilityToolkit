@@ -1,0 +1,72 @@
+@inject IJSRuntime JS
+@* A modal dialog that moves focus in, contains it, closes with Escape and restores focus to the trigger. *@
+<button type="button" @ref="trigger" @onclick="OpenAsync" aria-haspopup="dialog" aria-expanded="@(open ? "true" : "false")">Delete file</button>
+@if (open)
+{
+    <div class="backdrop">
+        <div role="dialog" aria-modal="true" aria-labelledby="dlg-title" @onkeydown="OnKeyDownAsync" @ref="dialog" tabindex="-1">
+            <h2 id="dlg-title">Delete file?</h2>
+            <button type="button" @ref="first" @onclick="CloseAsync">Cancel</button>
+            <button type="button" @onclick="CloseAsync">Delete</button>
+        </div>
+    </div>
+}
+
+@code {
+    private bool open;
+    private bool focusFirst;
+    private bool restore;
+    private ElementReference trigger;
+    private ElementReference dialog;
+    private ElementReference first;
+
+    private void OpenAsync()
+    {
+        open = true;
+        focusFirst = true;
+    }
+
+    private void CloseAsync()
+    {
+        open = false;
+        restore = true;
+    }
+
+    private void OnKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            CloseAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusFirst)
+        {
+            focusFirst = false;
+
+            // Install the focus trap before moving focus in, so a Tab pressed immediately is already contained.
+            await JS.InvokeVoidAsync("eval", @"(() => {
+                const d = document.querySelector('[role=dialog]');
+                if (!d || d.__trap) return;
+                d.__trap = true;
+                d.addEventListener('keydown', e => {
+                    if (e.key !== 'Tab') return;
+                    const items = Array.from(d.querySelectorAll('button'));
+                    const i = items.indexOf(document.activeElement);
+                    const next = e.shiftKey ? (i <= 0 ? items.length - 1 : i - 1) : (i === items.length - 1 ? 0 : i + 1);
+                    e.preventDefault();
+                    items[next].focus();
+                });
+            })()");
+            await first.FocusAsync();
+        }
+
+        if (restore)
+        {
+            restore = false;
+            await trigger.FocusAsync();
+        }
+    }
+}

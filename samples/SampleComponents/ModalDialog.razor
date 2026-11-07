@@ -1,0 +1,97 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@* Modal dialog: moves focus into the dialog, keeps it there, closes with Escape and returns focus to the trigger. *@
+<button type="button" class="secondary" @ref="trigger" aria-haspopup="dialog" aria-expanded="@(open ? "true" : "false")" @onclick="Open">@TriggerText</button>
+
+@if (open)
+{
+    <div class="dialog-backdrop">
+        <div @ref="dialog" class="dialog" role="dialog" aria-modal="true" aria-labelledby="@titleId" aria-describedby="@descriptionId" @onkeydown="OnKeyDown">
+            <h2 id="@titleId">@Title</h2>
+            <div id="@descriptionId">@ChildContent</div>
+            <div class="dialog-actions">
+                <button type="button" class="secondary" @onclick="Close">@CancelText</button>
+                <button type="button" class="primary" @onclick="ConfirmAsync">@ConfirmText</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly string titleId = $"dialog-title-{Guid.NewGuid():N}";
+    private readonly string descriptionId = $"dialog-description-{Guid.NewGuid():N}";
+    private ElementReference trigger;
+    private ElementReference dialog;
+    private IJSObjectReference? module;
+    private bool open;
+    private bool activate;
+    private bool restore;
+
+    [Parameter] public string TriggerText { get; set; } = "Open dialog";
+
+    [Parameter] public string Title { get; set; } = "Dialog";
+
+    [Parameter] public string CancelText { get; set; } = "Cancel";
+
+    [Parameter] public string ConfirmText { get; set; } = "OK";
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public EventCallback OnConfirm { get; set; }
+
+    private void Open()
+    {
+        open = true;
+        activate = true;
+    }
+
+    private void Close()
+    {
+        open = false;
+        restore = true;
+    }
+
+    private async Task ConfirmAsync()
+    {
+        Close();
+        await OnConfirm.InvokeAsync();
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            Close();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (activate)
+        {
+            activate = false;
+            module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./_content/SampleComponents/ModalDialog.razor.js");
+            await module.InvokeVoidAsync("activate", dialog);
+        }
+
+        if (restore)
+        {
+            restore = false;
+            await trigger.FocusAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (module is not null)
+        {
+            try
+            {
+                await module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+}

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Browser-based accessibility testing for Blazor: axe-core audits (via Deque.AxeCore.Playwright), Razor-aware diagnostics, keyboard scenarios, focus-order inspection, live-region monitoring, ARIA snapshots, a browser engine for bUnit markup audits, and an in-process interactive component host.</Description>
+    <RootNamespace>BlazorAccessibilityToolkit.Playwright</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="Deque.AxeCore.Playwright" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorAccessibilityToolkit\BlazorAccessibilityToolkit.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts\toolkit.js" LogicalName="BlazorAccessibilityToolkit.toolkit.js" />
+  </ItemGroup>
+</Project>

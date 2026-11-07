@@ -1,0 +1,27 @@
+@inherits LayoutComponentBase
+@* Blazor's router intercepts in-page links: it scrolls to #main but does not move keyboard focus, so focus it explicitly. *@
+<a class="skip-link" href="#main" @onclick="SkipToMainAsync" @onclick:preventDefault>Skip to main content</a>
+<header>
+    <p class="brand">Sample App</p>
+    <nav aria-label="Main">
+        <ul>
+            <li><NavLink href="" Match="NavLinkMatch.All">Home</NavLink></li>
+            <li><NavLink href="settings">Settings</NavLink></li>
+            <li><NavLink href="signup">Sign up</NavLink></li>
+            <li><NavLink href="legacy">Legacy</NavLink></li>
+        </ul>
+    </nav>
+</header>
+@* data-interactive lets end-to-end tests wait until the circuit is connected instead of sleeping. *@
+<main id="main" tabindex="-1" @ref="main" data-interactive="@(RendererInfo.IsInteractive ? "true" : "false")">
+    @Body
+</main>
+<footer>
+    <p>Blazor Accessibility Toolkit sample</p>
+</footer>
+
+@code {
+    private ElementReference main;
+
+    private async Task SkipToMainAsync() => await main.FocusAsync();
+}

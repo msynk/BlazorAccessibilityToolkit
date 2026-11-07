@@ -1,0 +1,38 @@
+@* Accessible button that reports its result through a polite live region that exists before the update. *@
+<h2>@Title</h2>
+<button type="button" @onclick="SaveAsync">Save</button>
+<div role="status">@message</div>
+
+@code {
+    private string message = string.Empty;
+
+    [Parameter] public string Title { get; set; } = "Settings";
+
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    [CascadingParameter(Name = "Theme")] public string? Theme { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    public int Saves { get; private set; }
+
+    public void Reset()
+    {
+        message = "Reset";
+        StateHasChanged();
+    }
+
+    private async Task SaveAsync()
+    {
+        message = string.Empty;
+        await Task.Yield();
+        Saves++;
+        message = "Changes saved";
+        await OnSaved.InvokeAsync();
+    }
+}
+@if (Theme is not null)
+{
+    <p data-theme="@Theme">Theme: @Theme</p>
+}
+@ChildContent

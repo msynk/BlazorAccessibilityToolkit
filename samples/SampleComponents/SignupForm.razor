@@ -1,0 +1,61 @@
+@* Accessible form validation: errors are visible, associated with their fields, and success is announced. *@
+<EditForm EditContext="editContext" OnValidSubmit="SubmitAsync" OnInvalidSubmit="() => submitted = true" FormName="signup" novalidate>
+    <DataAnnotationsValidator />
+    <fieldset>
+        <legend>Create an account</legend>
+
+        <div class="field">
+            <label for="@NameId">Full name</label>
+            <InputText id="@NameId" @bind-Value="model.Name" autocomplete="name" aria-describedby="@ErrorRef(() => model.Name, NameId)" />
+            <FieldError Id="@($"{NameId}-error")" Messages="@Messages(() => model.Name)" />
+        </div>
+
+        <div class="field">
+            <label for="@EmailId">Email</label>
+            <InputText id="@EmailId" type="email" @bind-Value="model.Email" autocomplete="email" aria-describedby="@ErrorRef(() => model.Email, EmailId)" />
+            <FieldError Id="@($"{EmailId}-error")" Messages="@Messages(() => model.Email)" />
+        </div>
+    </fieldset>
+
+    <button type="submit" class="primary">Create account</button>
+    <p role="status" class="status">@status</p>
+</EditForm>
+
+@code {
+    private readonly Model model = new();
+    private readonly string idPrefix = $"signup-{Guid.NewGuid():N}";
+    private EditContext editContext = null!;
+    private bool submitted;
+    private string status = string.Empty;
+
+    private string NameId => $"{idPrefix}-name";
+
+    private string EmailId => $"{idPrefix}-email";
+
+    [Parameter] public EventCallback<Model> OnSignedUp { get; set; }
+
+    protected override void OnInitialized() => editContext = new EditContext(model);
+
+    private IReadOnlyList<string> Messages(System.Linq.Expressions.Expression<Func<object?>> field) =>
+        submitted ? editContext.GetValidationMessages(FieldIdentifier.Create(field)).ToArray() : [];
+
+    private string? ErrorRef(System.Linq.Expressions.Expression<Func<object?>> field, string id) =>
+        Messages(field).Count > 0 ? $"{id}-error" : null;
+
+    private async Task SubmitAsync()
+    {
+        submitted = true;
+        status = $"Account created for {model.Email}.";
+        await OnSignedUp.InvokeAsync(model);
+    }
+
+    public sealed class Model
+    {
+        [Required(ErrorMessage = "Enter your full name.")]
+        public string? Name { get; set; }
+
+        [Required(ErrorMessage = "Enter your email address.")]
+        [EmailAddress(ErrorMessage = "Enter an email address like name@example.com.")]
+        public string? Email { get; set; }
+    }
+}

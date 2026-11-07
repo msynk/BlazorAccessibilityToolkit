@@ -1,0 +1,480 @@
+class BlazorAccessibilityToolkit.AccessibilityAssertionException : System.Exception
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> Findings { get; init; }
+  ctor()
+  ctor(System.String message)
+  ctor(System.String message, System.Exception innerException)
+static class BlazorAccessibilityToolkit.AccessibilityAssertions
+  static BlazorAccessibilityToolkit.AccessibilityAudit ShouldBeConclusive(BlazorAccessibilityToolkit.AccessibilityAudit audit)
+  static BlazorAccessibilityToolkit.AccessibilityAudit ShouldHaveExecuted(BlazorAccessibilityToolkit.AccessibilityAudit audit)
+  static BlazorAccessibilityToolkit.AccessibilityAudit ShouldHaveNoViolations(BlazorAccessibilityToolkit.AccessibilityAudit audit, BlazorAccessibilityToolkit.AccessibilityExpectation expectation = null)
+  static BlazorAccessibilityToolkit.AccessibilityAudit ShouldNotHaveFinding(BlazorAccessibilityToolkit.AccessibilityAudit audit, System.String ruleId)
+  static BlazorAccessibilityToolkit.AccessibilityFinding ShouldHaveFinding(BlazorAccessibilityToolkit.AccessibilityAudit audit, System.String ruleId, System.Nullable<BlazorAccessibilityToolkit.FindingStatus> status = null)
+  static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityAudit> ShouldHaveNoViolations(System.Collections.Generic.IEnumerable<BlazorAccessibilityToolkit.AccessibilityAudit> audits, BlazorAccessibilityToolkit.AccessibilityExpectation expectation = null)
+sealed class BlazorAccessibilityToolkit.AccessibilityAudit
+  BlazorAccessibilityToolkit.AccessibilityContext Context { get; init; }
+  BlazorAccessibilityToolkit.AuditConfiguration Configuration { get; init; }
+  BlazorAccessibilityToolkit.AuditStatus Status { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> Findings { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> Inconclusive { get; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> ManualReviewRequired { get; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> PotentialIssues { get; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> Suppressed { get; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> Violations { get; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.EngineInfo> Engines { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.ExecutionError> Errors { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> InapplicableRules { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> PassedRules { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Warnings { get; init; }
+  System.DateTimeOffset StartedAt { get; init; }
+  System.Double DurationMs { get; init; }
+  System.String Id { get; init; }
+  System.String Name { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.AccessibilityAuditBuilder
+  BlazorAccessibilityToolkit.AccessibilityAudit Build()
+  BlazorAccessibilityToolkit.AccessibilityAuditBuilder AddEngine(System.String name, System.String version)
+  BlazorAccessibilityToolkit.AccessibilityAuditBuilder AddError(BlazorAccessibilityToolkit.ExecutionError error)
+  BlazorAccessibilityToolkit.AccessibilityAuditBuilder AddError(System.String source, System.Exception exception)
+  BlazorAccessibilityToolkit.AccessibilityAuditBuilder AddFinding(BlazorAccessibilityToolkit.AccessibilityFinding finding)
+  BlazorAccessibilityToolkit.AccessibilityAuditBuilder AddFindings(System.Collections.Generic.IEnumerable<BlazorAccessibilityToolkit.AccessibilityFinding> findings)
+  BlazorAccessibilityToolkit.AccessibilityAuditBuilder AddInapplicableRule(System.String ruleId)
+  BlazorAccessibilityToolkit.AccessibilityAuditBuilder AddPassedRule(System.String ruleId)
+  BlazorAccessibilityToolkit.AccessibilityAuditBuilder AddWarning(System.String warning)
+  BlazorAccessibilityToolkit.AccessibilityAuditBuilder MarkSkipped(System.String reason)
+  BlazorAccessibilityToolkit.AccessibilityAuditOptions Options { get; }
+  BlazorAccessibilityToolkit.AccessibilityContext Context { get; set; }
+  System.Boolean HasErrors { get; }
+  System.DateTimeOffset StartedAt { get; }
+  System.String Name { get; }
+  ctor(System.String name, BlazorAccessibilityToolkit.AccessibilityContext context, BlazorAccessibilityToolkit.AccessibilityAuditOptions options = null)
+sealed class BlazorAccessibilityToolkit.AccessibilityAuditFailedException : BlazorAccessibilityToolkit.AccessibilityAssertionException
+  BlazorAccessibilityToolkit.AccessibilityAudit Audit { get; init; }
+  ctor()
+  ctor(System.String message)
+  ctor(System.String message, System.Exception innerException)
+sealed class BlazorAccessibilityToolkit.AccessibilityAuditOptions
+  BlazorAccessibilityToolkit.AuditConfiguration ToConfiguration(BlazorAccessibilityToolkit.AuditTargetKind kind)
+  System.Boolean IncludeBestPractices { get; init; }
+  System.Boolean IncludeExperimental { get; init; }
+  System.Boolean PageLevelRulesForComponents { get; init; }
+  System.Boolean RedactFormValues { get; init; }
+  System.Boolean ToolkitDiagnostics { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Suppression> Suppressions { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> DisabledRules { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> EffectiveDisabledRules(BlazorAccessibilityToolkit.AuditTargetKind kind)
+  System.Collections.Generic.IReadOnlyList<System.String> EffectiveTags()
+  System.Collections.Generic.IReadOnlyList<System.String> EnabledRules { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> ExcludeSelectors { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Tags { get; init; }
+  System.Int32 MaxEvidenceLength { get; init; }
+  System.Int32 MaxNodesPerRule { get; init; }
+  System.TimeProvider TimeProvider { get; init; }
+  System.TimeSpan Timeout { get; init; }
+  ctor()
+  static BlazorAccessibilityToolkit.AccessibilityAuditOptions Default { get; }
+  static System.Collections.Generic.IReadOnlyList<System.String> PageLevelRules { get; }
+sealed class BlazorAccessibilityToolkit.AccessibilityContext
+  BlazorAccessibilityToolkit.AuditTargetKind Kind { get; init; }
+  System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Metadata { get; init; }
+  System.String Browser { get; init; }
+  System.String BrowserVersion { get; init; }
+  System.String ComponentType { get; init; }
+  System.String RenderMode { get; init; }
+  System.String Scenario { get; init; }
+  System.String ScopeSelector { get; init; }
+  System.String State { get; init; }
+  System.String Url { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.AccessibilityExpectation
+  BlazorAccessibilityToolkit.AccessibilityImpact MinimumImpact { get; init; }
+  System.Boolean FailOnInconclusive { get; init; }
+  System.Boolean FailOnPotentialIssues { get; init; }
+  System.Boolean IncludeBestPractices { get; init; }
+  ctor()
+  static BlazorAccessibilityToolkit.AccessibilityExpectation Default { get; }
+  static BlazorAccessibilityToolkit.AccessibilityExpectation Strict { get; }
+sealed class BlazorAccessibilityToolkit.AccessibilityFinding
+  BlazorAccessibilityToolkit.AppliedSuppression Suppression { get; init; }
+  BlazorAccessibilityToolkit.ComponentAttribution Component { get; init; }
+  BlazorAccessibilityToolkit.FindingStatus Status { get; init; }
+  BlazorAccessibilityToolkit.FindingTarget Target { get; init; }
+  System.Boolean IsBestPractice { get; init; }
+  System.Boolean IsSuppressed { get; }
+  System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Data { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.FindingCheck> Checks { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.WcagReference> Wcag { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Tags { get; init; }
+  System.Nullable<BlazorAccessibilityToolkit.AccessibilityImpact> Impact { get; init; }
+  System.String Description { get; init; }
+  System.String Engine { get; init; }
+  System.String Fingerprint { get; init; }
+  System.String Help { get; init; }
+  System.String HelpUrl { get; init; }
+  System.String Remediation { get; init; }
+  System.String RuleId { get; init; }
+  ctor()
+enum BlazorAccessibilityToolkit.AccessibilityImpact
+  Minor
+  Moderate
+  Serious
+  Critical
+static class BlazorAccessibilityToolkit.AccessibilityStandard
+  const System.String BestPracticeTag
+  const System.String ExperimentalTag
+  static System.Collections.Generic.IReadOnlyList<System.String> Wcag20A { get; }
+  static System.Collections.Generic.IReadOnlyList<System.String> Wcag20AA { get; }
+  static System.Collections.Generic.IReadOnlyList<System.String> Wcag21A { get; }
+  static System.Collections.Generic.IReadOnlyList<System.String> Wcag21AA { get; }
+  static System.Collections.Generic.IReadOnlyList<System.String> Wcag22AA { get; }
+sealed class BlazorAccessibilityToolkit.AppliedSuppression
+  System.Nullable<System.DateOnly> Expires { get; init; }
+  System.String Owner { get; init; }
+  System.String Reason { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.AuditConfiguration
+  System.Collections.Generic.IReadOnlyList<System.String> DisabledRules { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> EnabledRules { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> ExcludedSelectors { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Tags { get; init; }
+  ctor()
+enum BlazorAccessibilityToolkit.AuditStatus
+  Completed
+  Failed
+  Skipped
+enum BlazorAccessibilityToolkit.AuditTargetKind
+  Component
+  Page
+  Region
+sealed class BlazorAccessibilityToolkit.Baselines.AccessibilityBaseline
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Baselines.BaselineEntry> Entries { get; init; }
+  System.String FingerprintVersion { get; init; }
+  System.String SchemaVersion { get; init; }
+  System.Void Save(System.String path)
+  ctor()
+  static BlazorAccessibilityToolkit.Baselines.AccessibilityBaseline FromAudits(System.Collections.Generic.IEnumerable<BlazorAccessibilityToolkit.AccessibilityAudit> audits)
+  static BlazorAccessibilityToolkit.Baselines.AccessibilityBaseline Load(System.String path)
+sealed class BlazorAccessibilityToolkit.Baselines.BaselineComparison
+  System.Boolean ResolvedIsReliable { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Baselines.BaselineEntry> Resolved { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Baselines.BaselineFindingRef> Existing { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Baselines.BaselineFindingRef> New { get; init; }
+  ctor()
+  static BlazorAccessibilityToolkit.Baselines.BaselineComparison Compare(BlazorAccessibilityToolkit.Baselines.AccessibilityBaseline baseline, System.Collections.Generic.IEnumerable<BlazorAccessibilityToolkit.AccessibilityAudit> audits)
+sealed class BlazorAccessibilityToolkit.Baselines.BaselineEntry
+  BlazorAccessibilityToolkit.FindingStatus Status { get; init; }
+  System.Int32 Count { get; init; }
+  System.String Audit { get; init; }
+  System.String Component { get; init; }
+  System.String Engine { get; init; }
+  System.String Fingerprint { get; init; }
+  System.String Note { get; init; }
+  System.String RuleId { get; init; }
+  System.String Scenario { get; init; }
+  System.String Selector { get; init; }
+  System.String State { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.Baselines.BaselineFindingRef
+  BlazorAccessibilityToolkit.FindingStatus Status { get; init; }
+  System.String Audit { get; init; }
+  System.String AuditId { get; init; }
+  System.String Fingerprint { get; init; }
+  System.String RuleId { get; init; }
+  System.String Selector { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.ComponentAttribution
+  System.Collections.Generic.IReadOnlyList<System.String> ComponentPath { get; init; }
+  System.String ComponentType { get; init; }
+  System.String Method { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.EngineInfo
+  System.String Name { get; init; }
+  System.String Version { get; init; }
+  ctor()
+interface BlazorAccessibilityToolkit.Engines.IMarkupAuditEngine
+  System.String Name { get; }
+  System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Engines.MarkupEngineResult> AuditAsync(BlazorAccessibilityToolkit.Engines.MarkupAuditRequest request, System.Threading.CancellationToken cancellationToken = null)
+sealed class BlazorAccessibilityToolkit.Engines.MarkupAuditRequest
+  BlazorAccessibilityToolkit.AccessibilityAuditOptions Options { get; init; }
+  BlazorAccessibilityToolkit.AuditTargetKind Kind { get; init; }
+  BlazorAccessibilityToolkit.Engines.MarkupDocumentOptions Document { get; init; }
+  System.String BodyHtml { get; init; }
+  const System.String OrdinalAttribute
+  ctor()
+sealed class BlazorAccessibilityToolkit.Engines.MarkupDocumentOptions
+  System.Collections.Generic.IReadOnlyList<System.String> Styles { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> StylesheetFiles { get; init; }
+  System.String Language { get; init; }
+  System.String Title { get; init; }
+  System.String WrapperElement { get; init; }
+  ctor()
+  static BlazorAccessibilityToolkit.Engines.MarkupDocumentOptions Default { get; }
+sealed class BlazorAccessibilityToolkit.Engines.MarkupEngineResult
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> Findings { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.EngineInfo> Engines { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.ExecutionError> Errors { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> InapplicableRules { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> PassedRules { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Warnings { get; init; }
+  System.String Browser { get; init; }
+  System.String BrowserVersion { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.ExecutionError
+  System.String ExceptionType { get; init; }
+  System.String Message { get; init; }
+  System.String Source { get; init; }
+  ctor()
+  static BlazorAccessibilityToolkit.ExecutionError FromException(System.String source, System.Exception exception)
+sealed class BlazorAccessibilityToolkit.FindingCheck
+  System.Collections.Generic.IReadOnlyList<System.String> RelatedSelectors { get; init; }
+  System.Nullable<BlazorAccessibilityToolkit.AccessibilityImpact> Impact { get; init; }
+  System.String DataJson { get; init; }
+  System.String Group { get; init; }
+  System.String Id { get; init; }
+  System.String Message { get; init; }
+  ctor()
+static class BlazorAccessibilityToolkit.FindingFingerprint
+  const System.String Version
+  static System.String Compute(BlazorAccessibilityToolkit.AccessibilityFinding finding, BlazorAccessibilityToolkit.AccessibilityContext context)
+  static System.String NormalizeSelector(System.String selector)
+  static System.String NormalizeUrl(System.String url)
+static class BlazorAccessibilityToolkit.FindingFormatter
+  static System.String Format(BlazorAccessibilityToolkit.AccessibilityFinding finding)
+  static System.String FormatFailure(BlazorAccessibilityToolkit.AccessibilityAudit audit, System.Collections.Generic.IReadOnlyCollection<BlazorAccessibilityToolkit.AccessibilityFinding> findings, System.String what = null)
+enum BlazorAccessibilityToolkit.FindingStatus
+  Violation
+  PotentialIssue
+  Inconclusive
+  ManualReviewRequired
+sealed class BlazorAccessibilityToolkit.FindingTarget
+  System.Collections.Generic.IReadOnlyList<System.String> SelectorPath { get; init; }
+  System.Nullable<System.Int32> ElementOrdinal { get; init; }
+  System.String AccessibleName { get; init; }
+  System.String Html { get; init; }
+  System.String Role { get; init; }
+  System.String Selector { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.ManualReview.ManualReviewChecklist
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.ManualReview.ManualReviewItem> Items { get; init; }
+  System.String Name { get; init; }
+  System.String SchemaVersion { get; init; }
+  System.String Scope { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.ManualReview.ManualReviewCoverage
+  System.Int32 Failed { get; init; }
+  System.Int32 NotApplicable { get; init; }
+  System.Int32 NotTested { get; init; }
+  System.Int32 Outstanding { get; }
+  System.Int32 Passed { get; init; }
+  System.Int32 RequiresReview { get; init; }
+  System.Int32 Total { get; init; }
+  ctor()
+static class BlazorAccessibilityToolkit.ManualReview.ManualReviewEvaluator
+  const System.String EngineName
+  static BlazorAccessibilityToolkit.ManualReview.ManualReviewChecklist Load(System.String path)
+  static BlazorAccessibilityToolkit.ManualReview.ManualReviewCoverage Coverage(System.Collections.Generic.IEnumerable<BlazorAccessibilityToolkit.ManualReview.ManualReviewChecklist> checklists)
+  static BlazorAccessibilityToolkit.ManualReview.ManualReviewStatus EffectiveStatus(BlazorAccessibilityToolkit.ManualReview.ManualReviewItem item)
+  static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> ToFindings(BlazorAccessibilityToolkit.ManualReview.ManualReviewChecklist checklist)
+  static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.ManualReview.ManualReviewValidationIssue> Validate(BlazorAccessibilityToolkit.ManualReview.ManualReviewChecklist checklist)
+  static System.Void Save(BlazorAccessibilityToolkit.ManualReview.ManualReviewChecklist checklist, System.String path)
+sealed class BlazorAccessibilityToolkit.ManualReview.ManualReviewItem
+  BlazorAccessibilityToolkit.ManualReview.ManualReviewStatus Status { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Environments { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Evidence { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Wcag { get; init; }
+  System.Nullable<System.DateOnly> Date { get; init; }
+  System.String Guidance { get; init; }
+  System.String Id { get; init; }
+  System.String Justification { get; init; }
+  System.String Notes { get; init; }
+  System.String Tester { get; init; }
+  System.String Title { get; init; }
+  ctor()
+enum BlazorAccessibilityToolkit.ManualReview.ManualReviewStatus
+  NotTested
+  RequiresReview
+  Passed
+  Failed
+  NotApplicable
+static class BlazorAccessibilityToolkit.ManualReview.ManualReviewTemplates
+  static BlazorAccessibilityToolkit.ManualReview.ManualReviewChecklist Standard(System.String name, System.String scope = null)
+sealed class BlazorAccessibilityToolkit.ManualReview.ManualReviewValidationIssue
+  System.String ItemId { get; init; }
+  System.String Message { get; init; }
+  ctor(System.String ItemId, System.String Message)
+sealed class BlazorAccessibilityToolkit.Reporting.AccessibilityReport
+  BlazorAccessibilityToolkit.Baselines.BaselineComparison Baseline { get; init; }
+  BlazorAccessibilityToolkit.Reporting.ReportSummary Summary { get; init; }
+  BlazorAccessibilityToolkit.Reporting.ToolInfo Tool { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityAudit> Audits { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.ManualReview.ManualReviewChecklist> ManualReviews { get; init; }
+  System.DateTimeOffset GeneratedAt { get; init; }
+  System.String SchemaVersion { get; init; }
+  const System.String CurrentSchemaVersion
+  ctor()
+  static BlazorAccessibilityToolkit.Reporting.AccessibilityReport Create(System.Collections.Generic.IEnumerable<BlazorAccessibilityToolkit.AccessibilityAudit> audits, System.Collections.Generic.IEnumerable<BlazorAccessibilityToolkit.ManualReview.ManualReviewChecklist> manualReviews = null, BlazorAccessibilityToolkit.Baselines.AccessibilityBaseline baseline = null, System.TimeProvider timeProvider = null)
+  static BlazorAccessibilityToolkit.Reporting.AccessibilityReport Load(System.String path)
+sealed class BlazorAccessibilityToolkit.Reporting.AccessibilityResultStore
+  System.String Directory { get; }
+  System.String Save(BlazorAccessibilityToolkit.AccessibilityAudit audit)
+  const System.String DirectoryEnvironmentVariable
+  const System.String FileSuffix
+  ctor(System.String directory)
+  static BlazorAccessibilityToolkit.Reporting.AccessibilityResultStore Default { get; }
+sealed class BlazorAccessibilityToolkit.Reporting.ConsoleReportFormatter
+  System.Int32 MaxFindingsPerAudit { get; init; }
+  System.String DefaultFileName { get; }
+  System.String Name { get; }
+  System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
+  ctor()
+sealed class BlazorAccessibilityToolkit.Reporting.HtmlReportFormatter
+  System.String DefaultFileName { get; }
+  System.String Name { get; }
+  System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
+  ctor()
+interface BlazorAccessibilityToolkit.Reporting.IReportFormatter
+  System.String DefaultFileName { get; }
+  System.String Name { get; }
+  System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
+sealed class BlazorAccessibilityToolkit.Reporting.JUnitReportFormatter
+  System.Boolean IncludePassedRules { get; init; }
+  System.String DefaultFileName { get; }
+  System.String Name { get; }
+  System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
+  ctor()
+sealed class BlazorAccessibilityToolkit.Reporting.JsonReportFormatter
+  System.String DefaultFileName { get; }
+  System.String Name { get; }
+  System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
+  ctor()
+static class BlazorAccessibilityToolkit.Reporting.QualityGate
+  static BlazorAccessibilityToolkit.Reporting.QualityGateResult Evaluate(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, BlazorAccessibilityToolkit.Reporting.QualityGateOptions options = null, System.Collections.Generic.IEnumerable<System.String> loadErrors = null)
+sealed class BlazorAccessibilityToolkit.Reporting.QualityGateOptions
+  System.Boolean AllowEmpty { get; init; }
+  System.Boolean FailOnFailedManualReview { get; init; }
+  System.Boolean FailOnInconclusive { get; init; }
+  System.Boolean FailOnOutstandingManualReview { get; init; }
+  System.Boolean FailOnPotentialIssues { get; init; }
+  System.Boolean Strict { get; init; }
+  System.Nullable<BlazorAccessibilityToolkit.AccessibilityImpact> FailOnImpact { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.Reporting.QualityGateResult
+  System.Boolean Passed { get; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> FailingFindings { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Errors { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Failures { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Notes { get; init; }
+  System.Int32 ExitCode { get; init; }
+  const System.Int32 ExecutionFailed
+  const System.Int32 FindingsFailed
+  const System.Int32 InvalidUsage
+  const System.Int32 Success
+  ctor()
+static class BlazorAccessibilityToolkit.Reporting.ReportFormatters
+  static BlazorAccessibilityToolkit.Reporting.IReportFormatter Find(System.String name)
+  static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Reporting.IReportFormatter> All { get; }
+  static System.String Format(BlazorAccessibilityToolkit.Reporting.IReportFormatter formatter, BlazorAccessibilityToolkit.Reporting.AccessibilityReport report)
+  static System.Void WriteToFile(BlazorAccessibilityToolkit.Reporting.IReportFormatter formatter, BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.String path)
+static class BlazorAccessibilityToolkit.Reporting.ReportJson
+  static System.Text.Json.JsonSerializerOptions Options { get; }
+static class BlazorAccessibilityToolkit.Reporting.ReportLoader
+  static BlazorAccessibilityToolkit.Reporting.AccessibilityReport LoadReport(System.String path)
+  static System.ValueTuple<System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityAudit>, System.Collections.Generic.IReadOnlyList<System.String>> LoadAudits(System.Collections.Generic.IEnumerable<System.String> paths)
+sealed class BlazorAccessibilityToolkit.Reporting.ReportSummary
+  BlazorAccessibilityToolkit.ManualReview.ManualReviewCoverage ManualReview { get; init; }
+  System.Collections.Generic.IReadOnlyDictionary<System.String, System.Int32> ViolationsByImpact { get; init; }
+  System.Collections.Generic.IReadOnlyDictionary<System.String, System.Int32> ViolationsByRule { get; init; }
+  System.Collections.Generic.IReadOnlyDictionary<System.String, System.Int32> ViolationsByWcag { get; init; }
+  System.Int32 Audits { get; init; }
+  System.Int32 CompletedAudits { get; init; }
+  System.Int32 FailedAudits { get; init; }
+  System.Int32 Inconclusive { get; init; }
+  System.Int32 ManualReviewRequired { get; init; }
+  System.Int32 PotentialIssues { get; init; }
+  System.Int32 SkippedAudits { get; init; }
+  System.Int32 Suppressed { get; init; }
+  System.Int32 Violations { get; init; }
+  ctor()
+  static BlazorAccessibilityToolkit.Reporting.ReportSummary Compute(System.Collections.Generic.IReadOnlyCollection<BlazorAccessibilityToolkit.AccessibilityAudit> audits, System.Collections.Generic.IReadOnlyCollection<BlazorAccessibilityToolkit.ManualReview.ManualReviewChecklist> checklists)
+sealed class BlazorAccessibilityToolkit.Reporting.SarifReportFormatter
+  System.Func<System.String, System.String> SourceResolver { get; init; }
+  System.String DefaultFileName { get; }
+  System.String FallbackUri { get; init; }
+  System.String Name { get; }
+  System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
+  ctor()
+sealed class BlazorAccessibilityToolkit.Reporting.ToolInfo
+  System.String InformationUri { get; init; }
+  System.String Name { get; init; }
+  System.String Version { get; init; }
+  ctor()
+  static BlazorAccessibilityToolkit.Reporting.ToolInfo Toolkit { get; }
+sealed class BlazorAccessibilityToolkit.Rules.AccessibilityRule
+  BlazorAccessibilityToolkit.AccessibilityFinding CreateFinding(BlazorAccessibilityToolkit.FindingTarget target, System.String remediation = null, System.Nullable<BlazorAccessibilityToolkit.FindingStatus> status = null, System.Nullable<BlazorAccessibilityToolkit.AccessibilityImpact> impact = null, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> data = null)
+  BlazorAccessibilityToolkit.AccessibilityImpact Impact { get; init; }
+  BlazorAccessibilityToolkit.FindingStatus Status { get; init; }
+  System.Boolean IsBestPractice { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Environments { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Wcag { get; init; }
+  System.String Description { get; init; }
+  System.String Help { get; init; }
+  System.String HelpUrl { get; init; }
+  System.String Id { get; init; }
+  System.String Remediation { get; init; }
+  ctor()
+static class BlazorAccessibilityToolkit.Rules.ToolkitRules
+  const System.String Browser
+  const System.String EngineName
+  const System.String Markup
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule ClickHandlerSemantics { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule DuplicateId { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule DuplicateIdReferenced { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule ExpandedStateMismatch { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule FieldsetMissingLegend { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule Find(System.String id)
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusHiddenTarget { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusIndicatorNotDetected { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusRepeated { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusStuck { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusTrap { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule IdReferenceMissing { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule InvalidWithoutErrorReference { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule LiveRegionHiddenUpdate { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule LiveRegionInsertedWithContent { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule LiveRegionPolitenessConflict { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupAriaHiddenFocusable { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupControlName { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupFormLabel { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupImageAlt { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupInvalidAriaAttribute { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupInvalidRole { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupPositiveTabIndex { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule RadioGroupUngrouped { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule TabSelectionMismatch { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule ValidationMessageAssociation { get; }
+  static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Rules.AccessibilityRule> All { get; }
+sealed class BlazorAccessibilityToolkit.Suppression
+  System.Nullable<System.DateOnly> Expires { get; init; }
+  System.String Component { get; init; }
+  System.String Owner { get; init; }
+  System.String Reason { get; init; }
+  System.String RuleId { get; init; }
+  System.String Scenario { get; init; }
+  System.String Selector { get; init; }
+  ctor()
+static class BlazorAccessibilityToolkit.WcagCatalog
+  static BlazorAccessibilityToolkit.WcagReference Find(System.String id)
+  static BlazorAccessibilityToolkit.WcagReference Get(System.String id)
+  static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.WcagReference> All { get; }
+  static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.WcagReference> FromTags(System.Collections.Generic.IEnumerable<System.String> tags)
+enum BlazorAccessibilityToolkit.WcagLevel
+  A
+  AA
+  AAA
+sealed class BlazorAccessibilityToolkit.WcagReference
+  BlazorAccessibilityToolkit.WcagLevel Level { get; init; }
+  System.Boolean IsObsolete { get; init; }
+  System.String Id { get; init; }
+  System.String IntroducedIn { get; init; }
+  System.String Title { get; init; }
+  System.String Url { get; init; }
+  ctor()

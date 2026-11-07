@@ -1,0 +1,310 @@
+sealed class BlazorAccessibilityToolkit.Playwright.AccessibilityBrowser
+  Microsoft.Playwright.BrowserNewContextOptions CreateContextOptions()
+  Microsoft.Playwright.IBrowser Browser { get; }
+  Microsoft.Playwright.IPlaywright Playwright { get; }
+  System.Int32 Relaunches { get; }
+  System.String Name { get; }
+  System.String Version { get; }
+  System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.BrowserSession> NewSessionAsync(Microsoft.Playwright.BrowserNewContextOptions contextOptions = null)
+  System.Threading.Tasks.ValueTask DisposeAsync()
+  static System.Int32 Install(System.String[] browsers)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.AccessibilityBrowser> LaunchAsync(BlazorAccessibilityToolkit.Playwright.AccessibilityBrowserOptions options = null)
+sealed class BlazorAccessibilityToolkit.Playwright.AccessibilityBrowserOptions
+  System.Boolean ReducedMotion { get; init; }
+  System.Int32 ViewportHeight { get; init; }
+  System.Int32 ViewportWidth { get; init; }
+  System.Nullable<System.Boolean> Headless { get; init; }
+  System.String Browser { get; init; }
+  System.String Channel { get; init; }
+  System.String Locale { get; init; }
+  System.TimeSpan LaunchTimeout { get; init; }
+  const System.String BrowserEnvironmentVariable
+  const System.String HeadedEnvironmentVariable
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.AccessibleElementInfo
+  System.Boolean Focusable { get; init; }
+  System.Boolean HiddenFromAssistiveTechnologies { get; init; }
+  System.Boolean Visible { get; init; }
+  System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> States { get; init; }
+  System.Int32 ElementKey { get; init; }
+  System.Nullable<System.Int32> ElementOrdinal { get; init; }
+  System.Nullable<System.Int32> TabIndex { get; init; }
+  System.String Description { get; init; }
+  System.String Html { get; init; }
+  System.String Name { get; init; }
+  System.String Role { get; init; }
+  System.String Selector { get; init; }
+  System.String State(System.String name)
+  System.String TagName { get; init; }
+  ctor()
+static class BlazorAccessibilityToolkit.Playwright.AriaPatterns
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyDisclosureAsync(Microsoft.Playwright.ILocator button, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyMenuButtonAsync(Microsoft.Playwright.ILocator button, Microsoft.Playwright.ILocator menu = null, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyModalDialogAsync(Microsoft.Playwright.ILocator trigger, Microsoft.Playwright.ILocator dialog = null, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyTabsAsync(Microsoft.Playwright.ILocator tablist, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
+sealed class BlazorAccessibilityToolkit.Playwright.AriaSnapshotMismatchException : BlazorAccessibilityToolkit.AccessibilityAssertionException
+  ctor()
+  ctor(System.String message)
+  ctor(System.String message, System.Exception innerException)
+sealed class BlazorAccessibilityToolkit.Playwright.AriaSnapshotOptions
+  System.Nullable<System.Boolean> Update { get; init; }
+  System.String Directory { get; init; }
+  System.TimeSpan Timeout { get; init; }
+  const System.String DirectoryEnvironmentVariable
+  const System.String UpdateEnvironmentVariable
+  ctor()
+static class BlazorAccessibilityToolkit.Playwright.AriaSnapshots
+  static System.String Diff(System.String expected, System.String actual)
+  static System.Threading.Tasks.Task ShouldMatchAriaSnapshotAsync(Microsoft.Playwright.ILocator locator, System.String template, System.Nullable<System.TimeSpan> timeout = null)
+  static System.Threading.Tasks.Task ShouldMatchStoredAriaSnapshotAsync(Microsoft.Playwright.ILocator locator, System.String name, BlazorAccessibilityToolkit.Playwright.AriaSnapshotOptions options = null, System.String callerFilePath = )
+  static System.Threading.Tasks.Task<System.String> CaptureAriaSnapshotAsync(Microsoft.Playwright.ILocator locator)
+sealed class BlazorAccessibilityToolkit.Playwright.AuditLabel
+  System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> Metadata { get; init; }
+  System.String Name { get; init; }
+  System.String Scenario { get; init; }
+  System.String State { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.BrowserNotAvailableException : System.InvalidOperationException
+  ctor()
+  ctor(System.String message)
+  ctor(System.String message, System.Exception innerException)
+sealed class BlazorAccessibilityToolkit.Playwright.BrowserSession
+  Microsoft.Playwright.IBrowserContext Context { get; }
+  Microsoft.Playwright.IPage Page { get; }
+  System.Threading.Tasks.ValueTask DisposeAsync()
+enum BlazorAccessibilityToolkit.Playwright.FocusIndicator
+  Unknown
+  Detected
+  NotDetected
+static class BlazorAccessibilityToolkit.Playwright.FocusOrder
+  static BlazorAccessibilityToolkit.AccessibilityAudit ToAudit(BlazorAccessibilityToolkit.Playwright.FocusOrderResult result, System.String name, BlazorAccessibilityToolkit.AccessibilityContext context = null)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.FocusOrderResult> CaptureFocusOrderAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.FocusOrderOptions options = null)
+sealed class BlazorAccessibilityToolkit.Playwright.FocusOrderOptions
+  Microsoft.Playwright.ILocator StartAfter { get; init; }
+  System.Boolean ReportMissingFocusIndicator { get; init; }
+  System.Boolean Reverse { get; init; }
+  System.Int32 MaxStops { get; init; }
+  System.TimeSpan SettleTimeout { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.FocusOrderResult
+  BlazorAccessibilityToolkit.Playwright.FocusOrderResult ShouldMatch(System.String[] expected)
+  BlazorAccessibilityToolkit.Playwright.FocusOrderResult ShouldNotTrapFocus()
+  BlazorAccessibilityToolkit.Playwright.FocusOrderTermination Termination { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> Findings { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Playwright.FocusStop> CycleMembers { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Playwright.FocusStop> Stops { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> UnreachedCandidates { get; init; }
+  System.Int32 TabbableCandidates { get; init; }
+  System.String Describe()
+  ctor()
+enum BlazorAccessibilityToolkit.Playwright.FocusOrderTermination
+  ReachedEnd
+  Wrapped
+  Cycle
+  Stuck
+  MaxStopsReached
+  NothingFocusable
+sealed class BlazorAccessibilityToolkit.Playwright.FocusSnapshot
+  BlazorAccessibilityToolkit.Playwright.AccessibleElementInfo Element { get; init; }
+  BlazorAccessibilityToolkit.Playwright.FocusIndicator Indicator { get; init; }
+  System.Boolean DocumentHasFocus { get; init; }
+  System.Boolean FocusVisible { get; init; }
+  System.String ModalContainer { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.FocusStop
+  BlazorAccessibilityToolkit.Playwright.AccessibleElementInfo Element { get; init; }
+  BlazorAccessibilityToolkit.Playwright.FocusIndicator Indicator { get; init; }
+  System.Int32 Index { get; init; }
+  System.String ModalContainer { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.Hosting.AccessibilityHostApp : Microsoft.AspNetCore.Components.ComponentBase
+  ctor()
+abstract class BlazorAccessibilityToolkit.Playwright.Hosting.AccessibilityHostPageBase : Microsoft.AspNetCore.Components.ComponentBase
+  System.String Id { get; set; }
+sealed class BlazorAccessibilityToolkit.Playwright.Hosting.AccessibilityInteractiveHostPage : BlazorAccessibilityToolkit.Playwright.Hosting.AccessibilityHostPageBase
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.Hosting.AccessibilityStaticHostPage : BlazorAccessibilityToolkit.Playwright.Hosting.AccessibilityHostPageBase
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.Hosting.BlazorTestHost
+  System.Boolean SupportsInteractiveRendering { get; }
+  System.Collections.Generic.IReadOnlyCollection<System.String> ServerErrors { get; }
+  System.IServiceProvider Services { get; }
+  System.String InteractiveUnavailableReason { get; }
+  System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.Hosting.HostedComponent<TComponent>> RenderAsync<TComponent>(BlazorAccessibilityToolkit.Playwright.AccessibilityBrowser browser, System.Action<BlazorAccessibilityToolkit.Playwright.Hosting.HostedComponentParameters<TComponent>> parameters = null, BlazorAccessibilityToolkit.Playwright.Hosting.HostedRenderMode renderMode = InteractiveServer, System.String name = null)
+  System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.Hosting.HostedComponent<TComponent>> RenderAsync<TComponent>(Microsoft.Playwright.IPage page, System.Action<BlazorAccessibilityToolkit.Playwright.Hosting.HostedComponentParameters<TComponent>> parameters = null, BlazorAccessibilityToolkit.Playwright.Hosting.HostedRenderMode renderMode = InteractiveServer, System.String name = null)
+  System.Threading.Tasks.ValueTask DisposeAsync()
+  System.Uri BaseAddress { get; }
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.Hosting.BlazorTestHost> StartAsync(BlazorAccessibilityToolkit.Playwright.Hosting.BlazorTestHostOptions options = null, System.Threading.CancellationToken cancellationToken = null)
+sealed class BlazorAccessibilityToolkit.Playwright.Hosting.BlazorTestHostOptions
+  System.Action<Microsoft.AspNetCore.Builder.WebApplication> ConfigureApp { get; set; }
+  System.Action<Microsoft.Extensions.DependencyInjection.IServiceCollection> ConfigureServices { get; set; }
+  System.Collections.Generic.IList<System.String> Scripts { get; }
+  System.Collections.Generic.IList<System.String> Stylesheets { get; }
+  System.Globalization.CultureInfo Culture { get; set; }
+  System.Reflection.Assembly ApplicationAssembly { get; set; }
+  System.String EnvironmentName { get; set; }
+  System.String HeadMarkup { get; set; }
+  System.String Language { get; set; }
+  System.String Title { get; set; }
+  System.TimeSpan RenderTimeout { get; set; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.Hosting.HostedComponentException : System.InvalidOperationException
+  ctor()
+  ctor(System.String message)
+  ctor(System.String message, System.Exception innerException)
+sealed class BlazorAccessibilityToolkit.Playwright.Hosting.HostedComponentParameters<TComponent>
+  BlazorAccessibilityToolkit.Playwright.Hosting.HostedComponentParameters<TComponent> Add(System.String name, System.Object value)
+  BlazorAccessibilityToolkit.Playwright.Hosting.HostedComponentParameters<TComponent> Add<TValue>(System.Linq.Expressions.Expression<System.Func<TComponent, TValue>> parameter, TValue value)
+  BlazorAccessibilityToolkit.Playwright.Hosting.HostedComponentParameters<TComponent> AddCascadingValue<TValue>(TValue value, System.String name = null)
+  BlazorAccessibilityToolkit.Playwright.Hosting.HostedComponentParameters<TComponent> AddChildContent(Microsoft.AspNetCore.Components.RenderFragment content)
+  BlazorAccessibilityToolkit.Playwright.Hosting.HostedComponentParameters<TComponent> AddChildContent(System.String markup)
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.Hosting.HostedComponent<TComponent>
+  BlazorAccessibilityToolkit.Playwright.Hosting.HostedRenderMode RenderMode { get; }
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario Keyboard(BlazorAccessibilityToolkit.Playwright.KeyboardScenarioOptions options = null)
+  Microsoft.Playwright.ILocator Root { get; }
+  Microsoft.Playwright.IPage Page { get; }
+  System.Collections.Generic.IReadOnlyCollection<System.String> ConsoleErrors { get; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityAudit> Audits { get; }
+  System.String Id { get; }
+  System.String Name { get; }
+  System.Threading.Tasks.Task InvokeAsync(System.Action<TComponent> work)
+  System.Threading.Tasks.Task InvokeAsync(System.Func<TComponent, System.Threading.Tasks.Task> work)
+  System.Threading.Tasks.Task ShouldMatchStoredAriaSnapshotAsync(System.String name, BlazorAccessibilityToolkit.Playwright.AriaSnapshotOptions options = null, System.String callerFilePath = )
+  System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditAsync(System.String state = null, BlazorAccessibilityToolkit.AccessibilityAuditOptions options = null, System.Threading.CancellationToken cancellationToken = null)
+  System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.FocusOrderResult> CaptureFocusOrderAsync(BlazorAccessibilityToolkit.Playwright.FocusOrderOptions options = null)
+  System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.LiveRegionMonitor> MonitorLiveRegionsAsync()
+  System.Threading.Tasks.ValueTask DisposeAsync()
+  System.Uri Url { get; }
+enum BlazorAccessibilityToolkit.Playwright.Hosting.HostedRenderMode
+  InteractiveServer
+  Static
+sealed class BlazorAccessibilityToolkit.Playwright.KeyboardScenario
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario Audit(System.String state, BlazorAccessibilityToolkit.AccessibilityAuditOptions options = null, BlazorAccessibilityToolkit.AccessibilityExpectation expectation = null, System.Boolean assertNoViolations = True)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario Do(System.String description, System.Func<Microsoft.Playwright.IPage, System.Threading.Tasks.Task> action)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectFocusContainedWithin(Microsoft.Playwright.ILocator container, System.Int32 tabPresses = 0)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectFocusNotWithin(Microsoft.Playwright.ILocator container)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectFocusRestored(System.String key)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectFocusWithin(Microsoft.Playwright.ILocator container)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectFocused(Microsoft.Playwright.ILocator locator)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectFocused(System.String role = null, System.String name = null)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectFocused(System.String role, System.Text.RegularExpressions.Regex name)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectLiveRegionUpdate(System.String text, BlazorAccessibilityToolkit.Playwright.TextMatch match = Contains, System.String politeness = null)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectState(Microsoft.Playwright.ILocator locator, System.String state, System.String value)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario FocusOn(Microsoft.Playwright.ILocator locator)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario Press(System.String key, System.Int32 times = 1)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario PressArrowDown(System.Int32 times = 1)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario PressArrowLeft(System.Int32 times = 1)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario PressArrowRight(System.Int32 times = 1)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario PressArrowUp(System.Int32 times = 1)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario PressEnd()
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario PressEnter()
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario PressEscape()
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario PressHome()
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario PressShiftTab(System.Int32 times = 1)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario PressSpace()
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario PressTab(System.Int32 times = 1)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario RememberFocus(System.String key)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario StartFromDocument(System.Boolean reverse = False)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario Type(System.String text)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenarioOptions Options { get; }
+  BlazorAccessibilityToolkit.Playwright.LiveRegionMonitor LiveRegions { get; }
+  Microsoft.Playwright.IPage Page { get; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityAudit> Audits { get; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Playwright.ScenarioStepResult> Steps { get; }
+  System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Playwright.ScenarioStepResult>> RunAsync()
+  static BlazorAccessibilityToolkit.Playwright.KeyboardScenario For(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.KeyboardScenarioOptions options = null)
+sealed class BlazorAccessibilityToolkit.Playwright.KeyboardScenarioOptions
+  BlazorAccessibilityToolkit.AccessibilityAuditOptions AuditOptions { get; init; }
+  System.Boolean MonitorLiveRegions { get; init; }
+  System.String Name { get; init; }
+  System.TimeSpan ExpectTimeout { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.LiveRegionChange
+  BlazorAccessibilityToolkit.Playwright.LiveRegionChangeKind Kind { get; init; }
+  System.Boolean Atomic { get; init; }
+  System.Boolean Busy { get; init; }
+  System.Boolean Hidden { get; init; }
+  System.Boolean RegionWasPresent { get; init; }
+  System.Double Timestamp { get; init; }
+  System.Int32 Sequence { get; init; }
+  System.String AddedText { get; init; }
+  System.String AriaLive { get; init; }
+  System.String Politeness { get; init; }
+  System.String Relevant { get; init; }
+  System.String RemovedText { get; init; }
+  System.String Role { get; init; }
+  System.String Selector { get; init; }
+  System.String Text { get; init; }
+  ctor()
+enum BlazorAccessibilityToolkit.Playwright.LiveRegionChangeKind
+  Inserted
+  ContentAdded
+  ContentRemoved
+sealed class BlazorAccessibilityToolkit.Playwright.LiveRegionInfo
+  System.Boolean Atomic { get; init; }
+  System.Boolean Busy { get; init; }
+  System.Boolean Hidden { get; init; }
+  System.String AriaLive { get; init; }
+  System.String Politeness { get; init; }
+  System.String Relevant { get; init; }
+  System.String Role { get; init; }
+  System.String Selector { get; init; }
+  System.String Text { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.LiveRegionMonitor
+  Microsoft.Playwright.IPage Page { get; }
+  System.Threading.Tasks.Task ExpectNoUpdateAsync(System.TimeSpan duration)
+  System.Threading.Tasks.Task ResetAsync()
+  System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.LiveRegionChange> ExpectUpdateAsync(System.String text, BlazorAccessibilityToolkit.Playwright.TextMatch match = Contains, System.String politeness = null, System.Nullable<System.TimeSpan> timeout = null)
+  System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.LiveRegionChange> ExpectUpdateAsync(System.Text.RegularExpressions.Regex pattern, System.String politeness = null, System.Nullable<System.TimeSpan> timeout = null)
+  System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding>> AnalyzeAsync()
+  System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Playwright.LiveRegionChange>> GetChangesAsync()
+  System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Playwright.LiveRegionInfo>> GetRegionsAsync()
+  System.TimeSpan DefaultTimeout { get; init; }
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.LiveRegionMonitor> StartAsync(Microsoft.Playwright.IPage page)
+sealed class BlazorAccessibilityToolkit.Playwright.PatternCheck
+  System.Boolean Passed { get; init; }
+  System.String Detail { get; init; }
+  System.String Requirement { get; init; }
+  ctor(System.String Requirement, System.Boolean Passed, System.String Detail = null)
+sealed class BlazorAccessibilityToolkit.Playwright.PatternOptions
+  System.TimeSpan Timeout { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.PatternVerification
+  BlazorAccessibilityToolkit.Playwright.PatternVerification ShouldPass()
+  System.Boolean Passed { get; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Playwright.PatternCheck> Checks { get; init; }
+  System.String Describe()
+  System.String Pattern { get; init; }
+  ctor()
+static class BlazorAccessibilityToolkit.Playwright.PlaywrightAccessibility
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditAccessibilityAsync(Microsoft.Playwright.ILocator locator, BlazorAccessibilityToolkit.AccessibilityAuditOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null, System.Threading.CancellationToken cancellationToken = null)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditAccessibilityAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.AccessibilityAuditOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null, System.Threading.CancellationToken cancellationToken = null)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.AccessibleElementInfo> GetAccessibilityInfoAsync(Microsoft.Playwright.ILocator locator)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.AccessibleElementInfo> ShouldHaveAccessibleNameAsync(Microsoft.Playwright.ILocator locator, System.String name)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.AccessibleElementInfo> ShouldHaveRoleAsync(Microsoft.Playwright.ILocator locator, System.String role)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.AccessibleElementInfo> ShouldHaveStateAsync(Microsoft.Playwright.ILocator locator, System.String state, System.String value)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.FocusSnapshot> GetFocusAsync(Microsoft.Playwright.IPage page)
+sealed class BlazorAccessibilityToolkit.Playwright.PlaywrightMarkupAuditEngine
+  System.Boolean ReusePages { get; init; }
+  System.String Name { get; }
+  System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Engines.MarkupEngineResult> AuditAsync(BlazorAccessibilityToolkit.Engines.MarkupAuditRequest request, System.Threading.CancellationToken cancellationToken = null)
+  System.Threading.Tasks.ValueTask DisposeAsync()
+  ctor(BlazorAccessibilityToolkit.Playwright.AccessibilityBrowser browser)
+enum BlazorAccessibilityToolkit.Playwright.ScenarioStepKind
+  Action
+  Expectation
+  Audit
+sealed class BlazorAccessibilityToolkit.Playwright.ScenarioStepResult
+  BlazorAccessibilityToolkit.Playwright.FocusSnapshot FocusAfter { get; init; }
+  BlazorAccessibilityToolkit.Playwright.ScenarioStepKind Kind { get; init; }
+  System.Boolean Passed { get; init; }
+  System.Double DurationMs { get; init; }
+  System.Int32 Number { get; init; }
+  System.String Description { get; init; }
+  System.String Error { get; init; }
+  ctor()
+enum BlazorAccessibilityToolkit.Playwright.TextMatch
+  Contains
+  Exact

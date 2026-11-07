@@ -1,0 +1,19 @@
+@page "/settings"
+<PageTitle>Settings - Sample App</PageTitle>
+<h1>Settings</h1>
+<Tabs Label="Settings sections" Items="items" />
+<ModalDialog TriggerText="Delete account" Title="Delete account?" ConfirmText="Delete" OnConfirm="() => deleted = true">
+    <p>This removes your profile and cannot be undone.</p>
+</ModalDialog>
+<p role="status">@(deleted ? "Account deleted." : string.Empty)</p>
+
+@code {
+    private bool deleted;
+
+    private readonly IReadOnlyList<Tabs.TabItem> items =
+    [
+        new("Profile", @<p>Name, photo and contact details.</p>),
+        new("Notifications", @<p>Email and push notification preferences.</p>),
+        new("Privacy", @<p>Who can see your activity.</p>),
+    ];
+}

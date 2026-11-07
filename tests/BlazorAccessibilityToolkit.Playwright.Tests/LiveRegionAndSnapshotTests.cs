@@ -136,8 +136,19 @@ public sealed class AriaSnapshotTests(BrowserFixture browser) : IDisposable
         var options = new AriaSnapshotOptions { Directory = _directory, Timeout = TimeSpan.FromMilliseconds(500) };
         await using (var session = await browser.PageAsync(Menu))
         {
-            var created = await Assert.ThrowsAsync<AriaSnapshotMismatchException>(() => session.Page.Locator("nav").ShouldMatchStoredAriaSnapshotAsync("main-nav", options));
-            Assert.Contains("was created", created.Message, StringComparison.Ordinal);
+            var missing = await Assert.ThrowsAsync<AriaSnapshotMismatchException>(() => session.Page.Locator("nav").ShouldMatchStoredAriaSnapshotAsync("main-nav", options));
+            if (IsCi())
+            {
+                // CI servers (GitHub Actions, Azure Pipelines, ...) set CI=true: missing snapshots fail instead of being created.
+                Assert.Contains("not created on CI", missing.Message, StringComparison.Ordinal);
+                Assert.False(File.Exists(Path.Combine(_directory, "main-nav.aria.yml")));
+                await session.Page.Locator("nav").ShouldMatchStoredAriaSnapshotAsync("main-nav", options with { Update = true });
+            }
+            else
+            {
+                Assert.Contains("was created", missing.Message, StringComparison.Ordinal);
+            }
+
             Assert.True(File.Exists(Path.Combine(_directory, "main-nav.aria.yml")));
             await session.Page.Locator("nav").ShouldMatchStoredAriaSnapshotAsync("main-nav", options);
         }
@@ -152,6 +163,9 @@ public sealed class AriaSnapshotTests(BrowserFixture browser) : IDisposable
             await regressed.Page.Locator("nav").ShouldMatchStoredAriaSnapshotAsync("main-nav", options);
         }
     }
+
+    private static bool IsCi() =>
+        Environment.GetEnvironmentVariable("CI") is { } value && (value == "1" || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
 
     [Fact]
     public void Diff_shows_added_and_removed_lines()

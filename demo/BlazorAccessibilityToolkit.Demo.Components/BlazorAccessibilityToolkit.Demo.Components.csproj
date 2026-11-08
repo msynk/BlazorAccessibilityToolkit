@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
   <PropertyGroup>
-    <Description>Sample Razor components (accessible patterns and intentional defects) used by the toolkit samples.</Description>
+    <Description>Demo Razor components (accessible patterns and intentional defects) used by the toolkit demo.</Description>
   </PropertyGroup>
   <ItemGroup>
     <SupportedPlatform Include="browser" />

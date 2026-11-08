@@ -30,7 +30,7 @@ On Linux CI, add `--with-deps` to also install system libraries. The browser rev
 
 ## Flaky tests
 
-**Key presses do nothing in an end-to-end test.** The page was prerendered and the circuit had not connected yet, so the presses were lost. Wait for an interactivity signal; the sample app's layout exposes `data-interactive="true"`. Do not wait with fixed delays.
+**Key presses do nothing in an end-to-end test.** The page was prerendered and the circuit had not connected yet, so the presses were lost. Wait for an interactivity signal; the demo app's layout exposes `data-interactive="true"`. Do not wait with fixed delays.
 
 **Expectations time out sporadically on slow CI agents.** Increase `KeyboardScenarioOptions.ExpectTimeout`, `LiveRegionMonitor.DefaultTimeout` or `PatternOptions.Timeout`. Expectations poll, so a larger timeout only costs time when something is really wrong.
 
@@ -39,7 +39,7 @@ On Linux CI, add `--with-deps` to also install system libraries. The browser rev
 - WebKit does not move focus to links with Tab (Safari's default setting).
 - Headless Firefox keeps focus on the last element instead of leaving the page. The toolkit recognizes this as the end of the sequence.
 
-Write browser-aware expectations, as the samples do.
+Write browser-aware expectations, as the demo tests do.
 
 **"Process exited", "The pipe has been ended" or "Target page, context or browser has been closed" under heavy parallel load.** The browser process crashed. We observed this with WebKit on Windows when several test assemblies each run many contexts at once. Affected audits are reported as failed, and the next session relaunches the browser (`AccessibilityBrowser.Relaunches`). Limit parallelism: run test assemblies one at a time with `dotnet test -m:1`, lower xUnit's `maxParallelThreads`, or share fewer concurrent contexts.
 

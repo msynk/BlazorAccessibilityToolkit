@@ -2,7 +2,7 @@
 @* Blazor's router intercepts in-page links: it scrolls to #main but does not move keyboard focus, so focus it explicitly. *@
 <a class="skip-link" href="#main" @onclick="SkipToMainAsync" @onclick:preventDefault>Skip to main content</a>
 <header>
-    <p class="brand">Sample App</p>
+    <p class="brand">Demo App</p>
     <nav aria-label="Main">
         <ul>
             <li><NavLink href="" Match="NavLinkMatch.All">Home</NavLink></li>
@@ -17,7 +17,7 @@
     @Body
 </main>
 <footer>
-    <p>Blazor Accessibility Toolkit sample</p>
+    <p>Blazor Accessibility Toolkit demo</p>
 </footer>
 
 @* Shown by blazor.web.js when the circuit fails. role="alert" announces it when it appears; the dismiss control is a real

@@ -41,7 +41,7 @@
 | bUnit | 2.13.3 |
 | Test frameworks | xUnit v3 3.2.2 (main suite), NUnit 4.6.1 and MSTest 4.5.1 (compatibility suites in `tests/Compatibility`, VSTest runner) |
 
-The full test suite (unit, component, browser, host, sample and end-to-end tests) passes on Chromium, Firefox and WebKit. Known browser differences are handled and documented:
+The full test suite (unit, component, browser, host, demo and end-to-end tests) passes on Chromium, Firefox and WebKit. Known browser differences are handled and documented:
 
 - WebKit skips links on Tab, as Safari does by default.
 - Headless Firefox keeps focus on the last element at the end of the sequence.

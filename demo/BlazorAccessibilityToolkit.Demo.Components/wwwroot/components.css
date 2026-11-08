@@ -1,4 +1,4 @@
-/* Shared styles for the sample components: readable contrast, visible focus and targets of at least 44px. */
+/* Shared styles for the demo components: readable contrast, visible focus and targets of at least 44px. */
 :root { --fg: #1b1b1b; --bg: #ffffff; --accent: #0b57d0; --error: #b3261e; --muted: #4a4a4a; }
 body { font: 16px/1.5 system-ui, sans-serif; color: var(--fg); background: var(--bg); margin: 0; }
 button, a { min-height: 44px; min-width: 44px; }

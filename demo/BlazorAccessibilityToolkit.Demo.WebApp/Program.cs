@@ -1,4 +1,4 @@
-using SampleApp.Components;
+using BlazorAccessibilityToolkit.Demo.WebApp.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();

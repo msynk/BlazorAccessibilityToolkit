@@ -1,8 +1,8 @@
 using BlazorAccessibilityToolkit.Playwright;
 using Microsoft.Playwright;
-using SampleComponents;
+using BlazorAccessibilityToolkit.Demo.Components;
 
-namespace SampleApp.ComponentTests;
+namespace BlazorAccessibilityToolkit.Demo.ComponentTests;
 
 /// <summary>
 /// Real-browser tests of isolated components hosted with Interactive Server: keyboard input, focus management and
@@ -65,7 +65,7 @@ public sealed class InteractiveComponentTests(TestEnvironment env)
     {
         await using var component = await env.Host.RenderAsync<Tabs>(env.Browser, p => p
             .Add(c => c.Label, "Sections")
-            .Add(c => c.Items, SampleData.Tabs));
+            .Add(c => c.Items, DemoData.Tabs));
         var profile = component.Page.GetByRole(AriaRole.Tab, new() { Name = "Profile" });
         var privacy = component.Page.GetByRole(AriaRole.Tab, new() { Name = "Privacy" });
 
@@ -102,7 +102,7 @@ public sealed class InteractiveComponentTests(TestEnvironment env)
     {
         await using var component = await env.Host.RenderAsync<Tabs>(env.Browser, p => p
             .Add(c => c.Label, "Sections")
-            .Add(c => c.Items, SampleData.Tabs));
+            .Add(c => c.Items, DemoData.Tabs));
         // A long page, and the furthest it scrolls. Focusing a tab scrolls it back into view, so the final position alone
         // would hide a jump to the bottom of the page and back.
         await component.Page.EvaluateAsync("""
@@ -130,7 +130,7 @@ public sealed class InteractiveComponentTests(TestEnvironment env)
     {
         await using var component = await env.Host.RenderAsync<Tabs>(env.Browser, p => p
             .Add(c => c.Label, "Sections")
-            .Add(c => c.Items, SampleData.Tabs));
+            .Add(c => c.Items, DemoData.Tabs));
 
         var result = await AriaPatterns.VerifyTabsAsync(component.Page.GetByRole(AriaRole.Tablist));
 
@@ -142,7 +142,7 @@ public sealed class InteractiveComponentTests(TestEnvironment env)
     {
         await using var component = await env.Host.RenderAsync<Tabs>(env.Browser, p => p
             .Add(c => c.Label, "Sections")
-            .Add(c => c.Items, SampleData.Tabs));
+            .Add(c => c.Items, DemoData.Tabs));
 
         await component.ShouldMatchStoredAriaSnapshotAsync("tabs-initial");
     }

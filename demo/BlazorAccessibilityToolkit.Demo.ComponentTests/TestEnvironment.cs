@@ -3,9 +3,9 @@ using BlazorAccessibilityToolkit.Engines;
 using BlazorAccessibilityToolkit.Playwright;
 using BlazorAccessibilityToolkit.Playwright.Hosting;
 
-[assembly: AssemblyFixture(typeof(SampleApp.ComponentTests.TestEnvironment))]
+[assembly: AssemblyFixture(typeof(BlazorAccessibilityToolkit.Demo.ComponentTests.TestEnvironment))]
 
-namespace SampleApp.ComponentTests;
+namespace BlazorAccessibilityToolkit.Demo.ComponentTests;
 
 /// <summary>
 /// Shared, read-only test infrastructure: one browser, one component host, and immutable audit settings.
@@ -26,8 +26,8 @@ public sealed class TestEnvironment : IAsyncLifetime
     {
         Browser = await AccessibilityBrowser.LaunchAsync();
 
-        var hostOptions = new BlazorTestHostOptions { Title = "Sample components" };
-        hostOptions.Stylesheets.Add("_content/SampleComponents/components.css");
+        var hostOptions = new BlazorTestHostOptions { Title = "Demo components" };
+        hostOptions.Stylesheets.Add("_content/BlazorAccessibilityToolkit.Demo.Components/components.css");
         Host = await BlazorTestHost.StartAsync(hostOptions);
 
         markupEngine = new PlaywrightMarkupAuditEngine(Browser);

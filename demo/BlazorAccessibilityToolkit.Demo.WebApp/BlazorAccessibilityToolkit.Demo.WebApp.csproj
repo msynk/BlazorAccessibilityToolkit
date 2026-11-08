@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup>
-    <ProjectReference Include="..\SampleComponents\SampleComponents.csproj" />
+    <ProjectReference Include="..\BlazorAccessibilityToolkit.Demo.Components\BlazorAccessibilityToolkit.Demo.Components.csproj" />
   </ItemGroup>
 </Project>

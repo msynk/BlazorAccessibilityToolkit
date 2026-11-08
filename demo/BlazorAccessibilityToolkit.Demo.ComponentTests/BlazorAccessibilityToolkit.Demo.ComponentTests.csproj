@@ -12,13 +12,13 @@
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SampleComponents\SampleComponents.csproj" />
+    <ProjectReference Include="..\BlazorAccessibilityToolkit.Demo.Components\BlazorAccessibilityToolkit.Demo.Components.csproj" />
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.ComponentTesting\BlazorAccessibilityToolkit.ComponentTesting.csproj" />
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Playwright\BlazorAccessibilityToolkit.Playwright.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- The component stylesheet, so markup audits measure real colors. -->
-    <Content Include="..\SampleComponents\wwwroot\components.css" Link="assets\components.css" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+    <Content Include="..\BlazorAccessibilityToolkit.Demo.Components\wwwroot\components.css" Link="assets\components.css" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

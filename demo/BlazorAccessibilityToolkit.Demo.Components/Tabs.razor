@@ -79,7 +79,7 @@
     {
         if (firstRender)
         {
-            module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/SampleComponents/Tabs.razor.js");
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorAccessibilityToolkit.Demo.Components/Tabs.razor.js");
             await module.InvokeVoidAsync("preventScrollKeys", tablist);
         }
 

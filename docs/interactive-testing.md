@@ -28,7 +28,7 @@ var region = await page.GetByRole(AriaRole.Navigation).AuditAccessibilityAsync()
 
 - axe-core and the toolkit's browser diagnostics run together. Audit again after each interaction you care about (dialog open, menu expanded, form submitted).
 - Audits never pass silently. They fail with an execution error when the engine fails or times out (`AccessibilityAuditOptions.Timeout`, default 60 s), when the scope matches zero or several elements, when tags or rules are unknown, or when the page is closed.
-- Interactive Server pages are prerendered, and key presses sent before the circuit connects are lost. Expose readiness (the sample app's layout sets `data-interactive="true"` from `RendererInfo.IsInteractive`) and wait for it instead of sleeping.
+- Interactive Server pages are prerendered, and key presses sent before the circuit connects are lost. Expose readiness (the demo app's layout sets `data-interactive="true"` from `RendererInfo.IsInteractive`) and wait for it instead of sleeping.
 
 ## Inspecting accessible names, roles and states
 
@@ -186,4 +186,4 @@ factory.StartServer();
 await session.Page.GotoAsync(new Uri(factory.ClientOptions.BaseAddress, "/settings").ToString());
 ```
 
-See `samples/SampleApp.EndToEndTests`.
+See `demo/BlazorAccessibilityToolkit.Demo.EndToEndTests`.

@@ -38,7 +38,7 @@ Test project for component and browser tests (xUnit v3 shown):
 
 - NUnit or MSTest? Use the same project with your framework's packages (`NUnit` + `NUnit3TestAdapter` + `Microsoft.NET.Test.Sdk`, or the `MSTest` metapackage). Keep `<OutputType>Exe</OutputType>`; with VSTest, `Microsoft.NET.Test.Sdk` generates the entry point. [`tests/Compatibility`](../tests/Compatibility) has working NUnit and MSTest projects.
 - Only bUnit markup audits without a browser? Reference just `BlazorAccessibilityToolkit.ComponentTesting`. A plain `Microsoft.NET.Sdk` or `Microsoft.NET.Sdk.Razor` project is enough.
-- End-to-end tests of an app? Use `Microsoft.NET.Sdk` with `Microsoft.AspNetCore.Mvc.Testing`, and reference the app project. See `samples/SampleApp.EndToEndTests`.
+- End-to-end tests of an app? Use `Microsoft.NET.Sdk` with `Microsoft.AspNetCore.Mvc.Testing`, and reference the app project. See `demo/BlazorAccessibilityToolkit.Demo.EndToEndTests`.
 
 Install the CI tool:
 

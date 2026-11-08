@@ -87,7 +87,7 @@
         if (activate)
         {
             activate = false;
-            module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./_content/SampleComponents/ModalDialog.razor.js");
+            module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorAccessibilityToolkit.Demo.Components/ModalDialog.razor.js");
             await module.InvokeVoidAsync("activate", dialog);
         }
 

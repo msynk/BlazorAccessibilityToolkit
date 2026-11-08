@@ -1,9 +1,9 @@
 <Solution>
-  <Folder Name="/samples/">
-    <Project Path="samples/SampleApp.ComponentTests/SampleApp.ComponentTests.csproj" />
-    <Project Path="samples/SampleApp.EndToEndTests/SampleApp.EndToEndTests.csproj" />
-    <Project Path="samples/SampleApp/SampleApp.csproj" />
-    <Project Path="samples/SampleComponents/SampleComponents.csproj" />
+  <Folder Name="/demo/">
+    <Project Path="demo/BlazorAccessibilityToolkit.Demo.ComponentTests/BlazorAccessibilityToolkit.Demo.ComponentTests.csproj" />
+    <Project Path="demo/BlazorAccessibilityToolkit.Demo.EndToEndTests/BlazorAccessibilityToolkit.Demo.EndToEndTests.csproj" />
+    <Project Path="demo/BlazorAccessibilityToolkit.Demo.WebApp/BlazorAccessibilityToolkit.Demo.WebApp.csproj" />
+    <Project Path="demo/BlazorAccessibilityToolkit.Demo.Components/BlazorAccessibilityToolkit.Demo.Components.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/BlazorAccessibilityToolkit.Cli/BlazorAccessibilityToolkit.Cli.csproj" />

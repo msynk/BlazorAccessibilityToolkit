@@ -10,7 +10,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SampleApp\SampleApp.csproj" />
+    <ProjectReference Include="..\BlazorAccessibilityToolkit.Demo.WebApp\BlazorAccessibilityToolkit.Demo.WebApp.csproj" />
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Playwright\BlazorAccessibilityToolkit.Playwright.csproj" />
   </ItemGroup>
   <ItemGroup>

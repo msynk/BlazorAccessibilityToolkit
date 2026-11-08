@@ -1,7 +1,7 @@
 using BlazorAccessibilityToolkit.Playwright;
 using Microsoft.Playwright;
 
-namespace SampleApp.EndToEndTests;
+namespace BlazorAccessibilityToolkit.Demo.EndToEndTests;
 
 /// <summary>End-to-end accessibility tests of complete pages of the running application.</summary>
 public sealed class PageTests(AppFixture app)
@@ -111,7 +111,7 @@ public sealed class PageTests(AppFixture app)
     [Fact]
     public async Task Legacy_page_known_issues_are_still_reported()
     {
-        // The legacy page keeps two known defects. CI tracks them in the baseline (samples/a11y-baseline.json), so the
+        // The legacy page keeps two known defects. CI tracks them in the baseline (demo/a11y-baseline.json), so the
         // build does not fail on them, while any NEW finding still fails it. This test ensures they are still detected.
         // The page audit finds the unlabelled button. The clickable card looks like static text in the rendered DOM: the
         // @onclick handler is only visible in Blazor's render tree, so the bUnit test of ClickableCard detects that one.
@@ -133,7 +133,7 @@ public sealed class PageTests(AppFixture app)
         Assert.Equal(404, response!.Status);
         await session.Page.Locator("main[data-interactive=true]").WaitForAsync();
         await session.Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found", Level = 1 }).WaitForAsync();
-        Assert.Equal("Page not found - Sample App", await session.Page.TitleAsync());
+        Assert.Equal("Page not found - Demo App", await session.Page.TitleAsync());
         var audit = await session.Page.AuditAccessibilityAsync(label: new AuditLabel { Scenario = "page", State = "not found" });
         audit.ShouldHaveNoViolations(AccessibilityExpectation.Strict);
     }

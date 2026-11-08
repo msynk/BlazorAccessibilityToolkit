@@ -3,23 +3,23 @@
   "fingerprintVersion": "v1",
   "entries": [
     {
-      "fingerprint": "03e735bbdca03f44024698311ad93b57",
+      "fingerprint": "22337f0f582c4b82070097bff9a5bdc3",
       "ruleId": "button-name",
       "engine": "axe-core",
       "status": "Violation",
       "audit": "UnlabelledIconButton",
-      "component": "SampleComponents.UnlabelledIconButton",
+      "component": "BlazorAccessibilityToolkit.Demo.Components.UnlabelledIconButton",
       "scenario": "UnlabelledIconButton",
       "selector": "button",
       "count": 1
     },
     {
-      "fingerprint": "4d6d941fe928b31034585165b1dcdee2",
+      "fingerprint": "9e8a42b0ba249039938789ab17f09692",
       "ruleId": "blazor-click-handler-semantics",
       "engine": "blazor-a11y",
       "status": "PotentialIssue",
       "audit": "ClickableCard",
-      "component": "SampleComponents.ClickableCard",
+      "component": "BlazorAccessibilityToolkit.Demo.Components.ClickableCard",
       "scenario": "ClickableCard",
       "selector": "div.card",
       "count": 1

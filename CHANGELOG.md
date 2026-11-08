@@ -22,16 +22,17 @@
 - Hosted generic components report their type without versioned generic arguments, matching bUnit audits and keeping fingerprints stable across versions.
 - The JUnit report declares `encoding="utf-8"` when formatted to a string, instead of `utf-16`.
 
-### Samples
+### Demo
 
-- `dotnet run --project samples/SampleApp` works: a launch profile sets the `Development` environment. Before, the app ran as `Production`, `blazor.web.js` and the component files returned errors, and the app never became interactive.
-- The sample app has the `/error` page its exception handler pointed to, a "Page not found" page (status 404) for unknown URLs, and the Blazor error notification with a real dismiss button.
+- The `samples` folder is now `demo`, and its projects are renamed: `SampleComponents` to `BlazorAccessibilityToolkit.Demo.Components`, `SampleApp` to `BlazorAccessibilityToolkit.Demo.WebApp`, `SampleApp.ComponentTests` to `BlazorAccessibilityToolkit.Demo.ComponentTests` and `SampleApp.EndToEndTests` to `BlazorAccessibilityToolkit.Demo.EndToEndTests`.
+- `dotnet run --project demo/BlazorAccessibilityToolkit.Demo.WebApp` works: a launch profile sets the `Development` environment. Before, the app ran as `Production`, `blazor.web.js` and the component files returned errors, and the app never became interactive.
+- The demo app has the `/error` page its exception handler pointed to, a "Page not found" page (status 404) for unknown URLs, and the Blazor error notification with a real dismiss button.
 - `ModalDialog`: Tab brings focus back into the dialog after it was lost (for example by clicking the backdrop), backdrop clicks no longer take focus out of the dialog, the dialog can hold focus itself, and it has no empty description without content.
 - `Tabs`: Arrow keys, Home and End no longer scroll the page, and modified keys (such as Alt+ArrowLeft) are left to the browser.
 - `SignupForm`: required fields are indicated, a field is never marked invalid without its error text, focus moves to the first invalid field after a failed submit, and the success status is cleared on a later failure.
 - `SaveButton`: a failed save is announced instead of leaving "Saving…" and a disabled button behind, and a repeated result is announced again.
 - `IconButton` no longer sets `title`, so its accessible name comes only from `Label`, as documented.
-- The sample tests verify the tabs, modal dialog and disclosure with `AriaPatterns`, assert roles and states in the markup tests, and cover the not-found and error pages. The end-to-end fixture no longer creates an extra `WebApplicationFactory`, and both fixtures dispose cleanly when initialization fails.
+- The demo tests verify the tabs, modal dialog and disclosure with `AriaPatterns`, assert roles and states in the markup tests, and cover the not-found and error pages. The end-to-end fixture no longer creates an extra `WebApplicationFactory`, and both fixtures dispose cleanly when initialization fails.
 
 ## 0.1.0-preview.1 — 2026-11-04
 

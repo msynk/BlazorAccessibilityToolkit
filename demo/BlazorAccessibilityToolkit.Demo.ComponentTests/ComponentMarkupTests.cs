@@ -1,8 +1,8 @@
 using BlazorAccessibilityToolkit.ComponentTesting;
 using Bunit;
-using SampleComponents;
+using BlazorAccessibilityToolkit.Demo.Components;
 
-namespace SampleApp.ComponentTests;
+namespace BlazorAccessibilityToolkit.Demo.ComponentTests;
 
 /// <summary>
 /// Component-level tests on bUnit-rendered markup. These check structure, names, roles, ARIA and Blazor event handlers;
@@ -94,7 +94,7 @@ public sealed class ComponentMarkupTests(TestEnvironment env)
     {
         await using var fixture = await AccessibilityFixture.For<Tabs>()
             .WithParameter(p => p.Label, "Sections")
-            .WithParameter(p => p.Items, SampleData.Tabs)
+            .WithParameter(p => p.Items, DemoData.Tabs)
             .WithSettings(env.BrowserMarkup)
             .BuildAsync();
 
@@ -149,7 +149,7 @@ public sealed class ComponentMarkupTests(TestEnvironment env)
     }
 }
 
-internal static class SampleData
+internal static class DemoData
 {
     public static IReadOnlyList<Tabs.TabItem> Tabs { get; } =
     [

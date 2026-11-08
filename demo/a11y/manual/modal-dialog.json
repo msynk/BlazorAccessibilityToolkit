@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "name": "ModalDialog",
-  "scope": "SampleComponents.ModalDialog",
+  "scope": "BlazorAccessibilityToolkit.Demo.Components.ModalDialog",
   "items": [
     {
       "id": "keyboard-operation",
@@ -17,7 +17,7 @@
       "environments": [
         "Chrome 156 + keyboard only"
       ],
-      "tester": "Sample reviewer",
+      "tester": "Demo reviewer",
       "date": "2026-11-04",
       "notes": "Open with Enter/Space, Tab cycles Cancel/Delete, Escape closes. Also covered by InteractiveComponentTests."
     },
@@ -34,7 +34,7 @@
         "Chrome 156",
         "Firefox 157"
       ],
-      "tester": "Sample reviewer",
+      "tester": "Demo reviewer",
       "date": "2026-11-04",
       "notes": "Focus moves to Cancel on open and returns to the trigger on close."
     },
@@ -172,7 +172,7 @@
       "status": "NotApplicable",
       "evidence": [],
       "environments": [],
-      "tester": "Sample reviewer",
+      "tester": "Demo reviewer",
       "date": "2026-11-04",
       "justification": "The dialog has no dragging or path-based gestures; its buttons are 44px targets."
     },

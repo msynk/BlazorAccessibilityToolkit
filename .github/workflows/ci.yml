@@ -41,27 +41,27 @@ jobs:
       - name: Toolkit tests
         run: >
           dotnet test BlazorAccessibilityToolkit.slnx -c Release --no-build -m:1
-          --filter "FullyQualifiedName!~SampleApp"
+          --filter "FullyQualifiedName!~BlazorAccessibilityToolkit.Demo"
           --logger "trx;LogFilePrefix=toolkit" --results-directory TestResults
 
-      # The sample tests write one result file per audit; the CLI turns them into reports and the CI gate.
-      - name: Sample accessibility tests
+      # The demo tests write one result file per audit; the CLI turns them into reports and the CI gate.
+      - name: Demo accessibility tests
         env:
           BLAZOR_A11Y_RESULTS_DIR: ${{ github.workspace }}/a11y-results
         run: |
-          dotnet test samples/SampleApp.ComponentTests -c Release --no-build --logger "trx;LogFilePrefix=components" --results-directory TestResults
-          dotnet test samples/SampleApp.EndToEndTests -c Release --no-build --logger "trx;LogFilePrefix=e2e" --results-directory TestResults
+          dotnet test demo/BlazorAccessibilityToolkit.Demo.ComponentTests -c Release --no-build --logger "trx;LogFilePrefix=components" --results-directory TestResults
+          dotnet test demo/BlazorAccessibilityToolkit.Demo.EndToEndTests -c Release --no-build --logger "trx;LogFilePrefix=e2e" --results-directory TestResults
 
       - name: Accessibility gate
         run: >
           dotnet run --project src/BlazorAccessibilityToolkit.Cli -c Release --no-build --
           report
           --input a11y-results
-          --baseline samples/a11y-baseline.json
-          --manual-review samples/a11y/manual/modal-dialog.json
+          --baseline demo/a11y-baseline.json
+          --manual-review demo/a11y/manual/modal-dialog.json
           --output a11y-report
-          --source-root samples
-          --sarif-fallback-uri samples/SampleApp.EndToEndTests/PageTests.cs
+          --source-root demo
+          --sarif-fallback-uri demo/BlazorAccessibilityToolkit.Demo.EndToEndTests/PageTests.cs
 
       # Optional: show findings in GitHub code scanning (requires code scanning to be enabled for the repository).
       - name: Upload SARIF

@@ -2,9 +2,9 @@ using System.Net;
 using BlazorAccessibilityToolkit.Playwright;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-[assembly: AssemblyFixture(typeof(SampleApp.EndToEndTests.AppFixture))]
+[assembly: AssemblyFixture(typeof(BlazorAccessibilityToolkit.Demo.EndToEndTests.AppFixture))]
 
-namespace SampleApp.EndToEndTests;
+namespace BlazorAccessibilityToolkit.Demo.EndToEndTests;
 
 /// <summary>Runs the real application on Kestrel (random port) and shares one browser.</summary>
 public sealed class AppFixture : IAsyncLifetime

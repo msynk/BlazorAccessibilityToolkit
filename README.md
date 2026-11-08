@@ -111,9 +111,9 @@ blazor-a11y report --input a11y-results --baseline a11y-baseline.json --output a
 - [Upgrading](docs/upgrading.md)
 - [Architecture decision record](docs/adr/0001-architecture.md)
 
-## Samples
+## Demo
 
-[`samples/`](samples) contains:
+[`demo/`](demo) contains:
 
 - a component library with accessible patterns and intentional defects,
 - a Blazor Web App,
@@ -121,7 +121,7 @@ blazor-a11y report --input a11y-results --baseline a11y-baseline.json --output a
 - end-to-end tests (`WebApplicationFactory` on Kestrel with Playwright),
 - a committed baseline and a manual-review checklist.
 
-See [samples/README.md](samples/README.md).
+See [demo/README.md](demo/README.md).
 
 ## License
 

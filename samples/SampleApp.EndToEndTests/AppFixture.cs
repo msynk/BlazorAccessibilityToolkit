@@ -1,6 +1,5 @@
 using System.Net;
 using BlazorAccessibilityToolkit.Playwright;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 [assembly: AssemblyFixture(typeof(SampleApp.EndToEndTests.AppFixture))]
@@ -18,7 +17,9 @@ public sealed class AppFixture : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(b => b.UseEnvironment("Development"));
+        // WebApplicationFactory runs the app in the Development environment, which also serves the static web assets
+        // of referenced projects (blazor.web.js and the component library's files) from the build output.
+        _factory = new WebApplicationFactory<Program>();
 
         // Port 0 on the loopback interface: the OS picks a free port, so parallel runs never collide.
         _factory.UseKestrel(options => options.Listen(IPAddress.Loopback, 0));
@@ -31,17 +32,32 @@ public sealed class AppFixture : IAsyncLifetime
     public async Task<BrowserSession> OpenAsync(string path)
     {
         var session = await Browser.NewSessionAsync();
-        await session.Page.GotoAsync(new Uri(BaseAddress, path).ToString());
+        try
+        {
+            await session.Page.GotoAsync(Url(path));
 
-        // Prerendered markup appears before the circuit connects; key presses sent earlier would be lost.
-        // The app's layout exposes when it has become interactive (see MainLayout.razor).
-        await session.Page.Locator("main[data-interactive=true]").WaitForAsync();
-        return session;
+            // Prerendered markup appears before the circuit connects; key presses sent earlier would be lost.
+            // The app's layout exposes when it has become interactive (see MainLayout.razor).
+            await session.Page.Locator("main[data-interactive=true]").WaitForAsync();
+            return session;
+        }
+        catch
+        {
+            await session.DisposeAsync();
+            throw;
+        }
     }
+
+    /// <summary>The absolute URL of <paramref name="path"/> in the running app.</summary>
+    public string Url(string path) => new Uri(BaseAddress, path).ToString();
 
     public async ValueTask DisposeAsync()
     {
-        await Browser.DisposeAsync();
+        if (Browser is not null)
+        {
+            await Browser.DisposeAsync();
+        }
+
         if (_factory is not null)
         {
             await _factory.DisposeAsync();

@@ -113,10 +113,43 @@ public sealed class PageTests(AppFixture app)
     {
         // The legacy page keeps two known defects. CI tracks them in the baseline (samples/a11y-baseline.json), so the
         // build does not fail on them, while any NEW finding still fails it. This test ensures they are still detected.
+        // The page audit finds the unlabelled button. The clickable card looks like static text in the rendered DOM: the
+        // @onclick handler is only visible in Blazor's render tree, so the bUnit test of ClickableCard detects that one.
         await using var session = await app.OpenAsync("/legacy");
 
         var audit = await session.Page.AuditAccessibilityAsync(label: new AuditLabel { Scenario = "page", State = "loaded" });
 
-        audit.ShouldHaveFinding("button-name", FindingStatus.Violation);
+        var finding = audit.ShouldHaveFinding("button-name", FindingStatus.Violation);
+        Assert.Contains(finding.Wcag, w => w.Id == "4.1.2");
+    }
+
+    [Fact]
+    public async Task Unknown_urls_show_an_accessible_not_found_page()
+    {
+        await using var session = await app.Browser.NewSessionAsync();
+
+        var response = await session.Page.GotoAsync(app.Url("/no-such-page"));
+
+        Assert.Equal(404, response!.Status);
+        await session.Page.Locator("main[data-interactive=true]").WaitForAsync();
+        await session.Page.GetByRole(AriaRole.Heading, new() { Name = "Page not found", Level = 1 }).WaitForAsync();
+        Assert.Equal("Page not found - Sample App", await session.Page.TitleAsync());
+        var audit = await session.Page.AuditAccessibilityAsync(label: new AuditLabel { Scenario = "page", State = "not found" });
+        audit.ShouldHaveNoViolations(AccessibilityExpectation.Strict);
+    }
+
+    [Fact]
+    public async Task Error_page_is_rendered_statically_and_is_accessible()
+    {
+        // The exception handler re-executes /error outside Development. It must work without a circuit, so it is
+        // excluded from interactive routing.
+        await using var session = await app.Browser.NewSessionAsync();
+
+        await session.Page.GotoAsync(app.Url("/error"));
+
+        await session.Page.GetByRole(AriaRole.Heading, new() { Name = "Something went wrong", Level = 1 }).WaitForAsync();
+        Assert.Equal("false", await session.Page.Locator("main").GetAttributeAsync("data-interactive"));
+        var audit = await session.Page.AuditAccessibilityAsync(label: new AuditLabel { Scenario = "page", State = "error" });
+        audit.ShouldHaveNoViolations(AccessibilityExpectation.Strict);
     }
 }

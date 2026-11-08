@@ -13,14 +13,14 @@ namespace SampleApp.ComponentTests;
 /// </summary>
 public sealed class TestEnvironment : IAsyncLifetime
 {
+    private PlaywrightMarkupAuditEngine? markupEngine;
+
     public AccessibilityBrowser Browser { get; private set; } = null!;
 
     public BlazorTestHost Host { get; private set; } = null!;
 
     /// <summary>bUnit markup audits with axe-core in a real browser engine and the component stylesheet.</summary>
     public ComponentAuditSettings BrowserMarkup { get; private set; } = null!;
-
-    private PlaywrightMarkupAuditEngine markupEngine = null!;
 
     public async ValueTask InitializeAsync()
     {
@@ -40,8 +40,21 @@ public sealed class TestEnvironment : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
-        await Host.DisposeAsync();
-        await markupEngine.DisposeAsync();
-        await Browser.DisposeAsync();
+        // Initialization may have failed part way (for example when the browser is not installed): dispose what exists,
+        // so the original error is reported instead of a NullReferenceException.
+        if (Host is not null)
+        {
+            await Host.DisposeAsync();
+        }
+
+        if (markupEngine is not null)
+        {
+            await markupEngine.DisposeAsync();
+        }
+
+        if (Browser is not null)
+        {
+            await Browser.DisposeAsync();
+        }
     }
 }

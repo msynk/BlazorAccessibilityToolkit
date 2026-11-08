@@ -6,10 +6,18 @@
     <base href="/" />
     <link rel="stylesheet" href="@Assets["_content/SampleComponents/components.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
-    <HeadOutlet @rendermode="InteractiveServer" />
+    <ImportMap />
+    <HeadOutlet @rendermode="PageRenderMode" />
 </head>
 <body>
-    <Routes @rendermode="InteractiveServer" />
+    <Routes @rendermode="PageRenderMode" />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 </html>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = null!;
+
+    // Interactive Server everywhere, except pages marked [ExcludeFromInteractiveRouting] (the error page).
+    private IComponentRenderMode? PageRenderMode => HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+}

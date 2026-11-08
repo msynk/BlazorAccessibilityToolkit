@@ -10,10 +10,12 @@
 
     [Parameter] public string Text { get; set; } = "Save changes";
 
+    /// <summary>The save operation. Without one, saving is simulated.</summary>
     [Parameter] public Func<Task>? OnSave { get; set; }
 
     private async Task SaveAsync()
     {
+        // aria-disabled keeps the button focusable while saving, so ignore activations here instead.
         if (saving)
         {
             return;
@@ -21,8 +23,22 @@
 
         saving = true;
         status = "Saving…";
-        await (OnSave?.Invoke() ?? Task.Delay(150));
-        saving = false;
-        status = "Changes saved";
+        try
+        {
+            // Render "Saving…" even when the operation completes synchronously. Otherwise a repeated result ("Changes
+            // saved" twice) would leave the live region unchanged, and screen readers would not announce it again.
+            await Task.Yield();
+            await (OnSave?.Invoke() ?? Task.Delay(150));
+            status = "Changes saved";
+        }
+        catch (Exception)
+        {
+            // Report the failure where the progress was reported instead of leaving "Saving…" (and a disabled button) behind.
+            status = "Changes could not be saved. Try again.";
+        }
+        finally
+        {
+            saving = false;
+        }
     }
 }

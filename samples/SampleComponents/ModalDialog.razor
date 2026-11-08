@@ -6,9 +6,14 @@
 @if (open)
 {
     <div class="dialog-backdrop">
-        <div @ref="dialog" class="dialog" role="dialog" aria-modal="true" aria-labelledby="@titleId" aria-describedby="@descriptionId" @onkeydown="OnKeyDown">
+        @* tabindex="-1": focus can rest on the dialog itself when it has no focusable content or its text is clicked. *@
+        <div @ref="dialog" class="dialog" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="@titleId"
+             aria-describedby="@(ChildContent is null ? null : descriptionId)" @onkeydown="OnKeyDown">
             <h2 id="@titleId">@Title</h2>
-            <div id="@descriptionId">@ChildContent</div>
+            @if (ChildContent is not null)
+            {
+                <div id="@descriptionId">@ChildContent</div>
+            }
             <div class="dialog-actions">
                 <button type="button" class="secondary" @onclick="Close">@CancelText</button>
                 <button type="button" class="primary" @onclick="ConfirmAsync">@ConfirmText</button>
@@ -35,19 +40,31 @@
 
     [Parameter] public string ConfirmText { get; set; } = "OK";
 
+    /// <summary>Dialog content. It also becomes the dialog's accessible description.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     [Parameter] public EventCallback OnConfirm { get; set; }
 
     private void Open()
     {
+        if (open)
+        {
+            return;
+        }
+
         open = true;
         activate = true;
     }
 
     private void Close()
     {
+        if (!open)
+        {
+            return;
+        }
+
         open = false;
+        activate = false;
         restore = true;
     }
 
@@ -77,21 +94,34 @@
         if (restore)
         {
             restore = false;
+            if (module is not null)
+            {
+                await module.InvokeVoidAsync("deactivate");
+            }
+
             await trigger.FocusAsync();
         }
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (module is not null)
+        if (module is null)
         {
-            try
+            return;
+        }
+
+        try
+        {
+            if (open)
             {
-                await module.DisposeAsync();
+                await module.InvokeVoidAsync("deactivate");
             }
-            catch (JSDisconnectedException)
-            {
-            }
+
+            await module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone, and the page with it: nothing to clean up.
         }
     }
 }

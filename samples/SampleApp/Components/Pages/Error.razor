@@ -1,0 +1,19 @@
+@page "/error"
+@using System.Diagnostics
+@* Rendered statically by the exception handler (see App.razor), so it works even when the circuit cannot start. *@
+@attribute [ExcludeFromInteractiveRouting]
+<PageTitle>Error - Sample App</PageTitle>
+<h1>Something went wrong</h1>
+<p>An error occurred while processing your request. <a href="">Return to the home page</a>.</p>
+@if (!string.IsNullOrEmpty(requestId))
+{
+    <p>Request ID: <code>@requestId</code></p>
+}
+
+@code {
+    private string? requestId;
+
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    protected override void OnInitialized() => requestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

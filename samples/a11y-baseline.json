@@ -14,17 +14,6 @@
       "count": 1
     },
     {
-      "fingerprint": "1f1f0d7c6168de7bde78c96eda51cd1f",
-      "ruleId": "button-name",
-      "engine": "axe-core",
-      "status": "Violation",
-      "audit": "/legacy",
-      "scenario": "page",
-      "state": "loaded",
-      "selector": "button",
-      "count": 1
-    },
-    {
       "fingerprint": "4d6d941fe928b31034585165b1dcdee2",
       "ruleId": "blazor-click-handler-semantics",
       "engine": "blazor-a11y",
@@ -33,6 +22,17 @@
       "component": "SampleComponents.ClickableCard",
       "scenario": "ClickableCard",
       "selector": "div.card",
+      "count": 1
+    },
+    {
+      "fingerprint": "c20e961c5189710f2768c112df153d75",
+      "ruleId": "button-name",
+      "engine": "axe-core",
+      "status": "Violation",
+      "audit": "/legacy",
+      "scenario": "page",
+      "state": "loaded",
+      "selector": ".icon-button",
       "count": 1
     }
   ]

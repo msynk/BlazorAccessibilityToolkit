@@ -20,6 +20,14 @@
     <p>Blazor Accessibility Toolkit sample</p>
 </footer>
 
+@* Shown by blazor.web.js when the circuit fails. role="alert" announces it when it appears; the dismiss control is a real
+   button (the project template uses a clickable <span>). *@
+<div id="blazor-error-ui" role="alert" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <button type="button" class="dismiss" aria-label="Dismiss">×</button>
+</div>
+
 @code {
     private ElementReference main;
 

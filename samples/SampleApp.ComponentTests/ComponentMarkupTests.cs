@@ -58,8 +58,16 @@ public sealed class ComponentMarkupTests(TestEnvironment env)
             .BuildAsync();
         (await fixedCard.AuditAsync("collapsed")).ShouldHaveNoViolations(AccessibilityExpectation.Strict);
 
-        fixedCard.Component.Find("button").Click();
+        var button = fixedCard.Component.Find("button");
+        Assert.Equal("false", button.GetAttribute("aria-expanded"));
+        Assert.True(fixedCard.Component.Find("#" + button.GetAttribute("aria-controls")).HasAttribute("hidden"));
+
+        button.Click();
+
         (await fixedCard.AuditAsync("expanded")).ShouldHaveNoViolations(AccessibilityExpectation.Strict);
+        button = fixedCard.Component.Find("button");
+        Assert.Equal("true", button.GetAttribute("aria-expanded"));
+        Assert.False(fixedCard.Component.Find("#" + button.GetAttribute("aria-controls")).HasAttribute("hidden"));
     }
 
     [Fact]
@@ -67,14 +75,18 @@ public sealed class ComponentMarkupTests(TestEnvironment env)
     {
         await using var fixture = await AccessibilityFixture.For<SignupForm>().WithSettings(env.BrowserMarkup).BuildAsync();
         (await fixture.AuditAsync("empty")).ShouldHaveNoViolations(AccessibilityExpectation.Strict);
+        Assert.All(fixture.Component.FindAll("input"), input => Assert.Equal("true", input.GetAttribute("aria-required")));
 
         fixture.Component.Find("form").Submit();
 
         var audit = await fixture.AuditAsync("after invalid submit");
         audit.ShouldHaveNoViolations(AccessibilityExpectation.Strict);
-        var email = fixture.Component.Find("input[type=email]");
-        Assert.Equal("true", email.GetAttribute("aria-invalid"));
-        Assert.NotNull(fixture.Component.Find("#" + email.GetAttribute("aria-describedby")));
+        foreach (var (selector, message) in new[] { ("input[autocomplete=name]", "Enter your full name."), ("input[type=email]", "Enter your email address.") })
+        {
+            var input = fixture.Component.Find(selector);
+            Assert.Equal("true", input.GetAttribute("aria-invalid"));
+            Assert.Equal(message, fixture.Component.Find("#" + input.GetAttribute("aria-describedby")).TextContent);
+        }
     }
 
     [Fact]
@@ -87,6 +99,53 @@ public sealed class ComponentMarkupTests(TestEnvironment env)
             .BuildAsync();
 
         (await fixture.AuditAsync()).ShouldHaveNoViolations(AccessibilityExpectation.Strict);
+
+        Assert.Equal("Sections", fixture.Component.Find("[role=tablist]").GetAttribute("aria-label"));
+        var tabs = fixture.Component.FindAll("[role=tab]");
+        var panels = fixture.Component.FindAll("[role=tabpanel]");
+        Assert.Equal(3, tabs.Count);
+        Assert.Equal(3, panels.Count);
+        for (var i = 0; i < tabs.Count; i++)
+        {
+            var selected = i == 0;
+            Assert.Equal(selected ? "true" : "false", tabs[i].GetAttribute("aria-selected"));
+            Assert.Equal(selected ? "0" : "-1", tabs[i].GetAttribute("tabindex"));    // roving tabindex
+            Assert.Equal(panels[i].Id, tabs[i].GetAttribute("aria-controls"));
+            Assert.Equal(tabs[i].Id, panels[i].GetAttribute("aria-labelledby"));
+            Assert.Equal(!selected, panels[i].HasAttribute("hidden"));
+        }
+    }
+
+    [Fact]
+    public async Task Modal_dialog_is_named_described_and_modal_when_open()
+    {
+        await using var fixture = await AccessibilityFixture.For<ModalDialog>()
+            .WithParameter(p => p.TriggerText, "Delete account")
+            .WithParameter(p => p.Title, "Delete account?")
+            .WithChildContent("<p>This cannot be undone.</p>")
+            .WithSettings(env.BrowserMarkup)
+            .BuildAsync();
+        (await fixture.AuditAsync("closed")).ShouldHaveNoViolations(AccessibilityExpectation.Strict);
+        Assert.Empty(fixture.Component.FindAll("[role=dialog]"));
+
+        fixture.Component.Find("button").Click();
+
+        (await fixture.AuditAsync("open")).ShouldHaveNoViolations(AccessibilityExpectation.Strict);
+        var dialog = fixture.Component.Find("[role=dialog]");
+        Assert.Equal("true", dialog.GetAttribute("aria-modal"));
+        Assert.Equal("Delete account?", fixture.Component.Find("#" + dialog.GetAttribute("aria-labelledby")).TextContent);
+        Assert.Equal("This cannot be undone.", fixture.Component.Find("#" + dialog.GetAttribute("aria-describedby")).TextContent);
+        Assert.Equal("true", fixture.Component.Find("button[aria-haspopup=dialog]").GetAttribute("aria-expanded"));
+    }
+
+    [Fact]
+    public async Task Save_status_region_is_rendered_before_any_update()
+    {
+        // Screen readers announce changes to live regions that already exist; a region inserted with its text often stays silent.
+        await using var fixture = await AccessibilityFixture.For<SaveButton>().WithSettings(env.BrowserMarkup).BuildAsync();
+
+        (await fixture.AuditAsync()).ShouldHaveNoViolations(AccessibilityExpectation.Strict);
+        Assert.Equal(string.Empty, fixture.Component.Find("[role=status]").TextContent);
     }
 }
 

@@ -1,6 +1,8 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 @* WAI-ARIA tabs with automatic activation, roving tabindex, arrow keys, Home and End. *@
 <div class="tabs">
-    <div role="tablist" aria-label="@Label">
+    <div role="tablist" aria-label="@Label" @ref="tablist">
         @for (var i = 0; i < Items.Count; i++)
         {
             var index = i;
@@ -20,7 +22,9 @@
 
 @code {
     private readonly string prefix = $"tabs-{Guid.NewGuid():N}";
+    private ElementReference tablist;
     private ElementReference[] tabs = [];
+    private IJSObjectReference? module;
     private int selectedIndex;
     private bool focusSelected;
 
@@ -50,6 +54,12 @@
 
     private void OnKeyDown(KeyboardEventArgs e, int index)
     {
+        // Leave modified keys (Alt+ArrowLeft is "back" in most browsers) to the browser.
+        if (Items.Count == 0 || e.AltKey || e.CtrlKey || e.MetaKey || e.ShiftKey)
+        {
+            return;
+        }
+
         var target = e.Key switch
         {
             "ArrowRight" => (index + 1) % Items.Count,
@@ -67,10 +77,33 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender)
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/SampleComponents/Tabs.razor.js");
+            await module.InvokeVoidAsync("preventScrollKeys", tablist);
+        }
+
         if (focusSelected)
         {
             focusSelected = false;
             await tabs[selectedIndex].FocusAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (module is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone, and the page with it: nothing to clean up.
         }
     }
 

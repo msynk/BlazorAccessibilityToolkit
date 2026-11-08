@@ -1,38 +1,86 @@
-// Focus management for ModalDialog: focus the first control and keep Tab / Shift+Tab inside the dialog.
-const focusable = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+// Focus management for ModalDialog: move focus into the dialog and keep it there while the dialog is open.
+// Tab and Shift+Tab wrap inside the dialog, focus that left it (for example after a click on the backdrop) is brought
+// back on the next Tab, and pointer presses outside the dialog do not take focus away from it.
+const candidates = [
+    'a[href]',
+    'area[href]',
+    'button:not([disabled])',
+    'input:not([disabled]):not([type="hidden"])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    'iframe',
+    'summary',
+    '[contenteditable=""]',
+    '[contenteditable="true"]',
+    '[tabindex]',
+].join(',');
+
+let active = null;
+
+function tabbables(container) {
+    return Array.from(container.querySelectorAll(candidates))
+        .filter(element => element.tabIndex >= 0 && !element.closest('[inert], [hidden]') && element.getClientRects().length > 0);
+}
 
 export function activate(dialog) {
     if (!dialog) {
         return;
     }
 
-    const items = () => Array.from(dialog.querySelectorAll(focusable));
-    const first = items()[0];
-    (first ?? dialog).focus();
+    // Modal dialogs do not stack: opening one releases the previous trap.
+    deactivate();
 
-    if (dialog.__trap) {
-        return;
-    }
+    const onKeyDown = event => {
+        if (!dialog.isConnected) {
+            deactivate();
+            return;
+        }
 
-    dialog.__trap = event => {
         if (event.key !== 'Tab') {
             return;
         }
 
-        const list = items();
-        if (list.length === 0) {
+        const items = tabbables(dialog);
+        if (items.length === 0) {
             event.preventDefault();
+            dialog.focus();
             return;
         }
 
-        const index = list.indexOf(document.activeElement);
-        if (event.shiftKey && index <= 0) {
+        const first = items[0];
+        const last = items[items.length - 1];
+        const current = document.activeElement;
+        if (!dialog.contains(current)) {
             event.preventDefault();
-            list[list.length - 1].focus();
-        } else if (!event.shiftKey && index === list.length - 1) {
+            (event.shiftKey ? last : first).focus();
+        } else if (event.shiftKey && (current === first || current === dialog)) {
             event.preventDefault();
-            list[0].focus();
+            last.focus();
+        } else if (!event.shiftKey && current === last) {
+            event.preventDefault();
+            first.focus();
         }
     };
-    dialog.addEventListener('keydown', dialog.__trap);
+
+    const onPointerDown = event => {
+        if (dialog.isConnected && !dialog.contains(event.target)) {
+            event.preventDefault();
+        }
+    };
+
+    document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener('mousedown', onPointerDown, true);
+    active = { onKeyDown, onPointerDown };
+
+    (tabbables(dialog)[0] ?? dialog).focus();
+}
+
+export function deactivate() {
+    if (!active) {
+        return;
+    }
+
+    document.removeEventListener('keydown', active.onKeyDown, true);
+    document.removeEventListener('mousedown', active.onPointerDown, true);
+    active = null;
 }

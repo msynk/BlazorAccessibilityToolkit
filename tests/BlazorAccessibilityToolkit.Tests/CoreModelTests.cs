@@ -165,6 +165,52 @@ public class AuditBuilderTests
     }
 
     [Fact]
+    public void Keeps_distinct_problems_of_one_rule_on_the_same_element()
+    {
+        static AccessibilityFinding Broken(string attribute) => TestData.Finding(ruleId: "blazor-idref-missing-target", selector: "#email", engine: "blazor-a11y") with
+        {
+            Remediation = $"{attribute} references missing id(s).",
+            Data = new Dictionary<string, string> { ["attribute"] = attribute, ["missing"] = "x" },
+        };
+
+        var audit = TestData.Audit(findings: [Broken("aria-labelledby"), Broken("aria-describedby"), Broken("aria-describedby")]);
+
+        Assert.Equal(["aria-describedby", "aria-labelledby"], audit.Findings.Select(f => f.Data["attribute"]).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void Build_is_repeatable_and_does_not_accumulate_warnings()
+    {
+        var clock = new FixedTimeProvider(new DateTimeOffset(2026, 11, 4, 0, 0, 0, TimeSpan.Zero));
+        var options = new AccessibilityAuditOptions
+        {
+            TimeProvider = clock,
+            Suppressions = [new Suppression { RuleId = "color-contrast", Reason = "Old", Expires = new DateOnly(2026, 1, 1) }, new Suppression { RuleId = "link-name", Reason = "" }],
+        };
+        var builder = new AccessibilityAuditBuilder("x", TestData.ComponentContext(), options);
+        builder.AddWarning("engine note").MarkSkipped("browser not installed");
+
+        var first = builder.Build();
+        var second = builder.Build();
+
+        Assert.Equal(first.Warnings, second.Warnings);
+        Assert.Equal(4, second.Warnings.Count);
+        Assert.Equal("Skipped: browser not installed", second.Warnings[0]);
+        Assert.Single(second.ExpiredSuppressions);
+    }
+
+    [Fact]
+    public void Expired_suppressions_are_recorded_as_data()
+    {
+        var clock = new FixedTimeProvider(new DateTimeOffset(2026, 11, 4, 0, 0, 0, TimeSpan.Zero));
+        var expired = new Suppression { RuleId = "color-contrast", Reason = "Old", Owner = "team-a", Expires = new DateOnly(2026, 1, 1) };
+        var active = new Suppression { RuleId = "button-name", Reason = "Tracked", Expires = new DateOnly(2026, 12, 31) };
+        var audit = TestData.Audit(options: new AccessibilityAuditOptions { TimeProvider = clock, Suppressions = [expired, active] });
+
+        Assert.Equal([expired], audit.ExpiredSuppressions);
+    }
+
+    [Fact]
     public void Sorts_findings_deterministically_and_drops_passed_rules_with_findings()
     {
         var builder = new AccessibilityAuditBuilder("x", TestData.ComponentContext());

@@ -254,7 +254,9 @@ public sealed class KeyboardScenario
 
     /// <summary>
     /// Presses Tab and Shift+Tab repeatedly and expects focus to stay inside <paramref name="container"/> (modal dialog focus
-    /// containment). Focus must already be inside the container.
+    /// containment). Focus must already be inside the container. After each key press, focus has up to
+    /// <see cref="KeyboardScenarioOptions.ExpectTimeout"/> to return to the container, so traps that move focus back
+    /// asynchronously (for example from a Blazor Server event handler) pass.
     /// </summary>
     public KeyboardScenario ExpectFocusContainedWithin(ILocator container, int tabPresses = 0)
     {
@@ -268,10 +270,10 @@ public sealed class KeyboardScenario
                 for (var i = 0; i < presses; i++)
                 {
                     await Page.Keyboard.PressAsync(key).ConfigureAwait(false);
-                    if (!await ContainsFocusAsync(container).ConfigureAwait(false))
+                    if (!await WaitUntilAsync(() => ContainsFocusAsync(container)).ConfigureAwait(false))
                     {
                         var focus = await Page.GetFocusAsync().ConfigureAwait(false);
-                        throw new AccessibilityAssertionException($"Focus escaped {container} after {i + 1} x {key}: now on {focus}.");
+                        throw new AccessibilityAssertionException($"Focus escaped {container} after {i + 1} x {key} and did not return within {Options.ExpectTimeout.TotalSeconds:0.#} s: now on {focus}.");
                     }
                 }
             }
@@ -397,18 +399,27 @@ public sealed class KeyboardScenario
 
     private async Task PollAsync(Func<Task<bool>> condition, string description)
     {
+        if (!await WaitUntilAsync(condition).ConfigureAwait(false))
+        {
+            var focus = await Page.GetFocusAsync().ConfigureAwait(false);
+            throw new AccessibilityAssertionException($"Failed to {description} within {Options.ExpectTimeout.TotalSeconds:0.#} s; focus is on {focus}.");
+        }
+    }
+
+    // Polls until the condition holds (true) or ExpectTimeout elapses (false).
+    private async Task<bool> WaitUntilAsync(Func<Task<bool>> condition)
+    {
         var stopwatch = Stopwatch.StartNew();
         while (true)
         {
             if (await condition().ConfigureAwait(false))
             {
-                return;
+                return true;
             }
 
             if (stopwatch.Elapsed >= Options.ExpectTimeout)
             {
-                var focus = await Page.GetFocusAsync().ConfigureAwait(false);
-                throw new AccessibilityAssertionException($"Failed to {description} within {Options.ExpectTimeout.TotalSeconds:0.#} s; focus is on {focus}.");
+                return false;
             }
 
             await Task.Delay(25).ConfigureAwait(false);

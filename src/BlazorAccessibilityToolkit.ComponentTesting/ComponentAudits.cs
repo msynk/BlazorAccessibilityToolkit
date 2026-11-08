@@ -209,7 +209,7 @@ public static class ComponentAudits
         for (var current = element; current is not null && current.LocalName is not ("body" or "html"); current = current.ParentElement)
         {
             string part;
-            if (!string.IsNullOrEmpty(current.Id) && IsUnique(element, "#" + CssEscape(current.Id), all))
+            if (!string.IsNullOrEmpty(current.Id) && IsUnique(current, "#" + CssEscape(current.Id), all))
             {
                 part = "#" + CssEscape(current.Id);
             }

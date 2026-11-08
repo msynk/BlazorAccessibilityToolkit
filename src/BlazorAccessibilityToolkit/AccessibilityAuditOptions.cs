@@ -98,10 +98,13 @@ public sealed record AccessibilityAuditOptions
     /// <summary>Maximum time for one audit. Exceeding it fails the audit; it never passes it.</summary>
     public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(60);
 
-    /// <summary>Maximum length of HTML evidence and engine data per finding.</summary>
+    /// <summary>Maximum length of HTML evidence and engine data per finding. Zero or less means no limit.</summary>
     public int MaxEvidenceLength { get; init; } = 1000;
 
-    /// <summary>Maximum number of nodes reported per rule. Additional nodes are summarized in a warning.</summary>
+    /// <summary>
+    /// Maximum number of nodes reported per rule. Additional nodes are summarized in a warning. Zero or less means no
+    /// limit.
+    /// </summary>
     public int MaxNodesPerRule { get; init; } = 50;
 
     /// <summary>Redact <c>value</c> attributes and textarea content in evidence. Default <c>true</c>.</summary>

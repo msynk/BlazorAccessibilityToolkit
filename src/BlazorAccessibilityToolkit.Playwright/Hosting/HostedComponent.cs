@@ -62,7 +62,9 @@ public sealed class HostedComponent<TComponent> : IAsyncDisposable
     /// </summary>
     public async Task<AccessibilityAudit> AuditAsync(string? state = null, AccessibilityAuditOptions? options = null, CancellationToken cancellationToken = default)
     {
-        var componentType = typeof(TComponent).FullName ?? typeof(TComponent).Name;
+        // Without generic arguments (which carry assembly versions), like bUnit audits, so fingerprints are stable across
+        // versions and match between the two hosts.
+        var componentType = (typeof(TComponent).FullName ?? typeof(TComponent).Name).Split('[')[0];
         var context = new AccessibilityContext
         {
             Kind = AuditTargetKind.Component,

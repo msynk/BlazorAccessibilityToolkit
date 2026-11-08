@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 
 namespace BlazorAccessibilityToolkit.Playwright;
@@ -54,7 +55,7 @@ public sealed class AriaSnapshotMismatchException : AccessibilityAssertionExcept
 /// Snapshots detect semantic regressions; they do not prove accessibility. Their content depends on Playwright's
 /// accessibility-tree implementation, so upgrade Microsoft.Playwright deliberately and review snapshot diffs.
 /// </remarks>
-public static class AriaSnapshots
+public static partial class AriaSnapshots
 {
     /// <summary>Captures the ARIA snapshot (YAML) of <paramref name="locator"/>.</summary>
     public static Task<string> CaptureAriaSnapshotAsync(this ILocator locator)
@@ -179,7 +180,7 @@ public static class AriaSnapshots
         }
     }
 
-    private static string ResolveDirectory(AriaSnapshotOptions options, string callerFilePath)
+    internal static string ResolveDirectory(AriaSnapshotOptions options, string callerFilePath)
     {
         if (options.Directory is { } directory)
         {
@@ -197,11 +198,12 @@ public static class AriaSnapshots
             return Path.Combine(callerDirectory, "__a11y_snapshots__");
         }
 
-        // Deterministic CI builds map source paths (for example "/_/tests/App.Tests/DialogTests.cs"). Find the
-        // repository-relative directory by walking up from the test output directory.
-        if (callerDirectory is not null && (callerDirectory.StartsWith("/_/", StringComparison.Ordinal) || callerDirectory.StartsWith("/_\\", StringComparison.Ordinal)))
+        // Deterministic CI builds map source paths (for example "/_/tests/App.Tests/DialogTests.cs", or "/_1/..." for
+        // additional source roots). Find the repository-relative directory by walking up from the test output directory.
+        // The raw caller path is inspected: on Windows, Path.GetDirectoryName turns "/_/tests" into "\_\tests".
+        var mapped = DeterministicSourcePath().Match(callerFilePath.Replace('\\', '/'));
+        if (mapped.Success && Path.GetDirectoryName(mapped.Groups[1].Value) is { Length: > 0 } relative)
         {
-            var relative = callerDirectory[3..].Replace('\\', '/');
             for (var current = new DirectoryInfo(AppContext.BaseDirectory); current is not null; current = current.Parent)
             {
                 var candidate = Path.Combine(current.FullName, relative);
@@ -233,4 +235,7 @@ public static class AriaSnapshots
         var chars = name.Select(c => char.IsLetterOrDigit(c) || c is '-' or '_' or '.' ? c : '-').ToArray();
         return new string(chars);
     }
+
+    [GeneratedRegex(@"^/_\d*/(.+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex DeterministicSourcePath();
 }

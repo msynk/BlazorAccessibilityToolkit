@@ -181,10 +181,31 @@ public sealed class KeyboardAndFocusTests(BrowserFixture browser)
     public async Task Focus_containment_expectation_detects_escaping_focus()
     {
         await using var session = await browser.PageAsync("<main><h1>x</h1><div id=\"box\"><button id=\"a\">A</button></div><button>Outside</button></main>");
-        var scenario = KeyboardScenario.For(session.Page)
+        var scenario = KeyboardScenario.For(session.Page, new KeyboardScenarioOptions { ExpectTimeout = TimeSpan.FromMilliseconds(300) })
             .FocusOn(session.Page.Locator("#a"))
             .ExpectFocusContainedWithin(session.Page.Locator("#box"));
         var ex = await Assert.ThrowsAsync<AccessibilityAssertionException>(async () => await scenario.RunAsync());
         Assert.Contains("escaped", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Focus_containment_allows_traps_that_return_focus_asynchronously()
+    {
+        // Like a trap whose handler runs on the Blazor Server circuit: focus briefly leaves the box, then comes back.
+        const string html = """
+            <main><h1>x</h1><button id="before">Before</button>
+            <div id="box"><button id="a">A</button><button id="b">B</button></div>
+            <button id="after">After</button></main>
+            <script>
+              document.getElementById('after').addEventListener('focus', () => setTimeout(() => document.getElementById('a').focus(), 100));
+              document.getElementById('before').addEventListener('focus', () => setTimeout(() => document.getElementById('b').focus(), 100));
+            </script>
+            """;
+        await using var session = await browser.PageAsync(html);
+        var steps = await KeyboardScenario.For(session.Page, new KeyboardScenarioOptions { MonitorLiveRegions = false })
+            .FocusOn(session.Page.Locator("#a"))
+            .ExpectFocusContainedWithin(session.Page.Locator("#box"))
+            .RunAsync();
+        Assert.All(steps, s => Assert.True(s.Passed));
     }
 }

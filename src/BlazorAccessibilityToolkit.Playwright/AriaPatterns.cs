@@ -94,7 +94,9 @@ public static class AriaPatterns
             for (var i = 0; i < Math.Max(2, tabbable + 1) && contained; i++)
             {
                 await page.Keyboard.PressAsync(key).ConfigureAwait(false);
-                if (!await ContainsFocusAsync(dialog).ConfigureAwait(false))
+
+                // A trap may move focus back asynchronously (for example from a Blazor Server event handler).
+                if (!await WaitAsync(() => ContainsFocusAsync(dialog), options).ConfigureAwait(false))
                 {
                     contained = false;
                     escapedTo = $"{key} moved focus to {await page.GetFocusAsync().ConfigureAwait(false)}";
@@ -187,7 +189,11 @@ public static class AriaPatterns
         var states = await TabStatesAsync(tabs, count).ConfigureAwait(false);
         var selected = states.Count(s => s.Selected);
         checks.Add(new("Exactly one tab is selected", selected == 1, selected.ToString(CultureInfo.InvariantCulture)));
-        checks.Add(new("Only the selected tab is in the tab sequence (roving tabindex)", states.All(s => s.Selected ? s.TabIndex >= 0 : s.TabIndex < 0), string.Join(", ", states.Select(s => $"{s.Name}:{s.TabIndex}"))));
+        // A null tab index means the tab is not focusable at all, so it is not in the tab sequence.
+        checks.Add(new(
+            "Only the selected tab is in the tab sequence (roving tabindex)",
+            states.All(s => s.Selected ? s.TabIndex >= 0 : s.TabIndex is null or < 0),
+            string.Join(", ", states.Select(s => $"{s.Name}:{(s.TabIndex is { } index ? index.ToString(CultureInfo.InvariantCulture) : "not focusable")}"))));
         checks.Add(new("Every tab controls a tabpanel", states.All(s => s.PanelExists), null));
         checks.Add(new("Only the selected tab's panel is shown", states.All(s => !s.PanelExists || s.PanelVisible == s.Selected)));
 
@@ -284,9 +290,9 @@ public static class AriaPatterns
         return true;
     }
 
-    private static async Task<(string Name, bool Selected, int TabIndex, bool PanelExists, bool PanelVisible)[]> TabStatesAsync(ILocator tabs, int count)
+    private static async Task<(string Name, bool Selected, int? TabIndex, bool PanelExists, bool PanelVisible)[]> TabStatesAsync(ILocator tabs, int count)
     {
-        var result = new (string, bool, int, bool, bool)[count];
+        var result = new (string, bool, int?, bool, bool)[count];
         for (var i = 0; i < count; i++)
         {
             var tab = tabs.Nth(i);
@@ -294,7 +300,7 @@ public static class AriaPatterns
             var controls = await tab.GetAttributeAsync("aria-controls").ConfigureAwait(false);
             var panel = string.IsNullOrWhiteSpace(controls) ? null : tab.Page.Locator($"[id=\"{controls.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0]}\"][role=tabpanel]");
             var exists = panel is not null && await panel.CountAsync().ConfigureAwait(false) == 1;
-            result[i] = (info.Name, info.State("selected") == "true", info.TabIndex ?? 0, exists, exists && await panel!.IsVisibleAsync().ConfigureAwait(false));
+            result[i] = (info.Name, info.State("selected") == "true", info.TabIndex, exists, exists && await panel!.IsVisibleAsync().ConfigureAwait(false));
         }
 
         return result;

@@ -44,7 +44,9 @@ internal static class DiagnosticsRunner
                 data: result.Data));
         }
 
-        foreach (var rule in ToolkitRules.All.Where(r => r.Environments.Contains(ToolkitRules.Browser) && Executed.Contains(r.Id) && !reported.Contains(r.Id) && !disabled.Contains(r.Id)))
+        // Best-practice rules whose results were filtered out above did not run as far as the audit is concerned, so
+        // they must not be reported as passed.
+        foreach (var rule in ToolkitRules.All.Where(r => r.Environments.Contains(ToolkitRules.Browser) && Executed.Contains(r.Id) && !reported.Contains(r.Id) && !disabled.Contains(r.Id) && (!r.IsBestPractice || options.IncludeBestPractices)))
         {
             output.Passed.Add(rule.Id);
         }

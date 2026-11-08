@@ -22,6 +22,7 @@ sealed class BlazorAccessibilityToolkit.AccessibilityAudit
   System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> Violations { get; }
   System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.EngineInfo> Engines { get; init; }
   System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.ExecutionError> Errors { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Suppression> ExpiredSuppressions { get; init; }
   System.Collections.Generic.IReadOnlyList<System.String> InapplicableRules { get; init; }
   System.Collections.Generic.IReadOnlyList<System.String> PassedRules { get; init; }
   System.Collections.Generic.IReadOnlyList<System.String> Warnings { get; init; }

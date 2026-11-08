@@ -37,7 +37,7 @@ new AccessibilityAuditOptions
     ToolkitDiagnostics = true,
     PageLevelRulesForComponents = false,          // region, landmark-one-main, page-has-heading-one ... off for components
     Timeout = TimeSpan.FromSeconds(60),
-    MaxEvidenceLength = 1000, MaxNodesPerRule = 50, RedactFormValues = true,
+    MaxEvidenceLength = 1000, MaxNodesPerRule = 50, RedactFormValues = true,   // 0 or less: no limit
 }
 ```
 
@@ -62,7 +62,7 @@ Suppressions =
 ```
 
 - A suppression without a reason is ignored, with a warning.
-- An expired suppression stops applying and produces a warning. Strict CI mode fails on it.
+- An expired suppression stops applying, produces a warning and is listed in `AccessibilityAudit.ExpiredSuppressions`. Strict CI mode fails on it.
 - Suppressed findings stay in every report, shown as suppressed with their reason (SARIF marks them as external suppressions). They never count toward gates.
 
 ## Toolkit rules

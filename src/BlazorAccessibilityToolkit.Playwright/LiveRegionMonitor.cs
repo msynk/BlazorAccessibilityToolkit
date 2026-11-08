@@ -132,6 +132,9 @@ public enum TextMatch
 /// </remarks>
 public sealed class LiveRegionMonitor
 {
+    // Position of the last matched (or reset) update. Sequence numbers restart with every document, so the cursor
+    // also records the document it belongs to; a cursor from a previous document matches from the beginning.
+    private string? _cursorDocument;
     private int _cursor;
 
     private LiveRegionMonitor(IPage page) => Page = page;
@@ -144,7 +147,9 @@ public sealed class LiveRegionMonitor
 
     /// <summary>
     /// Starts monitoring. Start before triggering the interaction: regions that appear after this call are tracked, and
-    /// content present when monitoring starts is not reported as an update. Monitoring is re-installed after navigations.
+    /// content present when monitoring starts is not reported as an update. Monitoring is re-installed after navigations;
+    /// on a new page it starts once the document has been parsed, so server-rendered content is not reported as an
+    /// update (and changes made while the document is still loading, such as streaming rendering, are not recorded).
     /// </summary>
     public static async Task<LiveRegionMonitor> StartAsync(IPage page)
     {
@@ -173,14 +178,20 @@ public sealed class LiveRegionMonitor
     /// <summary>Ignores changes recorded so far for subsequent expectations.</summary>
     public async Task ResetAsync()
     {
-        var changes = await GetChangesAsync().ConfigureAwait(false);
-        _cursor = changes.Count == 0 ? _cursor : changes.Max(c => c.Sequence);
+        var json = await Page.EvaluateAsync<JsonElement>("() => window.__blazorA11y && window.__blazorA11y.liveCursor()").ConfigureAwait(false);
+        if (json.ValueKind == JsonValueKind.Object)
+        {
+            _cursorDocument = json.GetProperty("documentId").GetString();
+            _cursor = json.GetProperty("sequence").GetInt32();
+        }
     }
 
     /// <summary>
     /// Waits for a live-region update whose text matches, after the previously matched update (so repeated identical
-    /// messages can be asserted one by one). Throws <see cref="AccessibilityAssertionException"/> listing the observed
-    /// updates when none matches in time.
+    /// messages can be asserted one by one). The text added by the update is matched; for inserted and atomic regions
+    /// (including <c>status</c> and <c>alert</c>), which are presented as a whole, the region text after the update is
+    /// matched too. Removals and updates of hidden regions never match. Throws
+    /// <see cref="AccessibilityAssertionException"/> listing the observed updates when none matches in time.
     /// </summary>
     public Task<LiveRegionChange> ExpectUpdateAsync(string text, TextMatch match = TextMatch.Contains, string? politeness = null, TimeSpan? timeout = null)
     {
@@ -199,12 +210,11 @@ public sealed class LiveRegionMonitor
     /// <summary>Asserts that no live-region update happens within <paramref name="duration"/> (for example after a no-op action).</summary>
     public async Task ExpectNoUpdateAsync(TimeSpan duration)
     {
-        var before = _cursor;
         try
         {
             await Page.WaitForFunctionAsync(
-                "after => (window.__blazorA11y.liveRecords(after) || []).length > 0",
-                before,
+                "c => (window.__blazorA11y.liveRecords(c.after, c.documentId) || []).length > 0",
+                new { after = _cursor, documentId = _cursorDocument },
                 new PageWaitForFunctionOptions { Timeout = (float)duration.TotalMilliseconds, PollingInterval = 50 }).ConfigureAwait(false);
         }
         catch (TimeoutException)
@@ -212,7 +222,7 @@ public sealed class LiveRegionMonitor
             return;
         }
 
-        var changes = (await GetChangesAsync().ConfigureAwait(false)).Where(c => c.Sequence > before).ToArray();
+        var changes = await GetChangesAfterCursorAsync().ConfigureAwait(false);
         throw new AccessibilityAssertionException("Expected no live-region update, but observed:" + Environment.NewLine + string.Join(Environment.NewLine, changes.Select(c => "  " + c)));
     }
 
@@ -262,16 +272,17 @@ public sealed class LiveRegionMonitor
         {
             var handle = await Page.WaitForFunctionAsync(
                 "arg => window.__blazorA11y && window.__blazorA11y.findLiveRecord(arg)",
-                new { after = _cursor, politeness, match },
+                new { after = _cursor, documentId = _cursorDocument, politeness, match },
                 new PageWaitForFunctionOptions { Timeout = (float)wait.TotalMilliseconds, PollingInterval = 25 }).ConfigureAwait(false);
             var json = await handle.JsonValueAsync<JsonElement>().ConfigureAwait(false);
             var change = ToolkitScript.Deserialize<LiveRegionChange>(json)!;
+            _cursorDocument = json.GetProperty("documentId").GetString();
             _cursor = change.Sequence;
             return change;
         }
         catch (TimeoutException)
         {
-            var changes = (await GetChangesAsync().ConfigureAwait(false)).Where(c => c.Sequence > _cursor).ToArray();
+            var changes = await GetChangesAfterCursorAsync().ConfigureAwait(false);
             var observed = changes.Length == 0
                 ? "  (no live-region updates were observed; check that the message is rendered inside an element with role=\"status\"/\"alert\" or aria-live that exists before the update)"
                 : string.Join(Environment.NewLine, changes.Select(c => "  " + c));
@@ -279,5 +290,13 @@ public sealed class LiveRegionMonitor
                 $"Expected a live-region update matching {description}{(politeness is null ? string.Empty : $" with politeness '{politeness}'")} within {wait.TotalSeconds:0.#} s. Observed updates:{Environment.NewLine}{observed}{Environment.NewLine}" +
                 "Note: this checks DOM evidence of the update, not screen-reader speech.");
         }
+    }
+
+    private async Task<LiveRegionChange[]> GetChangesAfterCursorAsync()
+    {
+        var json = await Page.EvaluateAsync<JsonElement>(
+            "c => window.__blazorA11y && window.__blazorA11y.liveRecords(c.after, c.documentId)",
+            new { after = _cursor, documentId = _cursorDocument }).ConfigureAwait(false);
+        return ToolkitScript.Deserialize<LiveRegionChange[]>(json) ?? [];
     }
 }

@@ -130,15 +130,17 @@ public static class QualityGate
                 failures.Add($"{audit.Name}: [{finding.Impact?.ToString().ToLowerInvariant() ?? "unknown"}] {finding.RuleId} ({finding.Status}) at {finding.Target.Selector ?? "(no selector)"}{(newOccurrences is null ? string.Empty : " [new]")}");
             }
 
-            foreach (var warning in audit.Warnings.Where(w => w.Contains("expired", StringComparison.OrdinalIgnoreCase)))
+            foreach (var suppression in audit.ExpiredSuppressions)
             {
+                var expires = suppression.Expires?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "an unknown date";
+                var message = $"{audit.Name}: suppression for rule '{suppression.RuleId}' expired on {expires} and no longer applies (owner: {suppression.Owner ?? "unassigned"}).";
                 if (options.Strict)
                 {
-                    failures.Add($"{audit.Name}: {warning}");
+                    failures.Add(message);
                 }
                 else
                 {
-                    notes.Add($"{audit.Name}: {warning}");
+                    notes.Add(message);
                 }
             }
         }

@@ -124,22 +124,40 @@ public sealed class AccessibilityAuditBuilder
         return this;
     }
 
-    /// <summary>Builds the normalized audit.</summary>
+    /// <summary>Builds the normalized audit. The builder is not changed, so calling it again gives an equivalent audit.</summary>
     public AccessibilityAudit Build()
     {
+        // Warnings derived here go to a local list so that repeated calls do not accumulate them in the builder.
+        var warnings = new List<string>();
+        if (_skipReason is not null)
+        {
+            warnings.Add("Skipped: " + _skipReason);
+        }
+
+        warnings.AddRange(_warnings);
+        void Warn(string warning)
+        {
+            if (!warnings.Contains(warning))
+            {
+                warnings.Add(warning);
+            }
+        }
+
         var today = DateOnly.FromDateTime(Options.TimeProvider.GetUtcNow().UtcDateTime);
         var activeSuppressions = new List<Suppression>();
+        var expiredSuppressions = new List<Suppression>();
         foreach (var suppression in Options.Suppressions)
         {
             if (string.IsNullOrWhiteSpace(suppression.Reason))
             {
-                _warnings.Add($"Suppression for rule '{suppression.RuleId}' was ignored because it has no reason.");
+                Warn($"Suppression for rule '{suppression.RuleId}' was ignored because it has no reason.");
                 continue;
             }
 
             if (suppression.Expires is { } expires && expires < today)
             {
-                _warnings.Add(string.Create(CultureInfo.InvariantCulture, $"Suppression for rule '{suppression.RuleId}' expired on {expires:yyyy-MM-dd} and no longer applies (owner: {suppression.Owner ?? "unassigned"})."));
+                expiredSuppressions.Add(suppression);
+                Warn(string.Create(CultureInfo.InvariantCulture, $"Suppression for rule '{suppression.RuleId}' expired on {expires:yyyy-MM-dd} and no longer applies (owner: {suppression.Owner ?? "unassigned"})."));
                 continue;
             }
 
@@ -161,9 +179,19 @@ public sealed class AccessibilityAuditBuilder
                 Data = raw.Data.ToDictionary(kv => kv.Key, kv => EvidenceSanitizer.Truncate(kv.Value, Options.MaxEvidenceLength) ?? string.Empty, StringComparer.Ordinal),
             };
 
-            // Exact duplicates (same engine, rule, status and raw selector) are reported once. Findings that only share a
-            // fingerprint (for example selectors that differ only in generated numbers) are all kept; baselines count them.
-            var exactKey = string.Join('\u001f', finding.Engine, finding.RuleId, finding.Status, finding.Target.Selector, string.Join(">>>", finding.Target.SelectorPath), finding.Data.GetValueOrDefault("fingerprintKey"));
+            // Exact duplicates (same engine, rule, status, raw selector, message and data) are reported once. Different
+            // problems of one rule on the same element (for example two broken id references) differ in their message or
+            // data and are all kept, as are findings that only share a fingerprint (for example selectors that differ
+            // only in generated numbers); baselines count them.
+            var exactKey = string.Join(
+                '\u001f',
+                finding.Engine,
+                finding.RuleId,
+                finding.Status,
+                finding.Target.Selector,
+                string.Join(">>>", finding.Target.SelectorPath),
+                finding.Remediation,
+                string.Join('\u001e', finding.Data.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => kv.Key + "=" + kv.Value)));
             if (!seen.Add(exactKey))
             {
                 continue;
@@ -187,11 +215,6 @@ public sealed class AccessibilityAuditBuilder
         var failingRules = normalized.Select(f => f.RuleId).ToHashSet(StringComparer.Ordinal);
 
         var status = _errors.Count > 0 ? AuditStatus.Failed : _skipReason is not null ? AuditStatus.Skipped : AuditStatus.Completed;
-        if (_skipReason is not null)
-        {
-            _warnings.Insert(0, "Skipped: " + _skipReason);
-        }
-
         return new AccessibilityAudit
         {
             Name = Name,
@@ -205,7 +228,8 @@ public sealed class AccessibilityAuditBuilder
             PassedRules = _passed.Where(r => !failingRules.Contains(r)).ToArray(),
             InapplicableRules = _inapplicable.ToArray(),
             Errors = _errors.ToArray(),
-            Warnings = _warnings.ToArray(),
+            Warnings = warnings.ToArray(),
+            ExpiredSuppressions = expiredSuppressions.ToArray(),
         };
     }
 

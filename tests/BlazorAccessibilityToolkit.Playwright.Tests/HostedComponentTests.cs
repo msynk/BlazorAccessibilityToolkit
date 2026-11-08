@@ -74,6 +74,18 @@ public sealed class HostedComponentTests(BrowserFixture browser, HostFixture hos
     }
 
     [Fact]
+    public async Task Generic_components_are_attributed_without_versioned_type_arguments()
+    {
+        await using var component = await host.Host.RenderAsync<GenericList<string>>(browser.Browser, p => p.Add(c => c.Items, new List<string> { "Alpha" }), HostedRenderMode.Static);
+        var audit = await component.AuditAsync();
+
+        // Same name as bUnit audits use, and no assembly version that would change every fingerprint on a version bump.
+        var expected = typeof(GenericList<>).FullName;
+        Assert.Equal(expected, audit.Context.ComponentType);
+        Assert.Equal(expected, audit.ShouldHaveFinding("button-name").Component!.ComponentType);
+    }
+
+    [Fact]
     public async Task Static_rendering_produces_auditable_markup_without_interactivity()
     {
         await using var component = await host.Host.RenderAsync<IconOnlyButton>(browser.Browser, renderMode: HostedRenderMode.Static);

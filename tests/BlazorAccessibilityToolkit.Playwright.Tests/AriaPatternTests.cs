@@ -98,6 +98,27 @@ public sealed class AriaPatternTests(BrowserFixture browser)
         Assert.Contains(result.Checks, c => c.Passed && c.Requirement == "Exactly one tab is selected");
     }
 
+    [Theory]
+    [InlineData("tabindex=\"0\"", true)]
+    [InlineData("", false)]
+    public async Task Roving_tabindex_treats_tabs_without_tabindex_as_not_focusable(string selectedTabIndex, bool expected)
+    {
+        var html = $"""
+            <main><h1>x</h1>
+              <div role="tablist" aria-label="Sections">
+                <div role="tab" aria-selected="true" aria-controls="p1" id="t1" {selectedTabIndex}>One</div>
+                <div role="tab" aria-selected="false" aria-controls="p2" id="t2">Two</div>
+              </div>
+              <div role="tabpanel" id="p1" aria-labelledby="t1">First</div>
+              <div role="tabpanel" id="p2" aria-labelledby="t2" hidden>Second</div>
+            </main>
+            """;
+        await using var session = await browser.PageAsync(html);
+        var result = await AriaPatterns.VerifyTabsAsync(session.Page.Locator("[role=tablist]"), new PatternOptions { Timeout = TimeSpan.FromMilliseconds(200) });
+        var roving = Assert.Single(result.Checks, c => c.Requirement.Contains("roving tabindex", StringComparison.Ordinal));
+        Assert.True(expected == roving.Passed, roving.ToString());
+    }
+
     [Fact]
     public async Task Tab_selection_mismatch_is_diagnosed()
     {

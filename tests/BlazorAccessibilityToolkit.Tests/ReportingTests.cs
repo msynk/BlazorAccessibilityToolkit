@@ -112,6 +112,21 @@ public sealed class BaselineAndGateTests
     }
 
     [Fact]
+    public void Strict_gate_fails_on_expired_suppressions_but_not_on_warnings_that_mention_expiry()
+    {
+        var clock = new FixedTimeProvider(new DateTimeOffset(2026, 11, 4, 0, 0, 0, TimeSpan.Zero));
+        var options = new AccessibilityAuditOptions { TimeProvider = clock, Suppressions = [new Suppression { RuleId = "color-contrast", Reason = "Old", Expires = new DateOnly(2026, 1, 1) }] };
+        var expired = AccessibilityReport.Create([TestData.Audit(options: options)]);
+        var strict = QualityGate.Evaluate(expired, new QualityGateOptions { Strict = true });
+        Assert.False(strict.Passed);
+        Assert.Contains(strict.Failures, f => f.Contains("'color-contrast' expired on 2026-01-01", StringComparison.Ordinal));
+        Assert.True(QualityGate.Evaluate(expired).Passed);
+
+        var warningOnly = TestData.Audit() with { Warnings = ["Browser session expired and was restarted."] };
+        Assert.True(QualityGate.Evaluate(AccessibilityReport.Create([warningOnly]), new QualityGateOptions { Strict = true }).Passed);
+    }
+
+    [Fact]
     public void Gate_thresholds_and_review_statuses()
     {
         var report = AccessibilityReport.Create([TestData.Audit(findings: [TestData.Finding(impact: AccessibilityImpact.Moderate), TestData.Finding(ruleId: "c", status: FindingStatus.Inconclusive)])]);
@@ -180,6 +195,25 @@ public sealed class FormatterTests
         Assert.Contains(root.Descendants("skipped"), s => s.Attribute("message")!.Value.StartsWith("Suppressed", StringComparison.Ordinal));
         Assert.Contains(root.Descendants("skipped"), s => s.Attribute("message")!.Value.Contains("not a pass", StringComparison.Ordinal));
         Assert.Contains(root.Descendants("testcase"), t => t.Attribute("name")!.Value == "image-alt");
+    }
+
+    [Fact]
+    public void JUnit_report_formatted_as_a_string_declares_utf8()
+    {
+        var text = new JUnitReportFormatter().Format(SampleReport());
+        Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>", text, StringComparison.Ordinal);
+
+        // Saved the usual way (UTF-8), the file parses with the encoding it declares.
+        var path = Path.Combine(Path.GetTempPath(), $"junit-{Guid.NewGuid():N}.xml");
+        try
+        {
+            File.WriteAllText(path, text);
+            Assert.Equal("testsuites", XDocument.Load(path).Root!.Name.LocalName);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]

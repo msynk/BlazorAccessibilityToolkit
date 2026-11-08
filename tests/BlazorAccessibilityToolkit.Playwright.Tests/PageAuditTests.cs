@@ -135,6 +135,21 @@ public sealed class PageAuditTests(BrowserFixture browser)
     }
 
     [Fact]
+    public async Task Max_nodes_per_rule_limits_findings_and_zero_means_no_limit()
+    {
+        await using var session = await browser.PageAsync("<main><h1>x</h1><img src=\"a.png\"><img src=\"b.png\"><img src=\"c.png\"></main>");
+
+        var limited = await session.Page.AuditAccessibilityAsync(new AccessibilityAuditOptions { MaxNodesPerRule = 2 });
+        Assert.Equal(2, limited.Findings.Count(f => f.RuleId == "image-alt"));
+        Assert.Contains(limited.Warnings, w => w.StartsWith("image-alt: 3 nodes", StringComparison.Ordinal));
+
+        var unlimited = await session.Page.AuditAccessibilityAsync(new AccessibilityAuditOptions { MaxNodesPerRule = 0 });
+        Assert.Equal(3, unlimited.Findings.Count(f => f.RuleId == "image-alt"));
+        Assert.DoesNotContain(unlimited.Warnings, w => w.StartsWith("image-alt:", StringComparison.Ordinal));
+        Assert.Throws<AccessibilityAssertionException>(() => unlimited.ShouldHaveNoViolations());
+    }
+
+    [Fact]
     public async Task Best_practices_are_separate_and_flagged()
     {
         await using var session = await browser.PageAsync("<div><h1>x</h1><p>outside landmarks</p></div>");

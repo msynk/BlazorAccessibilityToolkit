@@ -17,7 +17,9 @@ internal sealed record MarkupRuleResult(AccessibilityRule Rule, IElement Element
 /// </summary>
 internal static partial class RazorMarkupRules
 {
-    private static readonly FrozenSet<string> NativeInteractive = FrozenSet.ToFrozenSet(["button", "select", "textarea", "summary", "option", "label", "details", "video", "audio"], StringComparer.OrdinalIgnoreCase);
+    // Elements whose keyboard activation fires the click handler. Not label, option, video or audio: a click handler
+    // on those is not reachable with the keyboard (see ForwardsKeyboardActivation for labels wrapping a control).
+    private static readonly FrozenSet<string> NativeInteractive = FrozenSet.ToFrozenSet(["button", "select", "textarea", "summary", "details"], StringComparer.OrdinalIgnoreCase);
 
     private static readonly FrozenSet<string> InteractiveRoles = FrozenSet.ToFrozenSet(
     [
@@ -99,7 +101,7 @@ internal static partial class RazorMarkupRules
         foreach (var element in scope)
         {
             var pointer = element.Attributes.Where(a => PointerEvents.Contains(a.Name)).Select(a => a.Name["blazor:".Length..]).ToArray();
-            if (pointer.Length == 0 || IsHiddenFromAT(element) || IsNativelyInteractive(element) || element.Ancestors<IElement>().Any(IsInteractiveAncestor))
+            if (pointer.Length == 0 || IsHiddenFromAT(element) || IsNativelyInteractive(element) || ForwardsKeyboardActivation(element) || element.Ancestors<IElement>().Any(IsInteractiveAncestor))
             {
                 continue;
             }
@@ -112,9 +114,17 @@ internal static partial class RazorMarkupRules
             }
 
             var tabIndex = element.GetAttribute("tabindex");
-            if (tabIndex is null)
+            if (tabIndex is not null && int.TryParse(tabIndex.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var index))
             {
-                problems.Add("it is not focusable (no tabindex)");
+                if (index < 0)
+                {
+                    problems.Add($"tabindex=\"{tabIndex}\" keeps it out of the keyboard tab sequence");
+                }
+            }
+            else if (!IsNativelyFocusable(element))
+            {
+                // Browsers ignore a tabindex that is not an integer.
+                problems.Add(tabIndex is null ? "it is not focusable (no tabindex)" : $"it is not focusable (tabindex=\"{tabIndex}\" is not an integer)");
             }
 
             var hasKeyHandler = new[] { element }.Concat(element.Ancestors<IElement>()).Any(e => e.Attributes.Any(a => KeyEvents.Contains(a.Name)));
@@ -387,6 +397,7 @@ internal static partial class RazorMarkupRules
             "a" or "area" => element.HasAttribute("href"),
             "button" or "select" or "textarea" or "summary" or "iframe" => true,
             "input" => !Is(element, "type", "hidden"),
+            "audio" or "video" => element.HasAttribute("controls"),
             _ => Is(element, "contenteditable", "true") || Is(element, "contenteditable", string.Empty),
         };
     }
@@ -395,6 +406,19 @@ internal static partial class RazorMarkupRules
         NativeInteractive.Contains(element.LocalName)
         || (element.LocalName is "a" or "area" && element.HasAttribute("href"))
         || (element.LocalName == "input" && !Is(element, "type", "hidden"));
+
+    // Focusable without a tabindex, among elements that are not natively interactive.
+    private static bool IsNativelyFocusable(IElement element) =>
+        (element.LocalName is "audio" or "video" && element.HasAttribute("controls"))
+        || element.LocalName == "iframe"
+        || Is(element, "contenteditable", "true") || Is(element, "contenteditable", string.Empty);
+
+    // A label that wraps a checkbox, radio button or button: activating that control with the keyboard dispatches a
+    // click that bubbles to the label, so the label's click handler runs.
+    private static bool ForwardsKeyboardActivation(IElement element) =>
+        element.LocalName == "label"
+        && element.QuerySelectorAll("input, button").Any(c => c.LocalName == "button"
+            || (c.GetAttribute("type")?.ToLowerInvariant() is "checkbox" or "radio" or "submit" or "reset" or "button" or "image"));
 
     // Content inside these elements is activated through the ancestor (keyboard included).
     private static bool IsInteractiveAncestor(IElement element) =>

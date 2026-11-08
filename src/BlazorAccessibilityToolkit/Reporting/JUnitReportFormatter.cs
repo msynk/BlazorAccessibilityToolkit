@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using System.Xml;
 
 namespace BlazorAccessibilityToolkit.Reporting;
@@ -27,7 +26,15 @@ public sealed class JUnitReportFormatter : IReportFormatter
         ArgumentNullException.ThrowIfNull(writer);
         var suites = report.Audits.Select(BuildSuite).ToArray();
 
-        using var xml = XmlWriter.Create(writer, new XmlWriterSettings { Indent = true, Encoding = new UTF8Encoding(false), OmitXmlDeclaration = false });
+        // XmlWriter ignores XmlWriterSettings.Encoding for a TextWriter and declares the writer's encoding, which is UTF-16
+        // for a StringWriter (ReportFormatters.Format). A string has no encoding of its own and is almost always saved as
+        // UTF-8, so declare UTF-8 then; a writer that encodes (a StreamWriter) declares its real encoding.
+        var settings = new XmlWriterSettings { Indent = true, OmitXmlDeclaration = true };
+        var encoding = writer is StringWriter ? "utf-8" : writer.Encoding?.WebName ?? "utf-8";
+        writer.Write($"<?xml version=\"1.0\" encoding=\"{encoding}\"?>");
+        writer.Write(settings.NewLineChars);
+
+        using var xml = XmlWriter.Create(writer, settings);
         xml.WriteStartDocument();
         xml.WriteStartElement("testsuites");
         xml.WriteAttributeString("name", "accessibility");

@@ -21,6 +21,25 @@ public sealed class DiagnosticsTests(BrowserFixture browser)
     }
 
     [Fact]
+    public async Task Best_practice_rules_that_did_not_run_are_not_reported_as_passed()
+    {
+        Assert.DoesNotContain("blazor-duplicate-id", (await AuditAsync("<p id=\"x\">a</p><p id=\"x\">b</p>")).PassedRules);
+        Assert.Contains("blazor-duplicate-id", (await AuditAsync("<p id=\"x\">a</p>", new AccessibilityAuditOptions { IncludeBestPractices = true })).PassedRules);
+    }
+
+    [Fact]
+    public async Task Empty_but_rendered_controlled_content_counts_as_shown()
+    {
+        // An expanded combobox whose listbox is still loading, and a selected tab whose panel has no content yet.
+        var audit = await AuditAsync(
+            "<input role=\"combobox\" aria-label=\"City\" aria-expanded=\"true\" aria-controls=\"options\"><ul id=\"options\" role=\"listbox\" aria-label=\"Cities\"></ul>" +
+            "<div role=\"tablist\" aria-label=\"Sections\"><button role=\"tab\" aria-selected=\"true\" aria-controls=\"p1\" id=\"t1\">One</button><button role=\"tab\" aria-selected=\"false\" aria-controls=\"p2\" id=\"t2\" tabindex=\"-1\">Two</button></div>" +
+            "<div role=\"tabpanel\" id=\"p1\" aria-labelledby=\"t1\"></div><div role=\"tabpanel\" id=\"p2\" aria-labelledby=\"t2\" hidden>Second</div>");
+        audit.ShouldNotHaveFinding("blazor-expanded-state-mismatch");
+        audit.ShouldNotHaveFinding("blazor-tab-selection-mismatch");
+    }
+
+    [Fact]
     public async Task Broken_id_references_are_reported()
     {
         var audit = await AuditAsync("<button aria-describedby=\"help missing\">Go</button><p id=\"help\">Help</p><label for=\"nope\">Name</label><input aria-label=\"Name\">");

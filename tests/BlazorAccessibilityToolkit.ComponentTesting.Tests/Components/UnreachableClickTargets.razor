@@ -1,0 +1,9 @@
+@* Click handlers that look reachable but cannot be operated with the keyboard, and one that can. *@
+<div role="button" tabindex="-1" class="negative" @onclick="Noop" @onkeydown="Keys">Negative tabindex</div>
+<label class="label-only" @onclick="Noop">Show details</label>
+<label class="label-checkbox" @onclick="Noop"><input type="checkbox" /> Remember me</label>
+<video class="player" controls @onclick="Noop"></video>
+@code {
+    private void Noop() { }
+    private void Keys(KeyboardEventArgs e) { }
+}

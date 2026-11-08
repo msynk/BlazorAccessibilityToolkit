@@ -84,6 +84,78 @@ public sealed class LiveRegionTests(BrowserFixture browser)
     }
 
     [Fact]
+    public async Task Text_that_stays_in_a_region_is_not_announced_again()
+    {
+        const string html = """
+            <main><h1>Log</h1><div role="log" id="log"></div><div role="status" id="hidden" style="display:none">Saved</div></main>
+            <script>window.log = text => { const p = document.createElement('p'); p.textContent = text; document.getElementById('log').appendChild(p); };</script>
+            """;
+        await using var session = await browser.PageAsync(html);
+        var monitor = await LiveRegionMonitor.StartAsync(session.Page);
+        await session.Page.EvaluateAsync("() => log('Saved')");
+        await monitor.ExpectUpdateAsync("Saved");
+
+        // Separate tasks, so each change gets its own record: a later log entry (the log still contains "Saved"), a
+        // removal, and an update of a hidden region. None of them presents "Saved" again.
+        await session.Page.EvaluateAsync("() => log('Loading')");
+        await session.Page.EvaluateAsync("() => document.querySelector('#log p:last-child').remove()");
+        await session.Page.EvaluateAsync("() => { document.getElementById('hidden').textContent = 'Saved'; }");
+        Assert.Equal(4, (await monitor.GetChangesAsync()).Count);
+
+        await Assert.ThrowsAsync<AccessibilityAssertionException>(() => monitor.ExpectUpdateAsync("Saved", timeout: TimeSpan.FromMilliseconds(200)));
+        Assert.Equal("Loading", (await monitor.ExpectUpdateAsync("Loading")).AddedText);
+    }
+
+    [Fact]
+    public async Task Atomic_regions_match_their_whole_text()
+    {
+        await using var session = await browser.PageAsync("<main><h1>x</h1><p role=\"status\">Count: <span id=\"n\">0</span></p></main>");
+        var monitor = await LiveRegionMonitor.StartAsync(session.Page);
+        await session.Page.EvaluateAsync("() => { document.getElementById('n').textContent = '2'; }");
+        var change = await monitor.ExpectUpdateAsync("Count: 2", TextMatch.Exact);
+        Assert.Equal("2", change.AddedText);
+    }
+
+    [Fact]
+    public async Task Empty_regions_are_not_hidden()
+    {
+        await using var session = await browser.PageAsync(Page);
+        var monitor = await LiveRegionMonitor.StartAsync(session.Page);
+        await session.Page.EvaluateAsync("() => { const d = document.createElement('div'); d.setAttribute('role', 'status'); d.id = 'later'; document.getElementById('host').appendChild(d); }");
+        await session.Page.EvaluateAsync("() => say('later', 'Ready')");
+
+        Assert.False((await monitor.ExpectUpdateAsync("Ready")).Hidden);
+        Assert.False(Assert.Single(await monitor.GetChangesAsync(), c => c.Kind == LiveRegionChangeKind.Inserted).Hidden);
+        Assert.DoesNotContain(await monitor.AnalyzeAsync(), f => f.RuleId is "blazor-live-region-hidden-update" or "blazor-live-region-inserted-with-content");
+    }
+
+    [Fact]
+    public async Task Monitoring_continues_after_navigation_without_reporting_server_rendered_content()
+    {
+        const string script = "<script>window.say = t => { document.getElementById('s').textContent = t; };</script>";
+        await using var session = await browser.PageAsync("<main><h1>First</h1><div role=\"status\" id=\"s\"></div></main>" + script);
+        await session.Page.RouteAsync("http://a11y.test/**", route => route.FulfillAsync(new()
+        {
+            ContentType = "text/html",
+            Body = $"<!DOCTYPE html><html lang=\"en\"><head><title>Next</title></head><body><main><h1>Next</h1><div role=\"status\">Ready</div><div role=\"status\" id=\"s\"></div></main>{script}</body></html>",
+        }));
+
+        var monitor = await LiveRegionMonitor.StartAsync(session.Page);
+        await session.Page.EvaluateAsync("() => say('One')");
+        await session.Page.EvaluateAsync("() => say('Two')");
+        Assert.Equal(2, (await monitor.ExpectUpdateAsync("Two")).Sequence);
+
+        // Sequence numbers restart in the new document; the cursor from the first document must not hide them.
+        await session.Page.GotoAsync("http://a11y.test/next");
+        await session.Page.EvaluateAsync("() => say('Done')");
+        Assert.Equal(1, (await monitor.ExpectUpdateAsync("Done")).Sequence);
+
+        // The server-rendered "Ready" region is not an update.
+        Assert.Single(await monitor.GetChangesAsync());
+        Assert.DoesNotContain(await monitor.AnalyzeAsync(), f => f.RuleId == "blazor-live-region-inserted-with-content");
+    }
+
+    [Fact]
     public async Task Analysis_flags_inserted_hidden_and_conflicting_regions()
     {
         await using var session = await browser.PageAsync(Page);
@@ -166,6 +238,22 @@ public sealed class AriaSnapshotTests(BrowserFixture browser) : IDisposable
 
     private static bool IsCi() =>
         Environment.GetEnvironmentVariable("CI") is { } value && (value == "1" || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
+
+    [Theory]
+    [InlineData("/_/tests/BlazorAccessibilityToolkit.Playwright.Tests/DialogTests.cs")]
+    [InlineData("/_/tests\\BlazorAccessibilityToolkit.Playwright.Tests\\DialogTests.cs")]
+    [InlineData("/_1/tests/BlazorAccessibilityToolkit.Playwright.Tests/DialogTests.cs")]
+    public void Deterministic_source_paths_resolve_to_the_repository_directory(string callerFilePath)
+    {
+        if (Environment.GetEnvironmentVariable(AriaSnapshotOptions.DirectoryEnvironmentVariable) is { Length: > 0 })
+        {
+            return;
+        }
+
+        var resolved = AriaSnapshots.ResolveDirectory(new AriaSnapshotOptions(), callerFilePath);
+        Assert.EndsWith(Path.Combine("tests", "BlazorAccessibilityToolkit.Playwright.Tests", "__a11y_snapshots__"), resolved, StringComparison.Ordinal);
+        Assert.True(Directory.Exists(Path.GetDirectoryName(resolved)), resolved);
+    }
 
     [Fact]
     public void Diff_shows_added_and_removed_lines()

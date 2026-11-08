@@ -149,8 +149,13 @@ public sealed record AccessibilityAudit
     /// <summary>Errors that made the audit fail.</summary>
     public IReadOnlyList<ExecutionError> Errors { get; init; } = [];
 
-    /// <summary>Non-fatal warnings (expired suppressions, attribution gaps ...).</summary>
+    /// <summary>Non-fatal warnings (expired suppressions, attribution gaps ...). Informational text, not a contract.</summary>
     public IReadOnlyList<string> Warnings { get; init; } = [];
+
+    /// <summary>
+    /// Configured suppressions that had expired and therefore no longer applied. Strict quality gates fail on them.
+    /// </summary>
+    public IReadOnlyList<Suppression> ExpiredSuppressions { get; init; } = [];
 
     /// <summary>Unsuppressed confirmed violations.</summary>
     [JsonIgnore]

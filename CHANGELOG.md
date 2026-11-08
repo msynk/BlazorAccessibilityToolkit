@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `AccessibilityAudit.ExpiredSuppressions` (JSON field `expiredSuppressions`) lists suppressions that had expired. Strict quality gates now fail on this list instead of on warning text that contains "expired".
+
+### Fixed
+
+- Live regions: `ExpectUpdateAsync` no longer matches text that only remains in a region (for example earlier `log` entries), removals, or updates of hidden regions. Atomic and inserted regions still match on their whole text.
+- Live regions: monitoring after a navigation now works. The observer no longer depends on `document.documentElement` existing when the init script runs, does not report server-rendered regions as inserted, and expectations made before the navigation no longer hide updates on the new page.
+- Live regions and browser diagnostics: empty but rendered elements (an empty status region, an expanded listbox that is still loading, an empty selected tab panel) are no longer treated as hidden.
+- `MaxNodesPerRule` of zero or less means no limit. Before, it dropped every axe-core node and the audit passed.
+- `AriaPatterns.VerifyTabsAsync`: tabs that cannot be focused count as outside the tab sequence, so the roving-tabindex check no longer passes a non-focusable selected tab or fails a non-focusable unselected one.
+- `KeyboardScenario.ExpectFocusContainedWithin` and `AriaPatterns.VerifyModalDialogAsync` wait for focus to return after each key press, so focus traps that move focus back asynchronously (for example on the Blazor Server circuit) pass.
+- Razor click-handler rule: `tabindex="-1"` no longer counts as keyboard focusable, and `@onclick` on `<label>`, `<option>`, `<video>` and `<audio>` is now checked (a label that wraps a checkbox, radio button or button is still accepted).
+- bUnit selectors use unique ancestor ids as anchors (`#billing > div > button`) instead of positional selectors.
+- Stored ARIA snapshots resolve deterministic source paths (`/_/...`, `/_1/...`) on Windows build agents.
+- Browser audits no longer report filtered-out best-practice toolkit rules (such as `blazor-duplicate-id`) as passed.
+- The audit builder keeps different problems of one rule on the same element (for example two broken id references), and `Build()` can be called more than once without duplicating warnings.
+- Hosted generic components report their type without versioned generic arguments, matching bUnit audits and keeping fingerprints stable across versions.
+- The JUnit report declares `encoding="utf-8"` when formatted to a string, instead of `utf-16`.
+
 ## 0.1.0-preview.1 — 2026-11-04
 
 First preview release.

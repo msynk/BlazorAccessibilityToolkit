@@ -41,6 +41,38 @@ public sealed class MarkupRuleTests
     }
 
     [Fact]
+    public async Task Click_handlers_out_of_keyboard_reach_are_reported()
+    {
+        await using var fixture = await AccessibilityFixture.For<UnreachableClickTargets>().BuildAsync();
+        var audit = await fixture.AuditAsync();
+        var findings = audit.Findings.Where(f => f.RuleId == "blazor-click-handler-semantics").ToArray();
+
+        var negative = Assert.Single(findings, f => f.Target.Selector!.Contains("negative", StringComparison.Ordinal));
+        Assert.Contains("tabindex=\"-1\"", negative.Remediation, StringComparison.Ordinal);
+        Assert.DoesNotContain("Enter or Space", negative.Remediation, StringComparison.Ordinal);
+        var label = Assert.Single(findings, f => f.Target.Selector!.Contains("label-only", StringComparison.Ordinal));
+        Assert.Contains("not focusable", label.Remediation, StringComparison.Ordinal);
+
+        // A video with controls is focusable, but keyboard operation of the controls does not run the click handler.
+        var video = Assert.Single(findings, f => f.Target.Selector!.Contains("player", StringComparison.Ordinal));
+        Assert.DoesNotContain("not focusable", video.Remediation, StringComparison.Ordinal);
+        Assert.Contains("Enter or Space", video.Remediation, StringComparison.Ordinal);
+
+        // Space on the wrapped checkbox dispatches a click that bubbles to the label.
+        Assert.DoesNotContain(findings, f => f.Target.Selector!.Contains("label-checkbox", StringComparison.Ordinal));
+        Assert.Equal(3, findings.Length);
+    }
+
+    [Fact]
+    public async Task Selectors_are_anchored_on_unique_ancestor_ids()
+    {
+        await using var fixture = await AccessibilityFixture.For<IdAnchors>().BuildAsync();
+        var audit = await fixture.AuditAsync();
+        var selectors = audit.Findings.Where(f => f.RuleId == "blazor-markup-control-name").Select(f => f.Target.Selector!).Order(StringComparer.Ordinal);
+        Assert.Equal(["#billing > div > button.edit", "#shipping > div > button.edit"], selectors);
+    }
+
+    [Fact]
     public async Task Blazor_validation_messages_without_association_are_reported_after_submit()
     {
         await using var fixture = await AccessibilityFixture.For<SignupForm>().BuildAsync();

@@ -3,7 +3,7 @@
 // (axe.commons), which must be loaded before these helpers are called.
 (() => {
   'use strict';
-  const VERSION = '7';
+  const VERSION = '8';
   if (window.__blazorA11y && window.__blazorA11y.version === VERSION) {
     return;
   }
@@ -100,18 +100,35 @@
     return parts.join(' > ');
   }
 
+  function cssVisible(el) {
+    if (typeof el.checkVisibility === 'function') {
+      return el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+    }
+    const cs = getComputedStyle(el);
+    return !(cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0');
+  }
+
+  // Visible with a non-empty box: what a sighted keyboard user can see (used for focus targets and tab order).
   function isVisible(el) {
     if (!(el instanceof Element) || !el.isConnected) return false;
-    if (typeof el.checkVisibility === 'function') {
-      if (!el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) return false;
-    } else {
-      const cs = getComputedStyle(el);
-      if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return false;
-    }
+    if (!cssVisible(el)) return false;
     const rect = el.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) return true;
     // display: contents and similar: visible when any child box is visible.
     return getComputedStyle(el).display === 'contents' && Array.from(el.children).some(isVisible);
+  }
+
+  // Rendered and not hidden by CSS, regardless of size. An empty element (a live region waiting for its first
+  // message, a panel that is still loading) is rendered even though its box has no area.
+  function isRendered(el) {
+    if (!(el instanceof Element) || !el.isConnected) return false;
+    const cs = getComputedStyle(el);
+    if (cs.display === 'contents') {
+      // No box of its own (checkVisibility() reports false): rendered when its parent is.
+      return cs.visibility !== 'hidden' && (!el.parentElement || isRendered(el.parentElement));
+    }
+    if (!cssVisible(el)) return false;
+    return el.getClientRects().length > 0;
   }
 
   function isHiddenForAT(axe, el) {
@@ -369,7 +386,7 @@
         for (const id of controls.split(/\s+/).filter(Boolean)) {
           const target = byId(el, id);
           if (!target) continue;
-          const shown = isVisible(target);
+          const shown = isRendered(target);
           if ((expanded === 'true') !== shown) {
             report('blazor-expanded-state-mismatch', el, { expanded, controls: id, controlledVisible: String(shown) },
               'aria-expanded="' + expanded + '" but the controlled element #' + id + ' is ' + (shown ? 'visible' : 'hidden') + '. Update aria-expanded in the same render that shows or hides the content.');
@@ -391,8 +408,9 @@
           const panel = panelId ? byId(tab, panelId) : null;
           if (!panel) continue;
           const isSelected = tab.getAttribute('aria-selected') === 'true';
-          if (isSelected !== isVisible(panel)) {
-            report('blazor-tab-selection-mismatch', tab, { tab: describe(axe, tab).name, panelVisible: String(isVisible(panel)) },
+          const panelShown = isRendered(panel);
+          if (isSelected !== panelShown) {
+            report('blazor-tab-selection-mismatch', tab, { tab: describe(axe, tab).name, panelVisible: String(panelShown) },
               isSelected ? 'The selected tab controls a hidden panel.' : 'An unselected tab controls a visible panel.');
           }
         }
@@ -522,19 +540,20 @@
       atomic: el.getAttribute('aria-atomic') === 'true' || ((role === 'alert' || role === 'status') && el.getAttribute('aria-atomic') !== 'false'),
       relevant: el.getAttribute('aria-relevant') || 'additions text',
       busy: el.getAttribute('aria-busy') === 'true',
-      hidden: !isVisible(el) || !!el.closest('[aria-hidden="true"]'),
+      hidden: !isRendered(el) || !!el.closest('[aria-hidden="true"]'),
       text: truncate(norm(el.textContent), 500),
     };
   }
 
   function installLiveRegionObserver() {
     if (window.__blazorA11yLive) return true;
-    const state = { seq: 0, records: [], known: new WeakSet(), observer: null };
+    // documentId tells records of this document apart from those of a previous one, so a cursor taken before a
+    // navigation does not hide the records of the new page (sequence numbers restart with every document).
+    const state = { seq: 0, records: [], known: new WeakSet(), observer: null, documentId: performance.timeOrigin + ':' + Math.random().toString(36).slice(2) };
     window.__blazorA11yLive = state;
     const markKnown = () => {
       for (const el of document.querySelectorAll('[aria-live], [role="status"], [role="alert"], [role="log"], [role="marquee"], [role="timer"], output')) state.known.add(el);
     };
-    markKnown();
 
     state.observer = new MutationObserver((mutations) => {
       const batch = new Map();
@@ -584,7 +603,9 @@
         const wasPresent = state.known.has(region);
         state.known.add(region);
         if (!e.inserted && added.length === 0 && !removed && wasPresent) continue;
-        const push = (kind, addedText, removedText) => {
+        // textIsCurrent: info.text is the region text after this change. It is false for all but the last of several
+        // updates delivered in one callback, because only the final text can still be read.
+        const push = (kind, addedText, removedText, textIsCurrent) => {
           state.records.push({
             sequence: ++state.seq,
             timestamp: now,
@@ -592,39 +613,71 @@
             regionWasPresent: wasPresent,
             addedText: truncate(addedText, 500),
             removedText: truncate(removedText, 500),
+            textIsCurrent,
             ...info,
           });
           if (state.records.length > 1000) state.records.shift();
         };
         if (!wasPresent) {
-          push('inserted', added.join(' '), removed);
+          push('inserted', added.join(' '), removed, true);
         } else if (added.length === 0) {
-          push('content-removed', '', removed);
+          push('content-removed', '', removed, true);
         } else {
           // Several updates can arrive in one observer callback (for example two quick Blazor renders); keep one record
           // per added text so that each update can be asserted on its own.
-          added.forEach((text, i) => push('content-added', text, i === 0 ? removed : ''));
+          added.forEach((text, i) => push('content-added', text, i === 0 ? removed : '', i === added.length - 1));
         }
       }
     });
-    state.observer.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['aria-live', 'role'] });
+
+    const start = () => {
+      markKnown();
+      // Observe the document node rather than document.documentElement, which does not exist yet when an init script
+      // installs the observer on a new document.
+      state.observer.observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['aria-live', 'role'] });
+    };
+    if (document.readyState === 'loading') {
+      // Installed by an init script before the page was parsed: content that arrives with the server response is not
+      // an update, so observation starts once parsing is complete.
+      document.addEventListener('DOMContentLoaded', start, { once: true });
+    } else {
+      start();
+    }
     return true;
   }
 
-  function liveRecords(afterSequence) {
-    const s = window.__blazorA11yLive;
-    if (!s) return null;
-    return s.records.filter((r) => r.sequence > (afterSequence || 0));
+  // Sequence numbers restart with every document: a cursor from another document (taken before a navigation) means
+  // "from the beginning" in this one.
+  function liveAfter(s, documentId, sequence) {
+    return documentId && documentId !== s.documentId ? 0 : (sequence || 0);
   }
 
+  function liveRecords(afterSequence, documentId) {
+    const s = window.__blazorA11yLive;
+    if (!s) return null;
+    const after = liveAfter(s, documentId, afterSequence);
+    return s.records.filter((r) => r.sequence > after);
+  }
+
+  function liveCursor() {
+    const s = window.__blazorA11yLive;
+    return s ? { documentId: s.documentId, sequence: s.seq } : null;
+  }
+
+  // Finds the first record after the cursor whose announced text matches. Only text that a live region would present
+  // counts: the added text, or the whole region text when the region was inserted or is atomic. Removals and updates
+  // of hidden regions are not presented, so they never match.
   function findLiveRecord(arg) {
     const s = window.__blazorA11yLive;
     if (!s) return null;
+    const after = liveAfter(s, arg.documentId, arg.after);
     for (const r of s.records) {
-      if (r.sequence <= (arg.after || 0)) continue;
+      if (r.sequence <= after) continue;
+      if (r.kind === 'content-removed' || r.hidden) continue;
       if (arg.politeness && r.politeness !== arg.politeness) continue;
-      const candidates = [r.text, r.addedText];
-      if (candidates.some((c) => matchText(c, arg.match))) return r;
+      const candidates = [r.addedText];
+      if (r.kind === 'inserted' || (r.atomic && r.textIsCurrent)) candidates.push(r.text);
+      if (candidates.some((c) => !!c && matchText(c, arg.match))) return Object.assign({ documentId: s.documentId }, r);
     }
     return null;
   }
@@ -648,6 +701,7 @@
     adoptOrdinals,
     installLiveRegionObserver,
     liveRecords,
+    liveCursor,
     findLiveRecord,
     liveRegions,
     activeElementDeep,

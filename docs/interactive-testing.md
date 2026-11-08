@@ -123,7 +123,9 @@ await monitor.ExpectNoUpdateAsync(TimeSpan.FromMilliseconds(500));
 var findings = await monitor.AnalyzeAsync();
 ```
 
-- Each change record contains the region role, effective politeness, `aria-atomic`, `aria-relevant`, `aria-busy`, region text, added and removed text, whether the region existed before, and whether it was hidden.
+- Each change record contains the region role, effective politeness, `aria-atomic`, `aria-relevant`, `aria-busy`, region text, added and removed text, whether the region existed before, and whether it was hidden. Empty regions that are rendered are not hidden.
+- `ExpectUpdateAsync` matches the text an update adds. For regions that are inserted, or atomic (`aria-atomic="true"`, and `status` and `alert` by default), it also matches the whole region text after the update, because those are presented as a whole. Removals and updates of hidden regions never match, and text that merely stays in a region (for example earlier entries of a `log`) does not match later updates.
+- Monitoring survives navigations. On a new page it starts once the document has been parsed, so server-rendered regions are not reported as inserted; changes made while the page is still loading (for example by streaming rendering) are not recorded.
 - `AnalyzeAsync` reports patterns that commonly prevent announcements: regions inserted together with their content, updates to hidden regions, and `aria-live` values that contradict `role="alert"` or `role="status"`.
 
 **Limitation:** this is DOM evidence. It does not emulate a screen reader and does not prove that anything was spoken. Speech depends on the assistive technology, browser, timing and user settings. Track real screen reader testing in the [manual review](manual-review.md).

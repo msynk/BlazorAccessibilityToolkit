@@ -190,12 +190,15 @@ internal static class AxeRunner
             var wcag = WcagCatalog.FromTags(tags);
             var bestPractice = tags.Contains(AccessibilityStandard.BestPracticeTag) && wcag.Count == 0;
             var nodes = item.Nodes ?? [];
-            if (nodes.Length > options.MaxNodesPerRule)
+
+            // Zero or less means no limit (like MaxEvidenceLength); it must never drop every node of a rule.
+            var limit = options.MaxNodesPerRule > 0 ? options.MaxNodesPerRule : int.MaxValue;
+            if (nodes.Length > limit)
             {
-                output.Warnings.Add(string.Create(CultureInfo.InvariantCulture, $"{item.Id}: {nodes.Length} nodes reported; only the first {options.MaxNodesPerRule} are included."));
+                output.Warnings.Add(string.Create(CultureInfo.InvariantCulture, $"{item.Id}: {nodes.Length} nodes reported; only the first {limit} are included."));
             }
 
-            foreach (var node in nodes.Take(options.MaxNodesPerRule))
+            foreach (var node in nodes.Take(limit))
             {
                 var (selector, path) = SelectorOf(node.Target);
                 var finding = new AccessibilityFinding

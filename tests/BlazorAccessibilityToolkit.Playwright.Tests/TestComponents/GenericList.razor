@@ -1,0 +1,12 @@
+@typeparam TItem
+@* Regression fixture: a generic component, whose runtime type name carries assembly-qualified type arguments. *@
+<ul>
+    @foreach (var item in Items)
+    {
+        <li>@item <button type="button" class="icon"></button></li>
+    }
+</ul>
+
+@code {
+    [Parameter] public IReadOnlyList<TItem> Items { get; set; } = [];
+}

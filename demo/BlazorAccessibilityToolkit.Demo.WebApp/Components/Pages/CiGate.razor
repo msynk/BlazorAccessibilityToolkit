@@ -1,0 +1,299 @@
+@page "/ci-gate"
+@using BlazorAccessibilityToolkit.Baselines
+@using BlazorAccessibilityToolkit.Reporting
+@using System.Text.Json
+@inject ReportStore Reports
+<PageTitle>CI gate and reports · Blazor Accessibility Toolkit</PageTitle>
+
+<div class="page-intro">
+    <p class="eyebrow">CI and process</p>
+    <h1>The CI gate and reports</h1>
+    <p class="lead">
+        Tests assert on what a team owns. The gate enforces a policy across everything, for example "no new serious
+        violations". It is separate from the tests, so you can adopt it on an app that already has accessibility debt.
+    </p>
+</div>
+
+<ol class="flow">
+    <li><strong>Tests run audits as usual.</strong> With <code>BLAZOR_A11Y_RESULTS_DIR</code> set, every audit (component, page, keyboard scenario) is also written to that directory as its own JSON file.</li>
+    <li><strong><code>blazor-a11y report</code> aggregates the files.</strong> It compares them with a committed baseline, applies the failure policy and writes console, JSON, JUnit, SARIF and HTML reports.</li>
+    <li><strong>The exit code is the gate.</strong> 0: passed. 1: findings exceed the policy. 2: audits failed or nothing ran. A run where audits failed never passes.</li>
+</ol>
+
+<section aria-labelledby="simulator">
+    <h2 id="simulator">Try the gate</h2>
+    <p>
+        This runs a small suite of component audits (the accessible and the broken components of the demo library) and
+        evaluates the gate exactly as the CLI does. Suggested path:
+    </p>
+    <ol>
+        <li>Run the gate without a baseline. It fails: the known defects are violations.</li>
+        <li>Record a baseline from that run, as you would when adopting the toolkit, and run again with it. The gate passes, and the known findings are listed as existing.</li>
+        <li>Introduce a regression and run again. The gate fails on exactly one <strong>new</strong> finding.</li>
+        <li>Turn on strict mode: it ignores the baseline, as a release branch might.</li>
+    </ol>
+
+    <form class="gate-form" @onsubmit="RunAsync" @formname="ci-gate">
+        <fieldset>
+            <legend>Policy</legend>
+            <div class="field field--compact">
+                <label for="fail-on">Fail on violations of impact (<code>--fail-on</code>)</label>
+                <select id="fail-on" @bind="failOn">
+                    <option value="none">none</option>
+                    <option value="minor">minor or worse (default)</option>
+                    <option value="moderate">moderate or worse</option>
+                    <option value="serious">serious or worse</option>
+                    <option value="critical">critical</option>
+                </select>
+            </div>
+            <label class="choice"><input type="checkbox" @bind="failOnPotential" /> Fail on potential issues (<code>--fail-on-potential</code>)</label>
+            <label class="choice"><input type="checkbox" @bind="strict" /> Strict mode (<code>--strict</code>)</label>
+        </fieldset>
+        <fieldset>
+            <legend>Baseline and changes</legend>
+            <label class="choice">
+                <input type="checkbox" @bind="useBaseline" disabled="@(baseline is null)" aria-describedby="baseline-hint" />
+                Compare with the recorded baseline (<code>--baseline</code>)
+            </label>
+            <p id="baseline-hint" class="hint">@(baseline is null ? "No baseline recorded yet. Run the gate, then record one." : $"Recorded baseline: {baseline.Entries.Count} entries.")</p>
+            <label class="choice"><input type="checkbox" @bind="regression" /> Introduce a regression: an unlabelled button in the formatting toolbar</label>
+        </fieldset>
+        <div class="lab__actions">
+            <button type="submit" class="primary" aria-disabled="@(Busy ? "true" : "false")">Run the suite and the gate</button>
+            <button type="button" class="secondary" aria-disabled="@(audits is null || Busy ? "true" : "false")" @onclick="RecordBaseline">Record a baseline from the last run</button>
+            <p role="status" class="lab__status">@status</p>
+        </div>
+    </form>
+
+    @if (gate is not null && report is not null)
+    {
+        <div class="gate @(gate.Passed ? "gate--passed" : "gate--failed")">
+            <p class="gate__exit">
+                <span class="gate__code">exit @gate.ExitCode</span>
+                <strong>@(gate.Passed ? "Gate passed." : gate.ExitCode == QualityGateResult.ExecutionFailed ? "Gate failed: audits did not run completely." : "Gate failed: findings exceed the policy.")</strong>
+            </p>
+            <CodeBlock Language="shell" Caption="Equivalent command" Code="@Command" />
+
+            <h3>Summary</h3>
+            <ul class="facts">
+                <li><span class="facts__label">Audits</span> @report.Summary.Audits</li>
+                <li><span class="facts__label">Violations</span> @report.Summary.Violations</li>
+                <li><span class="facts__label">Potential issues</span> @report.Summary.PotentialIssues</li>
+                <li><span class="facts__label">Needs review</span> @report.Summary.Inconclusive</li>
+            </ul>
+
+            @if (report.Baseline is { } comparison)
+            {
+                <h3>Baseline comparison</h3>
+                <ul class="facts">
+                    <li><span class="facts__label">New</span> @comparison.New.Count</li>
+                    <li><span class="facts__label">Existing</span> @comparison.Existing.Count</li>
+                    <li><span class="facts__label">Resolved</span> @comparison.Resolved.Sum(r => r.Count)</li>
+                </ul>
+                @if (comparison.New.Count > 0)
+                {
+                    <ul class="plain-list">
+                        @foreach (var item in comparison.New)
+                        {
+                            <li><span class="badge badge--violation">new</span> @item.Audit: <code>@item.RuleId</code> at <code>@item.Selector</code></li>
+                        }
+                    </ul>
+                }
+            }
+
+            <h3>Why</h3>
+            @if (gate.Failures.Count + gate.Errors.Count == 0)
+            {
+                <p>No finding exceeds the policy.</p>
+            }
+            else
+            {
+                <ul class="plain-list">
+                    @foreach (var error in gate.Errors)
+                    {
+                        <li>@error</li>
+                    }
+                    @foreach (var failure in gate.Failures)
+                    {
+                        <li>@failure</li>
+                    }
+                </ul>
+            }
+            @foreach (var note in gate.Notes)
+            {
+                <p class="hint">Note: @note</p>
+            }
+
+            <h3>Reports</h3>
+            <p>The same report in every format the CLI writes:</p>
+            <ul class="downloads">
+                <li><a href="@($"reports/{reportId}/html")" target="_blank" rel="noopener">HTML report<span class="visually-hidden"> (opens in a new tab)</span></a> for local investigation</li>
+                <li><a href="@($"reports/{reportId}/sarif")">SARIF</a> for GitHub code scanning, with findings mapped to <code>.razor</code> files</li>
+                <li><a href="@($"reports/{reportId}/junit")">JUnit</a> for test result views in Azure Pipelines and others</li>
+                <li><a href="@($"reports/{reportId}/json")">JSON</a>: the full, versioned report</li>
+            </ul>
+            <details class="example__source">
+                <summary>Console report</summary>
+                <CodeBlock Language="text" Code="@consoleReport" Class="code--terminal" />
+            </details>
+            @if (baseline is not null)
+            {
+                <details class="example__source">
+                    <summary>Recorded baseline (a11y-baseline.json)</summary>
+                    <CodeBlock Language="text" Code="@baselineJson" />
+                </details>
+            }
+        </div>
+    }
+</section>
+
+<section aria-labelledby="baselines">
+    <h2 id="baselines">Baselines never hide new problems</h2>
+    <p>
+        A baseline is a committed list of known findings: fingerprint, rule, component, scenario, selector and count. It
+        is sorted and has no timestamps, so changes are easy to review. Fingerprints ignore ports, generated ids and GUIDs,
+        so they are stable across runs.
+    </p>
+    <ul class="reasons">
+        <li>A known rule failing on another element, component, scenario or state is <strong>new</strong>, and so is an additional occurrence.</li>
+        <li>Fixed findings are listed as <strong>resolved</strong>. Regenerate the baseline to lock the improvement in; strict mode fails until you do.</li>
+        <li>When audits failed, resolved entries are flagged as unreliable: a finding that disappeared may simply not have been checked.</li>
+    </ul>
+    <p>This repository's own baseline, generated from the demo test suites:</p>
+    <details class="example__source">
+        <summary>demo/a11y-baseline.json</summary>
+        <CodeBlock Language="text" Code="@SourceCatalog.Asset("a11y-baseline.json")" />
+    </details>
+</section>
+
+<section aria-labelledby="pipelines">
+    <h2 id="pipelines">In a pipeline</h2>
+    <p>The repository's workflow (<code>.github/workflows/ci.yml</code>) runs these steps on Chromium, Firefox and WebKit:</p>
+    <CodeBlock Language="shell" Code="@Pipeline" />
+    <p>Suppressions are the other tool for accepted exceptions. They live in test code, need a reason, can have an owner and an expiry date, and stay visible in every report:</p>
+    <CodeBlock Code="@Suppression" />
+</section>
+
+@code {
+    private AccessibilityBaseline? baseline;
+    private IReadOnlyList<AccessibilityAudit>? audits;
+    private AccessibilityReport? report;
+    private QualityGateResult? gate;
+    private Guid reportId;
+    private string consoleReport = string.Empty;
+    private string baselineJson = string.Empty;
+    private string status = string.Empty;
+    private string failOn = "minor";
+    private bool failOnPotential;
+    private bool strict;
+    private bool useBaseline;
+    private bool regression;
+    private bool running;
+
+    private bool Busy => running || !RendererInfo.IsInteractive;
+
+    private string Command
+    {
+        get
+        {
+            var args = new List<string> { "blazor-a11y report --input a11y-results" };
+            if (useBaseline && baseline is not null)
+            {
+                args.Add("--baseline a11y-baseline.json");
+            }
+
+            if (failOn != "minor")
+            {
+                args.Add($"--fail-on {failOn}");
+            }
+
+            if (failOnPotential)
+            {
+                args.Add("--fail-on-potential");
+            }
+
+            if (strict)
+            {
+                args.Add("--strict");
+            }
+
+            args.Add("--output a11y-report");
+            return string.Join(" ", args);
+        }
+    }
+
+    private async Task RunAsync()
+    {
+        if (Busy)
+        {
+            return;
+        }
+
+        running = true;
+        status = "Running the suite…";
+        try
+        {
+            audits = await Task.Run(() => CiSuite.RunAsync(regression));
+            report = AccessibilityReport.Create(audits, baseline: useBaseline ? baseline : null);
+            gate = QualityGate.Evaluate(report, new QualityGateOptions
+            {
+                FailOnImpact = failOn == "none" ? null : Enum.Parse<AccessibilityImpact>(failOn, ignoreCase: true),
+                FailOnPotentialIssues = failOnPotential,
+                Strict = strict,
+            });
+            reportId = Reports.Add(report);
+            consoleReport = ReportFormatters.Format(new ConsoleReportFormatter(), report);
+            status = $"{audits.Count} audits ran. {(gate.Passed ? "The gate passed" : "The gate failed")} with exit code {gate.ExitCode}.";
+        }
+        finally
+        {
+            running = false;
+        }
+    }
+
+    private void RecordBaseline()
+    {
+        if (audits is null || Busy)
+        {
+            return;
+        }
+
+        baseline = AccessibilityBaseline.FromAudits(audits);
+        baselineJson = JsonSerializer.Serialize(baseline, ReportJson.Options);
+        useBaseline = true;
+        status = $"Baseline recorded with {baseline.Entries.Count} entries. Run the gate again to compare with it.";
+    }
+
+    private const string Pipeline = """
+        # Every audit of the test run is written to a11y-results.
+        export BLAZOR_A11Y_RESULTS_DIR=$PWD/a11y-results
+        dotnet test demo/BlazorAccessibilityToolkit.Demo.ComponentTests
+        dotnet test demo/BlazorAccessibilityToolkit.Demo.EndToEndTests
+
+        # The gate: known issues are in the baseline, any new finding fails the build.
+        blazor-a11y report --input a11y-results --baseline demo/a11y-baseline.json \
+          --manual-review demo/a11y/manual/modal-dialog.json \
+          --output a11y-report --source-root demo
+
+        # Other commands
+        blazor-a11y baseline --input a11y-results --baseline demo/a11y-baseline.json
+        blazor-a11y manual init --name "Checkout" --scope "/checkout" --output a11y/manual/checkout.json
+        """;
+
+    private const string Suppression = """
+        var options = new AccessibilityAuditOptions
+        {
+            Suppressions =
+            [
+                new Suppression
+                {
+                    RuleId = "color-contrast",
+                    Component = "BrandBadge",
+                    Reason = "Brand colors under review, design ticket 812",
+                    Owner = "design-system team",
+                    Expires = new DateOnly(2027, 3, 31),       // expired suppressions stop applying
+                },
+            ],
+        };
+        """;
+}

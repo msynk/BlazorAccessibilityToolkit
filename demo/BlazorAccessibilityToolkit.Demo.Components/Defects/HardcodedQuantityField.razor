@@ -1,0 +1,12 @@
+@* INTENTIONAL DEFECT: hard-coded ids in a reusable component. Rendered once, it is fine. Rendered twice (see
+   LegacyCartLines), both labels point at the first input, the second input has no label, and both hints describe the
+   first input. Detected by: blazor-duplicate-id-referenced. Fixed version: QuantityField. *@
+<div class="field field--compact">
+    <label for="quantity">@Label</label>
+    <input id="quantity" type="number" min="0" max="10" value="1" aria-describedby="quantity-hint" />
+    <p id="quantity-hint" class="hint">Up to 10 per order.</p>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Quantity";
+}

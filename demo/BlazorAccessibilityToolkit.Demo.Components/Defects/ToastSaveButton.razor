@@ -1,0 +1,25 @@
+@* INTENTIONAL DEFECT: the confirmation is a toast that is inserted together with its text. The text appears on screen,
+   but many screen readers only announce changes to live regions that already existed, so "Changes saved" is often silent.
+   Detected by: LiveRegionMonitor.AnalyzeAsync (blazor-live-region-inserted-with-content). Fixed version: SaveButton. *@
+<div class="save">
+    <button type="button" class="primary" @onclick="SaveAsync">@Text</button>
+    @if (message is not null)
+    {
+        <div role="status" class="toast">@message</div>
+    }
+</div>
+
+@code {
+    private string? message;
+
+    [Parameter] public string Text { get; set; } = "Save changes";
+
+    [Parameter] public Func<Task>? OnSave { get; set; }
+
+    private async Task SaveAsync()
+    {
+        message = null;
+        await (OnSave?.Invoke() ?? Task.Delay(150));
+        message = "Changes saved";
+    }
+}

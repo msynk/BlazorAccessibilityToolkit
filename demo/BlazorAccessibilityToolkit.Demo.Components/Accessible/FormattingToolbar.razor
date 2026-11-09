@@ -1,0 +1,18 @@
+@* A group of icon-only buttons. Every IconButton has a Label, so each one has an accessible name.
+   Its broken counterpart is LegacyFormattingToolbar. *@
+<div class="toolbar" role="group" aria-label="@Label">
+    <IconButton Label="Bold" IconPath="@Icons.Bold" />
+    <IconButton Label="Italic" IconPath="@Icons.Italic" />
+    <IconButton Label="Insert link" IconPath="@Icons.Link" />
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Formatting";
+
+    internal static class Icons
+    {
+        public const string Bold = "M4 2h5a3 3 0 0 1 2.1 5.2A3.2 3.2 0 0 1 9.5 14H4zm2 2v3h3a1.5 1.5 0 0 0 0-3zm0 5v3h3.5a1.5 1.5 0 0 0 0-3z";
+        public const string Italic = "M6 2h7v2h-2.6l-2.8 8H10v2H3v-2h2.6l2.8-8H6z";
+        public const string Link = "M1 8a3 3 0 0 1 3-3h3v2H4a1 1 0 0 0 0 2h3v2H4a3 3 0 0 1-3-3zm8-3h3a3 3 0 0 1 0 6H9V9h3a1 1 0 0 0 0-2H9zM5 7.25h6v1.5H5z";
+    }
+}

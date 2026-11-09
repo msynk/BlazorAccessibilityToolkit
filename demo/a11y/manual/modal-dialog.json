@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "name": "ModalDialog",
-  "scope": "BlazorAccessibilityToolkit.Demo.Components.ModalDialog",
+  "scope": "BlazorAccessibilityToolkit.Demo.Components.Accessible.ModalDialog",
   "items": [
     {
       "id": "keyboard-operation",

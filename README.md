@@ -11,6 +11,13 @@ The toolkit does more than run a scanner in a browser. It knows about Razor and 
 
 > Automated checks find a subset of accessibility problems. They cannot prove WCAG conformance. The toolkit keeps inconclusive results and manual-review items separate, and never reports them as passed.
 
+**See it running.** The [demo showcase](demo) puts realistic broken components next to their fixes, with the test that tells them apart and a button that runs it live:
+
+```bash
+dotnet build
+dotnet run --project demo/BlazorAccessibilityToolkit.Demo.WebApp   # http://localhost:5180
+```
+
 ## Packages
 
 | Package | Use it for |
@@ -115,11 +122,11 @@ blazor-a11y report --input a11y-results --baseline a11y-baseline.json --output a
 
 [`demo/`](demo) contains:
 
-- a component library with accessible patterns and intentional defects,
-- a Blazor Web App,
-- component tests (bUnit and the interactive host),
-- end-to-end tests (`WebApplicationFactory` on Kestrel with Playwright),
-- a committed baseline and a manual-review checklist.
+- a component library with accessible patterns (`Accessible/`) and intentional, realistic defects (`Defects/`), each paired with its fix,
+- a showcase web app that explains every feature next to live components and runs the toolkit live: bUnit audits in process, browser features through Playwright and the in-process component host,
+- component tests (bUnit and the interactive host) with regression tests for every defect,
+- end-to-end tests of the showcase (`WebApplicationFactory` on Kestrel with Playwright),
+- a committed baseline and a manual-review checklist for the CI gate.
 
 See [demo/README.md](demo/README.md).
 

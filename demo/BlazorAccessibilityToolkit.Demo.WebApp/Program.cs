@@ -1,7 +1,13 @@
 using BlazorAccessibilityToolkit.Demo.WebApp.Components;
+using BlazorAccessibilityToolkit.Demo.WebApp.Lab;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+
+// Live runs of the toolkit (the "Run this test" buttons): see Lab/.
+builder.Services.AddSingleton<LabBrowser>();
+builder.Services.AddSingleton<LabRunner>();
+builder.Services.AddSingleton<ReportStore>();
 
 var app = builder.Build();
 if (!app.Environment.IsDevelopment())
@@ -13,6 +19,7 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseAntiforgery();
 app.MapStaticAssets();
+ReportStore.MapEndpoints(app);
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.Run();
 

@@ -1,6 +1,7 @@
 using BlazorAccessibilityToolkit.ComponentTesting;
 using Bunit;
-using BlazorAccessibilityToolkit.Demo.Components;
+using BlazorAccessibilityToolkit.Demo.Components.Accessible;
+using BlazorAccessibilityToolkit.Demo.Components.Defects;
 
 namespace BlazorAccessibilityToolkit.Demo.ComponentTests;
 
@@ -68,6 +69,66 @@ public sealed class ComponentMarkupTests(TestEnvironment env)
         button = fixedCard.Component.Find("button");
         Assert.Equal("true", button.GetAttribute("aria-expanded"));
         Assert.False(fixedCard.Component.Find("#" + button.GetAttribute("aria-controls")).HasAttribute("hidden"));
+    }
+
+    [Fact]
+    public async Task Regression_legacy_toolbar_finding_names_the_component_that_rendered_it()
+    {
+        await using var broken = await AccessibilityFixture.For<LegacyFormattingToolbar>().WithSettings(env.BrowserMarkup).BuildAsync();
+
+        var finding = (await broken.AuditAsync()).ShouldHaveFinding("button-name", FindingStatus.Violation);
+        Assert.Equal([typeof(LegacyFormattingToolbar).FullName!, typeof(UnlabelledIconButton).FullName!], finding.Component!.ComponentPath);
+
+        await using var fixedToolbar = await AccessibilityFixture.For<FormattingToolbar>().WithSettings(env.BrowserMarkup).BuildAsync();
+        (await fixedToolbar.AuditAsync()).ShouldHaveNoViolations(AccessibilityExpectation.Strict);
+    }
+
+    [Fact]
+    public async Task Regression_template_validation_messages_are_not_associated()
+    {
+        // Browserless: the Razor rules run on bUnit's markup.
+        await using var fixture = await AccessibilityFixture.For<LegacySignupForm>().BuildAsync();
+        fixture.Component.Find("form").Submit();
+
+        var audit = await fixture.AuditAsync("after invalid submit");
+
+        audit.ShouldHaveFinding("blazor-validation-message-association", FindingStatus.PotentialIssue);
+        audit.ShouldHaveFinding("blazor-invalid-without-error-reference", FindingStatus.PotentialIssue);
+    }
+
+    [Fact]
+    public async Task Regression_hard_coded_ids_collide_when_the_component_is_reused()
+    {
+        await using var broken = await AccessibilityFixture.For<LegacyCartLines>().BuildAsync();
+        (await broken.AuditAsync()).ShouldHaveFinding("blazor-duplicate-id-referenced", FindingStatus.Violation);
+
+        await using var fixedCart = await AccessibilityFixture.For<CartLines>().WithSettings(env.BrowserMarkup).BuildAsync();
+        (await fixedCart.AuditAsync()).ShouldHaveNoViolations(AccessibilityExpectation.Strict);
+    }
+
+    [Fact]
+    public async Task Regression_ungrouped_radio_buttons_are_detected_and_the_fieldset_fix_passes()
+    {
+        await using var broken = await AccessibilityFixture.For<UngroupedShippingOptions>().BuildAsync();
+        (await broken.AuditAsync()).ShouldHaveFinding("blazor-radio-group-ungrouped", FindingStatus.PotentialIssue);
+
+        await using var fixedOptions = await AccessibilityFixture.For<ShippingOptions>().WithSettings(env.BrowserMarkup).BuildAsync();
+        (await fixedOptions.AuditAsync()).ShouldHaveNoViolations(AccessibilityExpectation.Strict);
+    }
+
+    [Fact]
+    public async Task Filter_panel_menu_button_and_quantity_field_have_no_markup_findings()
+    {
+        await ShouldHaveNoFindingsAsync<FilterPanel>();
+        await ShouldHaveNoFindingsAsync<MenuButton>();
+        await ShouldHaveNoFindingsAsync<QuantityField>();
+    }
+
+    private async Task ShouldHaveNoFindingsAsync<T>()
+        where T : Microsoft.AspNetCore.Components.IComponent
+    {
+        await using var fixture = await AccessibilityFixture.For<T>().WithSettings(env.BrowserMarkup).BuildAsync();
+        (await fixture.AuditAsync()).ShouldHaveNoViolations(AccessibilityExpectation.Strict);
     }
 
     [Fact]

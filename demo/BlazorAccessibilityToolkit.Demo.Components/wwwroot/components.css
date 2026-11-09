@@ -1,27 +1,70 @@
-/* Shared styles for the demo components: readable contrast, visible focus and targets of at least 44px. */
-:root { --fg: #1b1b1b; --bg: #ffffff; --accent: #0b57d0; --error: #b3261e; --muted: #4a4a4a; }
+/* Shared styles for the demo components: readable contrast, visible focus and targets of at least 44px.
+   The component tests load this file, so axe-core measures the real colors. */
+:root { --fg: #1b1b1b; --bg: #ffffff; --accent: #0b57d0; --error: #b3261e; --muted: #4a4a4a; --border: #8a8a8a; --success: #0d5323; }
 body { font: 16px/1.5 system-ui, sans-serif; color: var(--fg); background: var(--bg); margin: 0; }
-button, a { min-height: 44px; min-width: 44px; }
-a { display: inline-flex; align-items: center; color: var(--accent); }
-button { font: inherit; padding: 0.5rem 1rem; border-radius: 6px; border: 2px solid var(--accent); cursor: pointer; }
+button { min-height: 44px; min-width: 44px; font: inherit; padding: 0.5rem 1rem; border-radius: 6px; border: 2px solid var(--accent); cursor: pointer; }
 button.primary { background: var(--accent); color: #fff; }
 button.secondary, button.disclosure { background: #fff; color: var(--accent); }
 button[aria-disabled="true"] { opacity: 0.75; cursor: not-allowed; }
-.icon-button { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; background: #fff; color: var(--fg); border-color: var(--muted); }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.card { border: 1px solid #8a8a8a; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
-.card h3 { margin: 0; }
-fieldset { border: 1px solid #8a8a8a; border-radius: 8px; padding: 1rem; margin: 0 0 1rem; }
+
+/* Icon buttons and toolbars */
+.icon-button { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem; background: #fff; color: var(--fg); border-color: var(--muted); }
+.toolbar { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; }
+
+/* Cards and disclosures */
+.card { border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 0; }
+.card h3 { margin: 0; font-size: 1.125rem; }
+.card p { margin: 0.75rem 0 0; }
+
+/* Forms */
+fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 0 0 1rem; }
 .hint { margin: 0 0 1rem; color: var(--muted); }
 .field { display: flex; flex-direction: column; margin-bottom: 1rem; max-width: 24rem; }
 .field input { font: inherit; padding: 0.5rem; border: 1px solid #6b6b6b; border-radius: 4px; min-height: 44px; }
 .field input[aria-invalid="true"] { border-color: var(--error); border-width: 2px; }
-.field-error { color: var(--error); margin: 0.25rem 0 0; }
+.field-error, .validation-message { color: var(--error); margin: 0.25rem 0 0; }
+.field--compact { max-width: 14rem; margin-bottom: 0; }
+.field--compact .hint { margin: 0.25rem 0 0; font-size: 0.875rem; }
 .status { min-height: 1.5em; color: var(--muted); }
+.choice-group { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; margin: 0; }
+.choice-group legend, .choice-group__label { font-weight: 600; margin: 0 0 0.25rem; padding: 0 0.25rem; }
+.choice { display: flex; align-items: center; gap: 0.5rem; min-height: 44px; }
+.choice input { width: 1.25rem; height: 1.25rem; margin: 0; }
+.cart-lines { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; }
+.cart-lines li { display: grid; gap: 0.25rem; }
+.cart-lines__item { font-weight: 600; }
+
+/* Filter panels */
+.filter-panel { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+.filter-panel__body { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; padding: 0.25rem 0 0.25rem 1rem; border-left: 3px solid var(--border); }
+.filter-panel__body[hidden] { display: none; }
+.filter-panel__body--animated { overflow: hidden; max-height: 20rem; transition: max-height 0.2s ease, opacity 0.2s ease; }
+/* The defect: the panel only looks collapsed. Its controls are invisible but still focusable. */
+.filter-panel__body--animated.is-collapsed { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; }
+
+/* Dialogs */
 .dialog-backdrop { position: fixed; inset: 0; z-index: 100; background: rgb(0 0 0 / 0.5); display: flex; align-items: center; justify-content: center; }
-.dialog { background: #fff; color: var(--fg); padding: 1.5rem; border-radius: 8px; max-width: 28rem; }
+.dialog { background: #fff; color: var(--fg); padding: 1.5rem; border-radius: 8px; max-width: 28rem; margin: 1rem; }
+.dialog h2 { margin-top: 0; }
 .dialog-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem; }
-[role="tablist"] { display: flex; gap: 0.25rem; border-bottom: 2px solid #8a8a8a; }
+
+/* Tabs */
+.tabs { max-width: 36rem; }
+[role="tablist"] { display: flex; gap: 0.25rem; border-bottom: 2px solid var(--border); }
 [role="tab"] { border: 2px solid transparent; border-radius: 6px 6px 0 0; background: #f2f2f2; color: var(--fg); }
 [role="tab"][aria-selected="true"] { background: #fff; border-color: var(--accent); border-bottom-color: #fff; }
 [role="tabpanel"] { padding: 1rem; }
+[role="tabpanel"] p { margin: 0; }
+
+/* Menu buttons */
+.menu-button { position: relative; display: inline-block; }
+.menu-button .status { margin: 0.25rem 0 0; }
+.menu { position: absolute; top: calc(100% - 1.5em); left: 0; z-index: 20; display: flex; flex-direction: column; min-width: 12rem; padding: 0.25rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgb(0 0 0 / 0.15); }
+.menu [role="menuitem"] { border: 0; border-radius: 4px; background: transparent; color: var(--fg); text-align: left; }
+.menu [role="menuitem"]:hover, .menu [role="menuitem"]:focus { background: #e8f0fe; }
+
+/* Saving and status messages */
+.save { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.save .status { margin: 0; }
+.toast { padding: 0.5rem 0.75rem; border-radius: 6px; background: #e6f4ea; color: var(--success); border: 1px solid var(--success); }

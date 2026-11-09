@@ -1,0 +1,22 @@
+@* INTENTIONAL DEFECT: the content opens and closes, but aria-expanded was hard-coded to "false" (copied from a static
+   mockup), so screen readers always announce "collapsed". It looks fine and passes a quick click test.
+   Detected by: AriaPatterns.VerifyDisclosureAsync and blazor-expanded-state-mismatch (browser). Fixed version: DisclosureCard. *@
+<div class="card">
+    <h3>
+        <button type="button" class="disclosure" aria-expanded="false" aria-controls="@panelId" @onclick="Toggle">@Title</button>
+    </h3>
+    <div id="@panelId" hidden="@(!expanded)">
+        <p>@Details</p>
+    </div>
+</div>
+
+@code {
+    private readonly string panelId = $"stale-panel-{Guid.NewGuid():N}";
+    private bool expanded;
+
+    [Parameter] public string Title { get; set; } = "Card";
+
+    [Parameter] public string Details { get; set; } = string.Empty;
+
+    private void Toggle() => expanded = !expanded;
+}

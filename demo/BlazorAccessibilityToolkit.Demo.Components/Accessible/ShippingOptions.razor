@@ -1,0 +1,21 @@
+@* Related radio buttons grouped in a fieldset whose legend names the group, so screen readers announce
+   "Delivery speed, group" before the options. Its broken counterpart is UngroupedShippingOptions. *@
+<fieldset class="choice-group">
+    <legend>Delivery speed</legend>
+    @foreach (var option in Options)
+    {
+        <label class="choice">
+            <input type="radio" name="@groupName" value="@option" checked="@(option == selected)" @onchange="() => selected = option" />
+            @option
+        </label>
+    }
+</fieldset>
+
+@code {
+    private readonly string groupName = $"delivery-{Guid.NewGuid():N}";
+    private string? selected;
+
+    [Parameter] public IReadOnlyList<string> Options { get; set; } = ["Standard (3 to 5 days)", "Express (next day)", "Pick up in store"];
+
+    protected override void OnParametersSet() => selected ??= Options.FirstOrDefault();
+}

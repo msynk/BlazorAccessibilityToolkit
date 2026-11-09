@@ -1,0 +1,62 @@
+@page "/focus-order"
+<PageTitle>Focus order · Blazor Accessibility Toolkit</PageTitle>
+
+<div class="page-intro">
+    <p class="eyebrow">Browser tests · Playwright</p>
+    <h1>Focus order</h1>
+    <p class="lead">
+        <code>CaptureFocusOrderAsync</code> presses Tab until focus leaves the page, wraps around, cycles or gets stuck,
+        and records every stop with its role and accessible name. You compare it with the order you expect, and
+        heuristics flag keyboard traps, stuck focus and focus on invisible elements.
+    </p>
+</div>
+
+<div class="table-wrap">
+    <table class="data">
+        <thead>
+            <tr><th scope="col">Rule</th><th scope="col">Reported when</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>blazor-focus-hidden-target</code></td><td>focus lands on an element that is invisible or hidden from assistive technologies</td></tr>
+            <tr><td><code>blazor-focus-trap</code></td><td>focus cycles within part of the page that is not a modal dialog</td></tr>
+            <tr><td><code>blazor-focus-stuck</code></td><td>Tab does not move focus</td></tr>
+            <tr><td><code>blazor-focus-repeated</code></td><td>one element is reached twice in a single pass</td></tr>
+        </tbody>
+    </table>
+</div>
+<p>
+    These are potential issues: the toolkit records what happened and flags patterns, but whether an order is
+    <em>logical</em> is decided by the expectation you write with <code>ShouldMatch</code>.
+</p>
+
+<section aria-labelledby="collapsed">
+    <h2 id="collapsed">A panel that only looks collapsed</h2>
+    <p>
+        Animating a panel closed with <code>opacity: 0</code> and <code>max-height: 0</code> hides it from sight but not
+        from the keyboard. Collapse both panels below, then press Tab from the Filters button: in the first one, focus
+        disappears into three invisible controls before it reaches "Show 24 results".
+    </p>
+    <ExampleCard Title="A filter panel collapsed with CSS only" Defect="true" Example="FocusOrderExamples.AnimatedFilterOrder" Sources="@(["AnimatedFilterPanel.razor"])">
+        <Stage><AnimatedFilterPanel /></Stage>
+    </ExampleCard>
+    <ExampleCard Title="A filter panel collapsed with hidden" Example="FocusOrderExamples.FilterOrder" Sources="@(["FilterPanel.razor"])">
+        <Stage><FilterPanel /></Stage>
+    </ExampleCard>
+</section>
+
+<section aria-labelledby="modal">
+    <h2 id="modal">A cycle that is not a trap</h2>
+    <p>
+        Inside an open modal dialog, Tab is supposed to cycle. The capture sees that the stops are inside an
+        <code>aria-modal="true"</code> dialog (or one opened with <code>showModal()</code>) and does not report a trap.
+    </p>
+    <ExampleCard Title="Focus order inside an open modal dialog" Example="FocusOrderExamples.DialogFocusCycle">
+        <Stage>
+            <ModalDialog TriggerText="Delete account" Title="Delete account?" ConfirmText="Delete">
+                <p>This removes your profile and cannot be undone.</p>
+            </ModalDialog>
+        </Stage>
+    </ExampleCard>
+</section>
+
+<p class="next">Next: <a href="aria-patterns">verify whole widgets against the ARIA Authoring Practices</a>.</p>

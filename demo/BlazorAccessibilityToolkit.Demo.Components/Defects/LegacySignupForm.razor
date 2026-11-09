@@ -1,0 +1,32 @@
+@* INTENTIONAL DEFECT: the form pattern from the Blazor project templates. After a failed submit, InputText sets
+   aria-invalid="true" and ValidationMessage shows the error, but nothing connects the two: screen readers announce
+   "invalid entry" without saying what is wrong. Focus also stays on the button and nothing is announced.
+   Detected by: blazor-validation-message-association and blazor-invalid-without-error-reference.
+   Fixed version: SignupForm. *@
+<EditForm Model="model" OnValidSubmit="Submit" FormName="legacy-signup">
+    <DataAnnotationsValidator />
+    <div class="field">
+        <label for="legacy-name">Full name</label>
+        <InputText id="legacy-name" @bind-Value="model.Name" />
+        <ValidationMessage For="() => model.Name" />
+    </div>
+
+    <div class="field">
+        <label for="legacy-email">Email</label>
+        <InputText id="legacy-email" type="email" @bind-Value="model.Email" />
+        <ValidationMessage For="() => model.Email" />
+    </div>
+
+    <button type="submit" class="primary">Create account</button>
+    @if (submitted)
+    {
+        <p class="status">Account created.</p>
+    }
+</EditForm>
+
+@code {
+    private readonly SignupForm.Model model = new();
+    private bool submitted;
+
+    private void Submit() => submitted = true;
+}

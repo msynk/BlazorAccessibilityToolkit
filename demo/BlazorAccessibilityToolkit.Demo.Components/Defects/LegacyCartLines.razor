@@ -1,0 +1,15 @@
+@* INTENTIONAL DEFECT: renders HardcodedQuantityField once per line, so the page contains the ids "quantity" and
+   "quantity-hint" twice. Detected by: blazor-duplicate-id-referenced. Fixed version: CartLines. *@
+<ul class="cart-lines" aria-label="Cart">
+    @foreach (var item in Items)
+    {
+        <li>
+            <span class="cart-lines__item">@item</span>
+            <HardcodedQuantityField />
+        </li>
+    }
+</ul>
+
+@code {
+    [Parameter] public IReadOnlyList<string> Items { get; set; } = ["Coffee beans", "Paper filters"];
+}

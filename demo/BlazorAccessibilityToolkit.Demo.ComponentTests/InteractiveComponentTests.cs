@@ -1,6 +1,7 @@
 using BlazorAccessibilityToolkit.Playwright;
 using Microsoft.Playwright;
-using BlazorAccessibilityToolkit.Demo.Components;
+using BlazorAccessibilityToolkit.Demo.Components.Accessible;
+using BlazorAccessibilityToolkit.Demo.Components.Defects;
 
 namespace BlazorAccessibilityToolkit.Demo.ComponentTests;
 
@@ -198,6 +199,107 @@ public sealed class InteractiveComponentTests(TestEnvironment env)
             .ExpectLiveRegionUpdate("Changes could not be saved. Try again.", TextMatch.Exact)
             .Audit("save failed")
             .RunAsync();
+    }
+
+    [Fact]
+    public async Task Menu_button_follows_the_aria_pattern()
+    {
+        await using var component = await env.Host.RenderAsync<MenuButton>(env.Browser, p => p.Add(c => c.Label, "Actions"));
+        var button = component.Page.GetByRole(AriaRole.Button, new() { Name = "Actions" });
+
+        (await AriaPatterns.VerifyMenuButtonAsync(button)).ShouldPass();
+
+        // Choosing an item closes the menu, returns focus to the button and announces the choice.
+        await component.Keyboard()
+            .FocusOn(button)
+            .PressArrowDown()
+            .ExpectFocused("menuitem", "Edit")
+            .PressEnd()
+            .ExpectFocused("menuitem", "Archive")
+            .PressEnter()
+            .ExpectFocused("button", "Actions")
+            .ExpectLiveRegionUpdate("Archive chosen.")
+            .Audit("after choosing")
+            .RunAsync();
+    }
+
+    [Fact]
+    public async Task Collapsed_filter_panel_keeps_its_controls_out_of_the_tab_order()
+    {
+        await using var component = await env.Host.RenderAsync<FilterPanel>(env.Browser);
+
+        var order = await component.CaptureFocusOrderAsync();
+
+        order.ShouldMatch("button Filters", "button Show 24 results").ShouldNotTrapFocus();
+        Assert.Empty(order.Findings);
+    }
+
+    // Regression tests for the intentional defects that only show in a browser. They assert that each defect is still
+    // detected, so the showcase keeps demonstrating something real. They run no audits, so nothing goes to the baseline.
+
+    [Fact]
+    public async Task Regression_focusless_dialog_fails_the_modal_dialog_pattern()
+    {
+        await using var component = await env.Host.RenderAsync<FocuslessDialog>(env.Browser, p => p
+            .Add(c => c.TriggerText, "Delete account")
+            .Add(c => c.Title, "Delete account?"));
+
+        var result = await AriaPatterns.VerifyModalDialogAsync(
+            component.Page.GetByRole(AriaRole.Button, new() { Name = "Delete account" }),
+            options: new PatternOptions { Timeout = TimeSpan.FromSeconds(1) });
+
+        Assert.Contains(result.Checks, c => c.Requirement == "Focus moves into the dialog when it opens" && !c.Passed);
+        Assert.Contains(result.Checks, c => c.Requirement == "Escape closes the dialog" && !c.Passed);
+    }
+
+    [Fact]
+    public async Task Regression_naive_tabs_fail_the_tabs_pattern()
+    {
+        await using var component = await env.Host.RenderAsync<NaiveTabs>(env.Browser, p => p
+            .Add(c => c.Label, "Sections")
+            .Add(c => c.Items, DemoData.Tabs));
+
+        var result = await AriaPatterns.VerifyTabsAsync(component.Page.GetByRole(AriaRole.Tablist), new PatternOptions { Timeout = TimeSpan.FromSeconds(1) });
+
+        Assert.Contains(result.Checks, c => c.Requirement == "Container has role tablist and an accessible name" && !c.Passed);
+        Assert.Contains(result.Checks, c => c.Requirement == "Only the selected tab is in the tab sequence (roving tabindex)" && !c.Passed);
+        Assert.Contains(result.Checks, c => c.Requirement == "ArrowRight moves focus to the next tab" && !c.Passed);
+    }
+
+    [Fact]
+    public async Task Regression_stale_disclosure_fails_the_disclosure_pattern()
+    {
+        await using var component = await env.Host.RenderAsync<StaleDisclosure>(env.Browser, p => p
+            .Add(c => c.Title, "Shipping")
+            .Add(c => c.Details, "Ships in 2 days."));
+
+        var result = await AriaPatterns.VerifyDisclosureAsync(
+            component.Page.GetByRole(AriaRole.Button, new() { Name = "Shipping" }),
+            new PatternOptions { Timeout = TimeSpan.FromSeconds(1) });
+
+        Assert.Contains(result.Checks, c => c.Requirement == "Enter toggles aria-expanded to \"true\"" && !c.Passed);
+    }
+
+    [Fact]
+    public async Task Regression_animated_filter_panel_leaves_hidden_controls_in_the_tab_order()
+    {
+        await using var component = await env.Host.RenderAsync<AnimatedFilterPanel>(env.Browser);
+
+        var order = await component.CaptureFocusOrderAsync();
+
+        Assert.Equal(3, order.Findings.Count(f => f.RuleId == "blazor-focus-hidden-target"));
+    }
+
+    [Fact]
+    public async Task Regression_toast_is_inserted_together_with_its_message()
+    {
+        await using var component = await env.Host.RenderAsync<ToastSaveButton>(env.Browser);
+        var monitor = await component.MonitorLiveRegionsAsync();
+
+        await component.Page.GetByRole(AriaRole.Button, new() { Name = "Save changes" }).ClickAsync();
+        await monitor.ExpectUpdateAsync("Changes saved");
+
+        Assert.Contains(await monitor.AnalyzeAsync(), f => f.RuleId == "blazor-live-region-inserted-with-content");
     }
 
     [Fact]

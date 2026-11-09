@@ -1,0 +1,34 @@
+@* INTENTIONAL DEFECT: the markup is a correct modal dialog (role, aria-modal, name), so markup audits pass. The behavior is
+   not: focus stays on the trigger behind the backdrop, Tab walks out of the dialog, Escape does nothing, and closing it
+   drops focus on the page body. Only a real browser driven with the keyboard can tell.
+   Detected by: KeyboardScenario and AriaPatterns.VerifyModalDialogAsync. Fixed version: ModalDialog. *@
+<button type="button" class="secondary" aria-haspopup="dialog" @onclick="() => open = true">@TriggerText</button>
+
+@if (open)
+{
+    <div class="dialog-backdrop">
+        <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="@titleId">
+            <h2 id="@titleId">@Title</h2>
+            @ChildContent
+            <div class="dialog-actions">
+                <button type="button" class="secondary" @onclick="() => open = false">@CancelText</button>
+                <button type="button" class="primary" @onclick="() => open = false">@ConfirmText</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly string titleId = $"focusless-title-{Guid.NewGuid():N}";
+    private bool open;
+
+    [Parameter] public string TriggerText { get; set; } = "Open dialog";
+
+    [Parameter] public string Title { get; set; } = "Dialog";
+
+    [Parameter] public string CancelText { get; set; } = "Cancel";
+
+    [Parameter] public string ConfirmText { get; set; } = "OK";
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

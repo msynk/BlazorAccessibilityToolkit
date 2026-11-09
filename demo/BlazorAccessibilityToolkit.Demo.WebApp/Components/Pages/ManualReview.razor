@@ -1,0 +1,141 @@
+@page "/manual-review"
+@using System.Text.Json
+@using BlazorAccessibilityToolkit.ManualReview
+@using BlazorAccessibilityToolkit.Reporting
+<PageTitle>Manual review · Blazor Accessibility Toolkit</PageTitle>
+
+<div class="page-intro">
+    <p class="eyebrow">CI and process</p>
+    <h1>Manual review</h1>
+    <p class="lead">
+        Automated rules cannot decide many success criteria: whether focus order makes sense, whether link text is
+        meaningful, how content reflows at 400% zoom, contrast over images, and what screen readers actually say. The
+        toolkit tracks these checks explicitly, so that an untested criterion never looks like a pass.
+    </p>
+</div>
+
+<CodeBlock Language="shell" Caption="Create a checklist, record results in the JSON file, validate it" Code="@Commands" />
+
+<section aria-labelledby="checklist">
+    <h2 id="checklist">The demo's checklist for the modal dialog</h2>
+    <p>
+        This is <code>demo/a11y/manual/modal-dialog.json</code>, read by this page and evaluated with
+        <code>ManualReviewEvaluator</code>. A "Passed" entry is only accepted with a tester and a date, and "Not
+        applicable" only with a justification; otherwise it counts as requiring review.
+    </p>
+    <ul class="facts">
+        <li><span class="facts__label">Checks</span> @coverage.Total</li>
+        <li><span class="facts__label">Passed</span> @coverage.Passed</li>
+        <li><span class="facts__label">Not applicable</span> @coverage.NotApplicable</li>
+        <li><span class="facts__label">Failed</span> @coverage.Failed</li>
+        <li><span class="facts__label">Outstanding</span> @coverage.Outstanding</li>
+    </ul>
+    <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr>
+                    <th scope="col">Check</th>
+                    <th scope="col">WCAG</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Recorded by</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in checklist.Items)
+                {
+                    var effective = ManualReviewEvaluator.EffectiveStatus(item);
+                    <tr>
+                        <td>
+                            @item.Title
+                            @if ((item.Notes ?? item.Justification) is { } note)
+                            {
+                                <span class="check__detail">@note</span>
+                            }
+                        </td>
+                        <td>@string.Join(", ", item.Wcag)</td>
+                        <td><span class="badge @StatusClass(effective)">@StatusText(effective)</span></td>
+                        <td>@(item.Tester is null ? "—" : $"{item.Tester}, {item.Date:yyyy-MM-dd}")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section aria-labelledby="gate">
+    <h2 id="gate">In the gate</h2>
+    <p>
+        Pass checklists to <code>blazor-a11y report --manual-review</code>. Failed checks fail the gate by default.
+        Outstanding checks are listed as notes, and fail the gate with <code>--fail-on-manual-review</code>, for example on
+        release branches.
+    </p>
+    <label class="choice"><input type="checkbox" @bind="releasePolicy" @bind:after="Evaluate" /> Release policy: fail on outstanding manual checks (<code>--fail-on-manual-review</code>)</label>
+    <div class="gate @(gate.Passed ? "gate--passed" : "gate--failed")">
+        <p class="gate__exit">
+            <span class="gate__code">exit @gate.ExitCode</span>
+            <strong>@(gate.Passed ? "Gate passed." : "Gate failed.")</strong>
+        </p>
+        <ul class="plain-list">
+            @foreach (var failure in gate.Failures)
+            {
+                <li>@failure</li>
+            }
+            @foreach (var note in gate.Notes)
+            {
+                <li>Note: @note</li>
+            }
+        </ul>
+    </div>
+</section>
+
+<section aria-labelledby="practice">
+    <h2 id="practice">Recommended practice</h2>
+    <ul class="reasons">
+        <li>Keep one checklist per feature or page next to the tests, and review changes to it like code.</li>
+        <li>Re-open items (<code>RequiresReview</code>) when the related component changes significantly.</li>
+        <li>Record the assistive technology and browser versions: results differ between combinations.</li>
+        <li>A keyboard scenario test and a manual check complement each other. The test prevents regressions; the review confirms the experience makes sense.</li>
+    </ul>
+</section>
+
+@code {
+    private readonly ManualReviewChecklist checklist =
+        JsonSerializer.Deserialize<ManualReviewChecklist>(SourceCatalog.Asset("modal-dialog.json"), ReportJson.Options)!;
+
+    private ManualReviewCoverage coverage = new();
+    private QualityGateResult gate = new();
+    private bool releasePolicy;
+
+    protected override void OnInitialized()
+    {
+        coverage = ManualReviewEvaluator.Coverage([checklist]);
+        Evaluate();
+    }
+
+    private void Evaluate()
+    {
+        var report = AccessibilityReport.Create([], [checklist]);
+        gate = QualityGate.Evaluate(report, new QualityGateOptions { AllowEmpty = true, FailOnOutstandingManualReview = releasePolicy });
+    }
+
+    private static string StatusClass(ManualReviewStatus status) => status switch
+    {
+        ManualReviewStatus.Passed => "badge--pass",
+        ManualReviewStatus.Failed => "badge--violation",
+        ManualReviewStatus.NotApplicable => "badge--impact",
+        _ => "badge--potential",
+    };
+
+    private static string StatusText(ManualReviewStatus status) => status switch
+    {
+        ManualReviewStatus.NotTested => "Not tested",
+        ManualReviewStatus.RequiresReview => "Requires review",
+        ManualReviewStatus.NotApplicable => "Not applicable",
+        _ => status.ToString(),
+    };
+
+    private const string Commands = """
+        blazor-a11y manual init --name "ModalDialog" --scope "BlazorAccessibilityToolkit.Demo.Components.Accessible.ModalDialog" --output demo/a11y/manual/modal-dialog.json
+        blazor-a11y manual validate demo/a11y/manual/*.json      # exit 1 when entries are incompletely recorded
+        """;
+}

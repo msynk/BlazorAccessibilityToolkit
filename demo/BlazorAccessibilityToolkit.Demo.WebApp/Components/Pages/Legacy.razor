@@ -1,7 +1,27 @@
 @page "/legacy"
-@* KNOWN ISSUES: this page keeps two intentional defects to demonstrate baselines and regression tests. *@
-<PageTitle>Legacy - Demo App</PageTitle>
-<h1>Legacy page</h1>
-<p>This page still uses components that have known accessibility defects.</p>
-<UnlabelledIconButton />
-<ClickableCard Title="Old card" Details="Only mouse users can open this card." />
+@* KNOWN ISSUES: this page keeps two intentional defects to demonstrate baselines and regression tests. Unlike the
+   showcase examples, its defects are not marked as known: the end-to-end tests audit this page as it is, and the CI gate
+   accepts its findings because they are in demo/a11y-baseline.json. *@
+<PageTitle>Legacy page · Blazor Accessibility Toolkit</PageTitle>
+
+<div class="page-intro">
+    <p class="eyebrow">Sample app page</p>
+    <h1>Legacy page</h1>
+    <p class="lead">
+        A page of an existing app that still uses two components with known defects. This is what adopting the toolkit
+        on a real app looks like: you cannot fix everything at once, so the known issues go into a committed baseline and
+        only <em>new</em> problems fail the build.
+    </p>
+</div>
+
+<ul class="reasons">
+    <li>The end-to-end test <code>Legacy_page_known_issues_are_still_reported</code> audits this page in a browser and asserts that the unlabelled button is still reported.</li>
+    <li>The CI gate passes anyway, because the finding is listed in <code>demo/a11y-baseline.json</code>. Add another unlabelled button here and the gate fails with a <code>[new]</code> finding.</li>
+    <li>The clickable card is invisible to the browser audit: axe-core cannot see Blazor's <code>@@onclick</code>. The bUnit test of <code>ClickableCard</code> catches it.</li>
+</ul>
+
+<h2>The legacy widgets</h2>
+<div class="legacy-widgets">
+    <UnlabelledIconButton />
+    <ClickableCard Title="Old card" Details="Only mouse users can open this card." />
+</div>

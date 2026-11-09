@@ -1,0 +1,58 @@
+@* One example: a live component, its Razor source and the test that checks it. Defect stages carry
+   data-known-defect, which the end-to-end page audits exclude (see PageTests.cs). *@
+<article class="example @(Defect ? "example--defect" : "example--accessible")" aria-labelledby="@HeadingId">
+    <header class="example__header">
+        <span class="tag @(Defect ? "tag--defect" : "tag--accessible")">@(Defect ? "Intentional defect" : "Accessible")</span>
+        <h3 id="@HeadingId" class="example__title">@Title</h3>
+    </header>
+
+    @if (ChildContent is not null)
+    {
+        <div class="example__intro">@ChildContent</div>
+    }
+
+    @if (Stage is not null)
+    {
+        <div class="example__stage" data-known-defect="@(Defect ? string.Empty : null)">
+            <p class="example__stage-label">@(Defect ? "Try it: this component is broken on purpose" : "Try it")</p>
+            <div class="example__stage-body">@Stage</div>
+        </div>
+    }
+
+    @foreach (var source in Sources)
+    {
+        <details class="example__source">
+            <summary>Source: @source</summary>
+            <CodeBlock Code="@SourceCatalog.Component(source)" Language="razor" />
+        </details>
+    }
+
+    @if (Example is not null)
+    {
+        <LabPanel Example="Example" />
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>True for components with an intentional defect.</summary>
+    [Parameter] public bool Defect { get; set; }
+
+    /// <summary>Explanation shown above the live component.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The live component.</summary>
+    [Parameter] public RenderFragment? Stage { get; set; }
+
+    /// <summary>Razor files of the demo component library to show, for example <c>ClickableCard.razor</c>.</summary>
+    [Parameter] public IReadOnlyList<string> Sources { get; set; } = [];
+
+    /// <summary>The live test.</summary>
+    [Parameter] public LabExample? Example { get; set; }
+
+    private string HeadingId => "example-" + (Example?.Id ?? Slug(Title));
+
+    private static string Slug(string text) =>
+        string.Concat(text.ToLowerInvariant().Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-')).Trim('-');
+}

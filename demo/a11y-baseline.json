@@ -3,26 +3,84 @@
   "fingerprintVersion": "v1",
   "entries": [
     {
-      "fingerprint": "22337f0f582c4b82070097bff9a5bdc3",
+      "fingerprint": "097b614f075f22d93042febd6446a1af",
+      "ruleId": "blazor-expanded-state-mismatch",
+      "engine": "blazor-a11y",
+      "status": "PotentialIssue",
+      "audit": "StaleDisclosure [expanded]",
+      "component": "BlazorAccessibilityToolkit.Demo.Components.Defects.StaleDisclosure",
+      "scenario": "StaleDisclosure",
+      "state": "expanded",
+      "selector": "button.disclosure",
+      "count": 1
+    },
+    {
+      "fingerprint": "14e47b0b3c3f1cf1610b4773d5989968",
+      "ruleId": "blazor-invalid-without-error-reference",
+      "engine": "blazor-a11y",
+      "status": "PotentialIssue",
+      "audit": "LegacySignupForm [after invalid submit]",
+      "component": "Microsoft.AspNetCore.Components.Forms.InputText",
+      "scenario": "LegacySignupForm",
+      "state": "after invalid submit",
+      "selector": "#legacy-email",
+      "count": 2
+    },
+    {
+      "fingerprint": "2ab8467e1de56648f817b92f482b3fb6",
+      "ruleId": "blazor-invalid-without-error-reference",
+      "engine": "blazor-a11y",
+      "status": "PotentialIssue",
+      "audit": "LegacySignupForm [after invalid submit]",
+      "component": "Microsoft.AspNetCore.Components.Forms.InputText",
+      "scenario": "LegacySignupForm",
+      "state": "after invalid submit",
+      "selector": "#legacy-name",
+      "count": 2
+    },
+    {
+      "fingerprint": "3daa521946b1900bbcf741211fe3a1e9",
+      "ruleId": "blazor-duplicate-id-referenced",
+      "engine": "blazor-a11y",
+      "status": "Violation",
+      "audit": "LegacyCartLines",
+      "component": "BlazorAccessibilityToolkit.Demo.Components.Defects.HardcodedQuantityField",
+      "scenario": "LegacyCartLines",
+      "selector": "li:nth-child(2) > div.field.field--compact > p.hint",
+      "count": 2
+    },
+    {
+      "fingerprint": "60f19c389370f682936bd3858774438a",
+      "ruleId": "blazor-markup-control-name",
+      "engine": "blazor-a11y",
+      "status": "Violation",
+      "audit": "UnlabelledIconButton",
+      "component": "BlazorAccessibilityToolkit.Demo.Components.Defects.UnlabelledIconButton",
+      "scenario": "UnlabelledIconButton",
+      "selector": "button.icon-button",
+      "count": 3
+    },
+    {
+      "fingerprint": "842d61aa6cf3649a32cb361e4f7010f6",
       "ruleId": "button-name",
       "engine": "axe-core",
       "status": "Violation",
       "audit": "UnlabelledIconButton",
-      "component": "BlazorAccessibilityToolkit.Demo.Components.UnlabelledIconButton",
+      "component": "BlazorAccessibilityToolkit.Demo.Components.Defects.UnlabelledIconButton",
       "scenario": "UnlabelledIconButton",
       "selector": "button",
       "count": 1
     },
     {
-      "fingerprint": "9e8a42b0ba249039938789ab17f09692",
-      "ruleId": "blazor-click-handler-semantics",
+      "fingerprint": "a32eeaf21d4a9aadb3112b243a6e0de1",
+      "ruleId": "blazor-radio-group-ungrouped",
       "engine": "blazor-a11y",
       "status": "PotentialIssue",
-      "audit": "ClickableCard",
-      "component": "BlazorAccessibilityToolkit.Demo.Components.ClickableCard",
-      "scenario": "ClickableCard",
-      "selector": "div.card",
-      "count": 1
+      "audit": "UngroupedShippingOptions",
+      "component": "BlazorAccessibilityToolkit.Demo.Components.Defects.UngroupedShippingOptions",
+      "scenario": "UngroupedShippingOptions",
+      "selector": "label.choice:nth-child(2) > input",
+      "count": 2
     },
     {
       "fingerprint": "c20e961c5189710f2768c112df153d75",
@@ -34,6 +92,74 @@
       "state": "loaded",
       "selector": ".icon-button",
       "count": 1
+    },
+    {
+      "fingerprint": "cec61d22f61a7c1954a7a5e4fa676080",
+      "ruleId": "blazor-validation-message-association",
+      "engine": "blazor-a11y",
+      "status": "PotentialIssue",
+      "audit": "LegacySignupForm [after invalid submit]",
+      "component": "Microsoft.AspNetCore.Components.Forms.ValidationMessage`1",
+      "scenario": "LegacySignupForm",
+      "state": "after invalid submit",
+      "selector": "div.field:nth-child(2) > div.validation-message",
+      "count": 2
+    },
+    {
+      "fingerprint": "db350453ca3ad2c11f0ad0338275677b",
+      "ruleId": "blazor-markup-control-name",
+      "engine": "blazor-a11y",
+      "status": "Violation",
+      "audit": "LegacyFormattingToolbar",
+      "component": "BlazorAccessibilityToolkit.Demo.Components.Defects.UnlabelledIconButton",
+      "scenario": "LegacyFormattingToolbar",
+      "selector": "button.icon-button:nth-child(3)",
+      "count": 1
+    },
+    {
+      "fingerprint": "e2a4131a2971535def87b73901e176a5",
+      "ruleId": "button-name",
+      "engine": "axe-core",
+      "status": "Violation",
+      "audit": "LegacyFormattingToolbar",
+      "component": "BlazorAccessibilityToolkit.Demo.Components.Defects.UnlabelledIconButton",
+      "scenario": "LegacyFormattingToolbar",
+      "selector": "button:nth-child(3)",
+      "count": 2
+    },
+    {
+      "fingerprint": "e54a252725478b833d43fa10cd30ec17",
+      "ruleId": "blazor-validation-message-association",
+      "engine": "blazor-a11y",
+      "status": "PotentialIssue",
+      "audit": "LegacySignupForm [after invalid submit]",
+      "component": "Microsoft.AspNetCore.Components.Forms.ValidationMessage`1",
+      "scenario": "LegacySignupForm",
+      "state": "after invalid submit",
+      "selector": "div.field:nth-child(1) > div.validation-message",
+      "count": 2
+    },
+    {
+      "fingerprint": "ec924f854db5199114c3955c596d2d75",
+      "ruleId": "blazor-duplicate-id-referenced",
+      "engine": "blazor-a11y",
+      "status": "Violation",
+      "audit": "LegacyCartLines",
+      "component": "BlazorAccessibilityToolkit.Demo.Components.Defects.HardcodedQuantityField",
+      "scenario": "LegacyCartLines",
+      "selector": "li:nth-child(2) > div.field.field--compact > input",
+      "count": 2
+    },
+    {
+      "fingerprint": "f228e8561a25117f353e4402cf9c39f1",
+      "ruleId": "blazor-click-handler-semantics",
+      "engine": "blazor-a11y",
+      "status": "PotentialIssue",
+      "audit": "ClickableCard",
+      "component": "BlazorAccessibilityToolkit.Demo.Components.Defects.ClickableCard",
+      "scenario": "ClickableCard",
+      "selector": "div.card",
+      "count": 2
     }
   ]
 }

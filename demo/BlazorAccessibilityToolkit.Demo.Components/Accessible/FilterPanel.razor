@@ -1,0 +1,18 @@
+@* A collapsible filter panel. When collapsed, the content is removed from rendering with the hidden attribute, so its
+   controls also leave the tab order. Its broken counterpart is AnimatedFilterPanel. *@
+<div class="filter-panel">
+    <button type="button" class="disclosure" aria-expanded="@(expanded ? "true" : "false")" aria-controls="@panelId" @onclick="Toggle">Filters</button>
+    <div id="@panelId" class="filter-panel__body" hidden="@(!expanded)">
+        <label class="choice"><input type="checkbox" /> In stock</label>
+        <label class="choice"><input type="checkbox" /> On sale</label>
+        <button type="button" class="secondary">Clear filters</button>
+    </div>
+    <button type="button" class="primary">Show 24 results</button>
+</div>
+
+@code {
+    private readonly string panelId = $"filters-{Guid.NewGuid():N}";
+    private bool expanded;
+
+    private void Toggle() => expanded = !expanded;
+}

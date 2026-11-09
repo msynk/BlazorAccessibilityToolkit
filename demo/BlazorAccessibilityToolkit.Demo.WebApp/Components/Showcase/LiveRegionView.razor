@@ -1,0 +1,47 @@
+@* Live-region changes recorded in the browser. *@
+<section class="artifact">
+    <h5 class="artifact__title">@(Caption ?? "Live-region changes")</h5>
+    @if (Changes.Count == 0)
+    {
+        <p class="artifact__empty">No live-region changes were recorded.</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="steps">
+                <thead>
+                    <tr>
+                        <th scope="col">Change</th>
+                        <th scope="col">Region</th>
+                        <th scope="col">Text</th>
+                        <th scope="col">Region existed before</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var change in Changes)
+                    {
+                        <tr class="@(change.RegionWasPresent ? null : "steps__failed")">
+                            <td>@Kind(change.Kind)</td>
+                            <td>@(change.Role ?? "aria-live") (@change.Politeness)</td>
+                            <td>"@(change.AddedText.Length > 0 ? change.AddedText : change.Text)"@(change.Hidden ? " (hidden)" : null)</td>
+                            <td>@(change.RegionWasPresent ? "yes" : "no: inserted with its text")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<LiveRegionChange> Changes { get; set; } = [];
+
+    [Parameter] public string? Caption { get; set; }
+
+    private static string Kind(LiveRegionChangeKind kind) => kind switch
+    {
+        LiveRegionChangeKind.Inserted => "region inserted",
+        LiveRegionChangeKind.ContentAdded => "text added",
+        _ => "text removed",
+    };
+}

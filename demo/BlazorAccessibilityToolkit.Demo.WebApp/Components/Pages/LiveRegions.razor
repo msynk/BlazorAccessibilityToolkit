@@ -1,0 +1,45 @@
+@page "/live-regions"
+<PageTitle>Live regions · Blazor Accessibility Toolkit</PageTitle>
+
+<div class="page-intro">
+    <p class="eyebrow">Browser tests · Playwright</p>
+    <h1>Live regions</h1>
+    <p class="lead">
+        Status messages such as "Changes saved" or "12 results" must be announced without moving focus. That only works
+        when the message is written into a live region (<code>role="status"</code>, <code>role="alert"</code> or
+        <code>aria-live</code>) that already exists. <code>LiveRegionMonitor</code> records every live-region change in
+        the browser, and <code>AnalyzeAsync</code> reports patterns that commonly keep messages from being announced.
+    </p>
+</div>
+
+<ul class="reasons">
+    <li><strong>Inserted with content:</strong> a region added together with its text is often not announced.</li>
+    <li><strong>Hidden updates:</strong> text changed in a hidden region is never announced.</li>
+    <li><strong>Conflicting politeness:</strong> <code>aria-live</code> values that contradict <code>role="alert"</code> or <code>role="status"</code>.</li>
+</ul>
+
+<section aria-labelledby="toast">
+    <h2 id="toast">A toast versus a status region</h2>
+    <p>
+        Save in both examples: the message appears either way, so a test that only looks for the text passes for both. The
+        difference is whether the region existed before the text was added. In the first example, the toast is inserted
+        with its text; in the second, the text is written into a <code>role="status"</code> paragraph that was rendered
+        from the start.
+    </p>
+    <ExampleCard Title="A toast inserted with its message" Defect="true" Example="LiveRegionExamples.ToastLiveRegion" Sources="@(["ToastSaveButton.razor"])">
+        <Stage><ToastSaveButton /></Stage>
+    </ExampleCard>
+    <ExampleCard Title="A status region that exists before the update" Example="LiveRegionExamples.SaveLiveRegion" Sources="@(["SaveButton.razor"])">
+        <Stage><SaveButton /></Stage>
+    </ExampleCard>
+</section>
+
+<div class="callout">
+    <p>
+        <strong>DOM evidence, not speech.</strong> The monitor does not emulate a screen reader and cannot prove that
+        anything was spoken. Announcements depend on the screen reader, the browser, timing and settings. Keep testing
+        with real assistive technologies, and record it in the <a href="manual-review">manual review</a>.
+    </p>
+</div>
+
+<p class="next">Next: <a href="accessibility-tree">accessibility-tree snapshots</a>.</p>

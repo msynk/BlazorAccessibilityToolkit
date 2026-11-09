@@ -1,0 +1,36 @@
+@* The tour, grouped by the layer of the toolkit each page demonstrates. *@
+@foreach (var group in Groups)
+{
+    <div class="nav-group">
+        <p class="nav-group__title" id="@group.Id">@group.Title</p>
+        <ul aria-labelledby="@group.Id">
+            @foreach (var (href, text) in group.Links)
+            {
+                <li><NavLink href="@href" Match="@(href.Length == 0 ? NavLinkMatch.All : NavLinkMatch.Prefix)">@text</NavLink></li>
+            }
+        </ul>
+    </div>
+}
+
+@code {
+    private sealed record Group(string Id, string Title, (string Href, string Text)[] Links);
+
+    /// <summary>Navigation entries, in tour order. End-to-end tests use this list to visit every page.</summary>
+    public static IReadOnlyList<(string Href, string Text)> Pages => Groups.SelectMany(g => g.Links).ToArray();
+
+    private static readonly Group[] Groups =
+    [
+        new("nav-start", "Start here", [("", "What the toolkit does")]),
+        new("nav-components", "Component tests (bUnit)", [("component-audits", "Component audits"), ("blazor-rules", "Blazor-aware rules")]),
+        new("nav-browser", "Browser tests (Playwright)",
+        [
+            ("keyboard", "Keyboard scenarios"),
+            ("focus-order", "Focus order"),
+            ("aria-patterns", "ARIA patterns"),
+            ("live-regions", "Live regions"),
+            ("accessibility-tree", "Accessibility tree"),
+        ]),
+        new("nav-ci", "CI and process", [("ci-gate", "CI gate and reports"), ("manual-review", "Manual review"), ("rules", "Rule catalog")]),
+        new("nav-app", "Sample app page", [("legacy", "Legacy page (known issues)")]),
+    ];
+}

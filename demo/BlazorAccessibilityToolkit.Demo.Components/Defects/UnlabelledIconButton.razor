@@ -1,8 +1,12 @@
-@* INTENTIONAL DEFECT (used by regression tests): icon-only button without an accessible name. *@
+@* INTENTIONAL DEFECT: an icon-only button without an accessible name. Screen readers announce just "button".
+   Detected by: axe-core button-name (browser engine) or blazor-markup-control-name (browserless).
+   Fixed version: IconButton. *@
 <button type="button" class="icon-button" @onclick="OnClick">
-    <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 16 16"><path d="M2 2h12v12H2z" fill="currentColor" /></svg>
+    <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 16 16"><path d="@IconPath" fill="currentColor" /></svg>
 </button>
 
 @code {
+    [Parameter] public string IconPath { get; set; } = "M2 2h12v12H2z";
+
     [Parameter] public EventCallback OnClick { get; set; }
 }

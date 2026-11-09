@@ -1,0 +1,41 @@
+@page "/accessibility-tree"
+<PageTitle>Accessibility tree · Blazor Accessibility Toolkit</PageTitle>
+
+<div class="page-intro">
+    <p class="eyebrow">Browser tests · Playwright</p>
+    <h1>Accessibility-tree snapshots</h1>
+    <p class="lead">
+        A snapshot records what assistive technologies get from a component: roles, accessible names, states and
+        hierarchy, without generated ids or styling. You review it once and commit it. When a refactoring changes the
+        semantics, the test fails with a readable diff.
+    </p>
+</div>
+
+<ul class="reasons">
+    <li>Stored snapshots live in <code>__a11y_snapshots__</code> next to the test file. A missing snapshot is written and the test fails, so the new file gets reviewed.</li>
+    <li>Templates can be partial and can use regular expressions, for example <code>- status: /\d+ results/</code>.</li>
+    <li>Run with <code>BLAZOR_A11Y_UPDATE_SNAPSHOTS=1</code> to accept intended changes. On CI, snapshots are never written.</li>
+</ul>
+
+<section aria-labelledby="snapshot">
+    <h2 id="snapshot">The same template, two implementations</h2>
+    <p>
+        Both components display the same tabs. The template below was reviewed for the accessible version. The other
+        version loses two names: the tablist has none, and the panel is not labelled by its tab.
+    </p>
+    <ExampleCard Title="Tabs that only work with a mouse" Defect="true" Example="SnapshotExamples.NaiveTabsSnapshot" Sources="@(["NaiveTabs.razor"])">
+        <Stage><NaiveTabs Label="Sections" Items="DemoData.Tabs" /></Stage>
+    </ExampleCard>
+    <ExampleCard Title="Tabs with complete semantics" Example="SnapshotExamples.TabsSnapshot" Sources="@(["Tabs.razor"])">
+        <Stage><Tabs Label="Sections" Items="DemoData.Tabs" /></Stage>
+    </ExampleCard>
+</section>
+
+<div class="callout">
+    <p>
+        Snapshots catch semantic regressions. They do not prove accessibility: a snapshot of an inaccessible component
+        passes too, once it is accepted. Review new snapshots like code.
+    </p>
+</div>
+
+<p class="next">Next: <a href="ci-gate">turn all of this into a CI gate</a>.</p>

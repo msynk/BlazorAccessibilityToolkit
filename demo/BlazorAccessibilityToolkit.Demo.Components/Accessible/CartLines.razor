@@ -1,0 +1,15 @@
+@* A shopping cart that renders QuantityField once per line. Each field has its own ids and a label that names the item.
+   Its broken counterpart is LegacyCartLines. *@
+<ul class="cart-lines" aria-label="Cart">
+    @foreach (var item in Items)
+    {
+        <li>
+            <span class="cart-lines__item">@item</span>
+            <QuantityField Label="@($"Quantity of {item}")" />
+        </li>
+    }
+</ul>
+
+@code {
+    [Parameter] public IReadOnlyList<string> Items { get; set; } = ["Coffee beans", "Paper filters"];
+}

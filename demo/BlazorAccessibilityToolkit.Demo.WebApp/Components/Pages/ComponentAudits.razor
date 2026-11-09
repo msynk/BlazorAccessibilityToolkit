@@ -1,0 +1,101 @@
+@page "/component-audits"
+<PageTitle>Component audits · Blazor Accessibility Toolkit</PageTitle>
+
+<div class="page-intro">
+    <p class="eyebrow">Component tests · bUnit</p>
+    <h1>Component audits</h1>
+    <p class="lead">
+        <code>AccessibilityFixture</code> renders a component with bUnit and audits the markup it produces. Without a
+        browser an audit takes about 2 ms, so you can check every component, with every parameter combination, in every
+        state. Add a browser engine and the same markup is audited by axe-core, with your CSS.
+    </p>
+</div>
+
+<CodeBlock Caption="The shape of every component audit" Code="@Shape" />
+
+<section aria-labelledby="attribution">
+    <h2 id="attribution">Findings name the component</h2>
+    <p>
+        Browser scanners report a CSS selector. In a component-based UI that is not enough: the same markup comes from
+        many places. The toolkit uses bUnit's render tree to say which Razor component rendered the element, from the
+        root of the fixture to the innermost component. Run the first test and look for <strong>Rendered by</strong>.
+    </p>
+    <ExampleCard Title="A toolbar with one legacy button" Defect="true" Example="ComponentAuditExamples.LegacyToolbarAudit"
+                 Sources="@(["LegacyFormattingToolbar.razor", "UnlabelledIconButton.razor"])">
+        <ChildContent>
+            <p>The toolbar reuses the old <code>UnlabelledIconButton</code> for its link button. Tab to the last button: it has no name.</p>
+        </ChildContent>
+        <Stage><LegacyFormattingToolbar /></Stage>
+    </ExampleCard>
+    <ExampleCard Title="The toolbar with labelled buttons" Example="ComponentAuditExamples.ToolbarAudit" Sources="@(["FormattingToolbar.razor", "IconButton.razor"])">
+        <Stage><FormattingToolbar /></Stage>
+    </ExampleCard>
+</section>
+
+<section aria-labelledby="axe-core-heading" id="axe-core">
+    <h2 id="axe-core-heading">Add axe-core for the full rule set</h2>
+    <p>
+        Without a browser, the toolkit runs its Razor rules plus a conservative subset of name, label and ARIA checks. With
+        <code>PlaywrightMarkupAuditEngine</code>, the markup is loaded into a pooled browser page and audited by axe-core
+        4.14 against WCAG 2.2 A and AA, including color contrast when you supply your stylesheets. The findings are still
+        attributed to Razor components.
+    </p>
+    <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr><th scope="col">Check</th><th scope="col">Without a browser</th><th scope="col">With axe-core</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Blazor event handlers without keyboard support</td><td>yes</td><td>yes</td></tr>
+                <tr><td>Validation messages, broken and duplicate ids, radio groups, fieldsets</td><td>yes</td><td>yes</td></tr>
+                <tr><td>Names, roles, ARIA validity and structure</td><td>a fallback subset</td><td>all axe-core WCAG rules</td></tr>
+                <tr><td>Color contrast</td><td>no</td><td>yes, with your CSS</td></tr>
+                <tr><td>Keyboard behavior, focus, scripts</td><td>no</td><td>no: use the <a href="keyboard">interactive host</a></td></tr>
+            </tbody>
+        </table>
+    </div>
+    <ExampleCard Title="The same toolbar, audited by axe-core" Defect="true" Example="ComponentAuditExamples.LegacyToolbarAxeAudit">
+        <ChildContent>
+            <p>The defect is now reported by axe-core's <code>button-name</code> rule, still attributed to <code>UnlabelledIconButton</code>.</p>
+        </ChildContent>
+    </ExampleCard>
+</section>
+
+<section aria-labelledby="states">
+    <h2 id="states">Audit every state</h2>
+    <p>
+        Problems often appear only after an interaction: an expanded panel, an opened dialog, a form after a failed
+        submit. Change the state with bUnit and audit again. Each audit carries the state in its label, in reports and
+        in the baseline.
+    </p>
+    <ExampleCard Title="A disclosure, collapsed and expanded" Example="ComponentAuditExamples.DisclosureStatesAudit" Sources="@(["DisclosureCard.razor"])">
+        <Stage><DisclosureCard Title="Shipping" Details="Ships in 2 days." /></Stage>
+    </ExampleCard>
+</section>
+
+<section aria-labelledby="regressions">
+    <h2 id="regressions">Keep known defects detected</h2>
+    <p>
+        Not every defect is fixed right away. A regression test asserts that a known defect is <em>still reported</em>, so
+        that a change to the test setup cannot silently hide it. When the component is fixed, this test fails and reminds
+        you to update it and the baseline.
+    </p>
+    <ExampleCard Title="A regression test for a known defect" Defect="true" Example="ComponentAuditExamples.KnownDefectRegression">
+        <ChildContent>
+            <p>This test passes because the defect is detected.</p>
+        </ChildContent>
+    </ExampleCard>
+</section>
+
+@code {
+    private const string Shape = """
+        await using var fixture = await AccessibilityFixture.For<SettingsPanel>()
+            .WithParameter(p => p.Title, "Settings")           // parameters, child content, cascading values,
+            .WithServices(s => s.AddSingleton(clock))          // services, authorization, bUnit context ...
+            .WithSettings(settings)                            // optional: a browser engine and your CSS
+            .BuildAsync();
+
+        var audit = await fixture.AuditAsync("initial");
+        audit.ShouldHaveNoViolations();                        // or ShouldHaveFinding("rule-id") for a known defect
+        """;
+}

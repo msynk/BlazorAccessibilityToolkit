@@ -1,0 +1,50 @@
+@* A KeyboardScenario transcript: each step, whether it passed, and where focus was afterwards. *@
+<section class="artifact">
+    <h5 class="artifact__title">Keyboard scenario: @Scenario.Steps.Count(s => s.Passed) of @Scenario.Steps.Count steps passed</h5>
+    <div class="table-wrap">
+        <table class="steps">
+            <thead>
+                <tr>
+                    <th scope="col">Step</th>
+                    <th scope="col">Action or expectation</th>
+                    <th scope="col">Result</th>
+                    <th scope="col">Focus afterwards</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var step in Scenario.Steps)
+                {
+                    <tr class="@(step.Passed ? null : "steps__failed")">
+                        <td>@step.Number</td>
+                        <td>@step.Description</td>
+                        <td>
+                            @if (step.Passed)
+                            {
+                                <span class="badge badge--pass">passed</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge--violation">failed</span>
+                                <span class="steps__error">@step.Error</span>
+                            }
+                        </td>
+                        <td>@(step.FocusAfter?.Element is { } element ? $"{element.Role ?? element.TagName} \"{element.Name}\"" : "nothing (page body)")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Scenario.Steps.Any(s => !s.Passed))
+    {
+        <p class="artifact__note">The scenario stops at the first failing step.</p>
+    }
+
+    @foreach (var audit in Scenario.Audits)
+    {
+        <AuditView Audit="audit" Caption="Audit during the scenario" />
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public KeyboardScenario Scenario { get; set; } = null!;
+}

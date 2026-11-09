@@ -1,0 +1,24 @@
+@* A PatternVerification: every APG requirement that was checked, passed or failed. *@
+<section class="artifact">
+    <h5 class="artifact__title">@Verification.Pattern pattern: @Verification.Checks.Count(c => c.Passed) of @Verification.Checks.Count requirements met</h5>
+    <ul class="checks">
+        @foreach (var check in Verification.Checks)
+        {
+            <li class="check @(check.Passed ? "check--pass" : "check--fail")">
+                <span class="check__icon" aria-hidden="true" data-icon="@(check.Passed ? "✓" : "✗")"></span>
+                <span class="visually-hidden">@(check.Passed ? "Pass:" : "Fail:")</span>
+                <span>
+                    @check.Requirement
+                    @if (check.Detail is { Length: > 0 } detail)
+                    {
+                        <span class="check__detail">@detail</span>
+                    }
+                </span>
+            </li>
+        }
+    </ul>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public PatternVerification Verification { get; set; } = null!;
+}

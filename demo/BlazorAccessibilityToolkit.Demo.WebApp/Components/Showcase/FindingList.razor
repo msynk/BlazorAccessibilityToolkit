@@ -1,0 +1,19 @@
+@if (Findings.Count == 0)
+{
+    <p class="artifact__empty">@Empty</p>
+}
+else
+{
+    <ul class="findings">
+        @foreach (var finding in Findings)
+        {
+            <li><FindingView Finding="finding" /></li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<AccessibilityFinding> Findings { get; set; } = [];
+
+    [Parameter] public string Empty { get; set; } = "No findings.";
+}

@@ -1,0 +1,26 @@
+@* INTENTIONAL DEFECT: tabs that work with a mouse. The tablist has no name, every tab is a separate Tab stop (no roving
+   tabindex), arrow keys, Home and End do nothing, and tabs are not connected to their panels.
+   Detected by: AriaPatterns.VerifyTabsAsync and ARIA snapshot comparison. Fixed version: Tabs. *@
+<div class="tabs">
+    <div role="tablist">
+        @for (var i = 0; i < Items.Count; i++)
+        {
+            var index = i;
+            <button type="button" role="tab" aria-selected="@(index == selectedIndex ? "true" : "false")" @onclick="() => selectedIndex = index">@Items[index].Title</button>
+        }
+    </div>
+    @for (var i = 0; i < Items.Count; i++)
+    {
+        <div role="tabpanel" hidden="@(i != selectedIndex)">
+            @Items[i].Content
+        </div>
+    }
+</div>
+
+@code {
+    private int selectedIndex;
+
+    [Parameter] public string Label { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public IReadOnlyList<Tabs.TabItem> Items { get; set; } = [];
+}

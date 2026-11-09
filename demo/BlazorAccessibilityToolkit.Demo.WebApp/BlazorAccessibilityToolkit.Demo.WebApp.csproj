@@ -1,5 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    The showcase app. Its pages explain each feature of the toolkit next to a live component, and its "Run" buttons
+    execute the toolkit in this process: bUnit audits directly, browser features through an in-process BlazorTestHost
+    and a Playwright browser. In your own solution, the toolkit belongs in test projects; see the demo test projects.
+  -->
   <ItemGroup>
     <ProjectReference Include="..\BlazorAccessibilityToolkit.Demo.Components\BlazorAccessibilityToolkit.Demo.Components.csproj" />
+    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.ComponentTesting\BlazorAccessibilityToolkit.ComponentTesting.csproj" />
+    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Playwright\BlazorAccessibilityToolkit.Playwright.csproj" />
+  </ItemGroup>
+  <ItemGroup Label="Sources shown on the showcase pages">
+    <!-- The example code is displayed exactly as it runs: the pages read it from these resources. -->
+    <EmbeddedResource Include="Lab\Examples\*.cs" LogicalName="snippets/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\BlazorAccessibilityToolkit.Demo.Components\**\*.razor" Exclude="..\BlazorAccessibilityToolkit.Demo.Components\_Imports.razor;..\BlazorAccessibilityToolkit.Demo.Components\obj\**;..\BlazorAccessibilityToolkit.Demo.Components\bin\**" LogicalName="components/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\BlazorAccessibilityToolkit.Demo.Components\wwwroot\components.css" LogicalName="assets/components.css" />
+    <EmbeddedResource Include="..\a11y\manual\modal-dialog.json" LogicalName="assets/modal-dialog.json" />
+    <EmbeddedResource Include="..\a11y-baseline.json" LogicalName="assets/a11y-baseline.json" />
   </ItemGroup>
 </Project>

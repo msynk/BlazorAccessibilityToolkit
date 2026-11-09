@@ -1,0 +1,21 @@
+@* INTENTIONAL DEFECT: the group label is a paragraph styled to look like a heading. Sighted users see the question;
+   screen reader users tabbing to "Express (next day), radio button" never hear "Delivery speed".
+   Detected by: blazor-radio-group-ungrouped. Fixed version: ShippingOptions. *@
+<div class="choice-group">
+    <p class="choice-group__label">Delivery speed</p>
+    @foreach (var option in Options)
+    {
+        <label class="choice">
+            <input type="radio" name="legacy-delivery" value="@option" checked="@(option == selected)" @onchange="() => selected = option" />
+            @option
+        </label>
+    }
+</div>
+
+@code {
+    private string? selected;
+
+    [Parameter] public IReadOnlyList<string> Options { get; set; } = ["Standard (3 to 5 days)", "Express (next day)", "Pick up in store"];
+
+    protected override void OnParametersSet() => selected ??= Options.FirstOrDefault();
+}

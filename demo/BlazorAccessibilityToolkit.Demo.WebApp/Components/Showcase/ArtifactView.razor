@@ -1,0 +1,41 @@
+@* Displays something a live test produced, by type. *@
+@switch (Artifact.Value)
+{
+    case AccessibilityAudit audit:
+        <AuditView Audit="audit" Caption="@Artifact.Caption" />
+        break;
+    case PatternVerification verification:
+        <PatternView Verification="verification" />
+        break;
+    case KeyboardScenario scenario:
+        <ScenarioView Scenario="scenario" />
+        break;
+    case FocusOrderResult order:
+        <FocusOrderView Order="order" />
+        break;
+    case IReadOnlyList<LiveRegionChange> changes:
+        <LiveRegionView Changes="changes" Caption="@Artifact.Caption" />
+        break;
+    case IReadOnlyList<AccessibilityFinding> findings:
+        <section class="artifact">
+            <h5 class="artifact__title">@(Artifact.Caption ?? "Live-region analysis")</h5>
+            <FindingList Findings="findings" Empty="No patterns that commonly prevent announcements were found." />
+        </section>
+        break;
+    case AccessibleElementInfo info:
+        <ElementInfoView Info="info" Caption="@Artifact.Caption" />
+        break;
+    case LabText text:
+        <section class="artifact">
+            <h5 class="artifact__title">@(Artifact.Caption ?? "Output")</h5>
+            <CodeBlock Code="@text.Text" Language="@text.Language" />
+        </section>
+        break;
+    default:
+        <pre class="code__body">@Artifact.Value</pre>
+        break;
+}
+
+@code {
+    [Parameter, EditorRequired] public LabArtifact Artifact { get; set; } = null!;
+}

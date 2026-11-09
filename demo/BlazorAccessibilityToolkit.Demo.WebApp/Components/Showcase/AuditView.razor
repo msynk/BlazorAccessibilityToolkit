@@ -1,0 +1,39 @@
+@* An AccessibilityAudit: what ran, how it ended, and every finding. *@
+<section class="artifact">
+    <h5 class="artifact__title">
+        @(Caption ?? $"Audit of {Audit.Name}")@(Audit.Context.State is { } state ? $" ({state})" : null)
+    </h5>
+    <ul class="facts">
+        <li><span class="facts__label">Status</span> @Audit.Status</li>
+        <li><span class="facts__label">Engines</span> @string.Join(", ", Audit.Engines.Select(e => $"{e.Name} {e.Version}"))</li>
+        <li><span class="facts__label">Rules passed</span> @Audit.PassedRules.Count</li>
+        <li><span class="facts__label">Duration</span> @($"{Audit.DurationMs:0} ms")</li>
+        @if (Audit.Context.Browser is { } browser)
+        {
+            <li><span class="facts__label">Browser</span> @browser @Audit.Context.BrowserVersion</li>
+        }
+    </ul>
+
+    @foreach (var error in Audit.Errors)
+    {
+        <p class="artifact__error">Execution error ([@error.Source]): @error.Message</p>
+    }
+
+    <FindingList Findings="Audit.Findings" Empty="No findings." />
+
+    @if (Audit.Warnings.Count > 0)
+    {
+        <ul class="artifact__warnings">
+            @foreach (var warning in Audit.Warnings)
+            {
+                <li>Warning: @warning</li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public AccessibilityAudit Audit { get; set; } = null!;
+
+    [Parameter] public string? Caption { get; set; }
+}

@@ -15,6 +15,9 @@ public sealed class AppFixture : IAsyncLifetime
 
     public Uri BaseAddress { get; private set; } = null!;
 
+    /// <summary>The application's services, for tests that use its components directly (for example the live test runner).</summary>
+    public IServiceProvider Services => _factory?.Services ?? throw new InvalidOperationException("The app has not started.");
+
     public async ValueTask InitializeAsync()
     {
         // WebApplicationFactory runs the app in the Development environment, which also serves the static web assets

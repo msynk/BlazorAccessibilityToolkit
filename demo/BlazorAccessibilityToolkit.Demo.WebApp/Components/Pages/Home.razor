@@ -1,6 +1,128 @@
 @page "/"
-<PageTitle>Home - Demo App</PageTitle>
-<h1>Home</h1>
-<p>This demo shows accessible Blazor components and the tests that keep them accessible.</p>
-<DisclosureCard Title="What does the toolkit check?" Details="Automated rules, keyboard behavior, focus order, live regions and ARIA snapshots." />
-<SaveButton />
+<PageTitle>Blazor Accessibility Toolkit showcase</PageTitle>
+
+<div class="hero">
+    <p class="eyebrow">Blazor Accessibility Toolkit</p>
+    <h1>Accessibility tests that understand Blazor</h1>
+    <p class="lead">
+        The toolkit audits Razor components and Blazor apps, drives them with a real keyboard, checks focus, live regions
+        and ARIA patterns, and turns the results into CI reports with baselines. It knows about Blazor: it sees
+        <code>@@onclick</code> handlers that browsers cannot see, and names the Razor component behind every finding.
+    </p>
+    <p class="lead">
+        This showcase runs the toolkit live. Every example has a working component, the test that checks it, and a
+        <strong>Run this test</strong> button that executes that test in this server process.
+    </p>
+</div>
+
+<section aria-labelledby="try-it">
+    <h2 id="try-it">Try it: one button, two versions</h2>
+    <p>
+        Both buttons look the same. The first has no accessible name, so a screen reader announces only "button". The
+        test is the same for both: render the component with bUnit, audit it, and assert that there are no violations.
+        It takes a few milliseconds and needs no browser.
+    </p>
+    <div class="example-pair">
+        <ExampleCard Title="Icon button without a name" Defect="true" Example="ComponentAuditExamples.UnlabelledButtonAudit" Sources="@(["UnlabelledIconButton.razor"])">
+            <Stage><UnlabelledIconButton /></Stage>
+        </ExampleCard>
+        <ExampleCard Title="Icon button with a name" Example="ComponentAuditExamples.LabelledButtonAudit" Sources="@(["IconButton.razor"])">
+            <Stage><IconButton Label="Close" /></Stage>
+        </ExampleCard>
+    </div>
+</section>
+
+<section aria-labelledby="layers">
+    <h2 id="layers">Four layers, one model</h2>
+    <p>Most test suites combine all four. Every layer produces the same findings, with WCAG references, component attribution and fingerprints.</p>
+    <ol class="layers">
+        <li class="layer">
+            <h3>1. Component markup</h3>
+            <p class="layer__tool">bUnit, no browser, about 2 ms per audit</p>
+            <p>
+                Render any component in any state and audit the markup. Blazor-aware rules catch clickable
+                <code>&lt;div&gt;</code> elements, unlinked <code>ValidationMessage</code> output and duplicate ids from reused components.
+            </p>
+            <p><a href="component-audits">Component audits</a> · <a href="blazor-rules">Blazor-aware rules</a></p>
+        </li>
+        <li class="layer">
+            <h3>2. axe-core in a browser</h3>
+            <p class="layer__tool">Playwright and axe-core 4.14, WCAG 2.2 A and AA</p>
+            <p>
+                Audit the same bUnit markup with your CSS, or audit whole pages of the running app. Findings name the
+                Razor component that rendered the element.
+            </p>
+            <p><a href="component-audits#axe-core">axe-core for components</a> · <a href="legacy">a page audit</a></p>
+        </li>
+        <li class="layer">
+            <h3>3. Real keyboard behavior</h3>
+            <p class="layer__tool">BlazorTestHost: one component, Interactive Server, a real browser</p>
+            <p>
+                Press real keys and check where focus goes, verify widgets against the ARIA Authoring Practices, watch
+                live regions and compare the accessibility tree with a reviewed snapshot.
+            </p>
+            <p><a href="keyboard">Keyboard</a> · <a href="focus-order">Focus order</a> · <a href="aria-patterns">ARIA patterns</a> · <a href="live-regions">Live regions</a> · <a href="accessibility-tree">Accessibility tree</a></p>
+        </li>
+        <li class="layer">
+            <h3>4. The CI gate</h3>
+            <p class="layer__tool">blazor-a11y CLI: JSON, JUnit, SARIF and HTML</p>
+            <p>
+                Every audit becomes a result file. The CLI aggregates them, compares them with a committed baseline so
+                that only new problems fail the build, and tracks the manual checks that automation cannot decide.
+            </p>
+            <p><a href="ci-gate">CI gate and reports</a> · <a href="manual-review">Manual review</a></p>
+        </li>
+    </ol>
+</section>
+
+<section aria-labelledby="why">
+    <h2 id="why">Why a Blazor-specific toolkit?</h2>
+    <ul class="reasons">
+        <li><strong>Browsers cannot see Blazor event handlers.</strong> A <code>&lt;div @@onclick&gt;</code> looks like static text to axe-core. The toolkit reads bUnit's render tree, where the handler is visible.</li>
+        <li><strong>Findings name components, not just selectors.</strong> "Rendered by: LegacyFormattingToolbar &gt; UnlabelledIconButton" tells you which <code>.razor</code> file to open.</li>
+        <li><strong>The templates have pitfalls.</strong> <code>ValidationMessage</code> is not linked to its input, and a hard-coded <code>id</code> breaks as soon as a component is rendered twice.</li>
+        <li><strong>Interactive components can be tested in isolation.</strong> The host renders one component with Interactive Server and in-process parameters, then presses real keys.</li>
+        <li><strong>Nothing passes silently.</strong> An audit that cannot run is an error, heuristics are reported as potential issues, and untested manual checks never count as passes.</li>
+    </ul>
+</section>
+
+<section aria-labelledby="organized">
+    <h2 id="organized">How the demo is organized</h2>
+    <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr><th scope="col">Folder</th><th scope="col">What it is</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>demo/BlazorAccessibilityToolkit.Demo.Components</code></td><td>The components under test. <code>Accessible/</code> holds correct patterns, <code>Defects/</code> holds realistic mistakes, each paired with its fix.</td></tr>
+                <tr><td><code>demo/BlazorAccessibilityToolkit.Demo.WebApp</code></td><td>This showcase. Its live tests are in <code>Lab/Examples</code>, and the pages display that code as it runs.</td></tr>
+                <tr><td><code>demo/BlazorAccessibilityToolkit.Demo.ComponentTests</code></td><td>The same checks as a real xUnit test suite: bUnit audits, the interactive host, patterns and snapshots.</td></tr>
+                <tr><td><code>demo/BlazorAccessibilityToolkit.Demo.EndToEndTests</code></td><td>This app on Kestrel through <code>WebApplicationFactory</code>: page audits, navigation and focus.</td></tr>
+                <tr><td><code>demo/a11y-baseline.json</code>, <code>demo/a11y/manual</code></td><td>The committed baseline of known issues and a manual-review checklist, used by the CI gate.</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Run the test suites and the gate from the repository root:</p>
+    <CodeBlock Language="shell" Code="@RunCommands" />
+</section>
+
+<div class="callout">
+    <p>
+        <strong>What automation cannot do.</strong> Passing every check here does not make a page conform to WCAG.
+        Whether focus order makes sense, whether link text is meaningful, how a page reflows, and what a screen reader
+        actually says need people. The toolkit keeps those checks visible: see <a href="manual-review">Manual review</a>.
+    </p>
+</div>
+
+@code {
+    private const string RunCommands = """
+        dotnet build
+        pwsh demo/BlazorAccessibilityToolkit.Demo.ComponentTests/bin/Debug/net10.0/playwright.ps1 install chromium
+
+        # Every audit is written to this directory, and the CLI turns the results into reports and a pass/fail gate.
+        export BLAZOR_A11Y_RESULTS_DIR=$PWD/a11y-results
+        dotnet test demo/BlazorAccessibilityToolkit.Demo.ComponentTests
+        dotnet test demo/BlazorAccessibilityToolkit.Demo.EndToEndTests
+        dotnet run --project src/BlazorAccessibilityToolkit.Cli -- report --input a11y-results --baseline demo/a11y-baseline.json --output a11y-report
+        """;
+}

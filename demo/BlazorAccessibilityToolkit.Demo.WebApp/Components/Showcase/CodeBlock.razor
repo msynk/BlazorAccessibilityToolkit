@@ -1,0 +1,19 @@
+@* A code listing with light syntax highlighting. Long lines wrap, so the block never needs horizontal scrolling. *@
+<figure class="code @Class">
+    @if (Caption is not null)
+    {
+        <figcaption class="code__caption">@Caption</figcaption>
+    }
+    <pre class="code__body"><code>@((MarkupString)CodeHighlighter.ToHtml(Code, Language))</code></pre>
+</figure>
+
+@code {
+    [Parameter, EditorRequired] public string Code { get; set; } = string.Empty;
+
+    /// <summary>csharp, razor, yaml, shell or text.</summary>
+    [Parameter] public string Language { get; set; } = "csharp";
+
+    [Parameter] public string? Caption { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+}

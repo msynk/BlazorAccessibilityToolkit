@@ -1,0 +1,66 @@
+@* The outcome of a live run, the failure output a developer would see, and what the test produced. *@
+<div class="result @CssClass">
+    <p class="result__verdict">
+        <span class="result__icon" aria-hidden="true" data-icon="@Icon"></span>
+        <strong>@Headline</strong>
+        <span>@Detail</span>
+    </p>
+
+    @if (Result.Outcome == LabOutcome.Unavailable)
+    {
+        <p>Install the browser once, then run the test again:</p>
+        <CodeBlock Code="pwsh demo/BlazorAccessibilityToolkit.Demo.WebApp/bin/Debug/net10.0/playwright.ps1 install chromium" Language="shell" />
+    }
+
+    @if (Result.Message is { Length: > 0 } message)
+    {
+        <CodeBlock Code="@message" Language="text" Caption="@(Result.Outcome == LabOutcome.Failed ? "Test output" : "Details")" Class="code--terminal" />
+    }
+
+    @foreach (var artifact in Result.Artifacts)
+    {
+        <ArtifactView Artifact="artifact" />
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public LabResult Result { get; set; } = null!;
+
+    [Parameter, EditorRequired] public LabExample Example { get; set; } = null!;
+
+    private bool Expected => Result.AsExpected(Example);
+
+    private string CssClass => Result.Outcome switch
+    {
+        LabOutcome.Unavailable => "result--info",
+        LabOutcome.Error => "result--bad",
+        _ => Expected ? "result--good" : "result--bad",
+    };
+
+    private string Icon => Result.Outcome switch
+    {
+        LabOutcome.Unavailable => "i",
+        LabOutcome.Error => "!",
+        _ => Expected ? "✓" : "✗",
+    };
+
+    private string Headline => (Result.Outcome, Example.ExpectFailure) switch
+    {
+        (LabOutcome.Failed, true) => "Defect detected.",
+        (LabOutcome.Passed, false) => "Test passed.",
+        (LabOutcome.Passed, true) => "Defect not detected.",
+        (LabOutcome.Failed, false) => "Unexpected failure.",
+        (LabOutcome.Unavailable, _) => "This test needs a browser.",
+        _ => "The test could not run.",
+    };
+
+    private string Detail => (Result.Outcome, Example.ExpectFailure) switch
+    {
+        (LabOutcome.Failed, true) => "The test fails, as it should. Below is the output a developer sees, and what the toolkit found.",
+        (LabOutcome.Passed, false) => "Every assertion in the test held.",
+        (LabOutcome.Passed, true) => "This is unexpected: the component has a known defect.",
+        (LabOutcome.Failed, false) => "This component is expected to pass.",
+        (LabOutcome.Unavailable, _) => "Browser features use Playwright, and the toolkit never downloads browsers on its own.",
+        _ => "An audit that cannot run is reported as an error, never as a pass.",
+    };
+}

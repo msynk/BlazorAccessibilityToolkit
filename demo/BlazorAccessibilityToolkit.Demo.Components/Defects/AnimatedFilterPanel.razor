@@ -1,0 +1,20 @@
+@* INTENTIONAL DEFECT: the panel collapses with a CSS animation (opacity 0, max-height 0) instead of hidden. It looks
+   collapsed, but its checkboxes and button stay in the tab order: keyboard users tab into controls they cannot see.
+   Detected by: CaptureFocusOrderAsync (blazor-focus-hidden-target) and an authored ShouldMatch expectation.
+   Fixed version: FilterPanel. *@
+<div class="filter-panel">
+    <button type="button" class="disclosure" aria-expanded="@(expanded ? "true" : "false")" aria-controls="@panelId" @onclick="Toggle">Filters</button>
+    <div id="@panelId" class="filter-panel__body filter-panel__body--animated @(expanded ? null : "is-collapsed")">
+        <label class="choice"><input type="checkbox" /> In stock</label>
+        <label class="choice"><input type="checkbox" /> On sale</label>
+        <button type="button" class="secondary">Clear filters</button>
+    </div>
+    <button type="button" class="primary">Show 24 results</button>
+</div>
+
+@code {
+    private readonly string panelId = $"animated-filters-{Guid.NewGuid():N}";
+    private bool expanded;
+
+    private void Toggle() => expanded = !expanded;
+}

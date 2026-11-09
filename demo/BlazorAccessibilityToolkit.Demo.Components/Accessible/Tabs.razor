@@ -1,6 +1,6 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
-@* WAI-ARIA tabs with automatic activation, roving tabindex, arrow keys, Home and End. *@
+@* WAI-ARIA tabs with automatic activation, roving tabindex, arrow keys, Home and End. Fixed version of NaiveTabs. *@
 <div class="tabs">
     <div role="tablist" aria-label="@Label" @ref="tablist">
         @for (var i = 0; i < Items.Count; i++)
@@ -79,7 +79,7 @@
     {
         if (firstRender)
         {
-            module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorAccessibilityToolkit.Demo.Components/Tabs.razor.js");
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorAccessibilityToolkit.Demo.Components/Accessible/Tabs.razor.js");
             await module.InvokeVoidAsync("preventScrollKeys", tablist);
         }
 

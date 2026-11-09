@@ -1,0 +1,12 @@
+@* INTENTIONAL DEFECT: the toolbar still uses the old UnlabelledIconButton for its last button. A browser scanner reports
+   "button has no accessible name" at a CSS selector; the toolkit also reports which Razor component rendered it:
+   LegacyFormattingToolbar > UnlabelledIconButton. Fixed version: FormattingToolbar. *@
+<div class="toolbar" role="group" aria-label="@Label">
+    <IconButton Label="Bold" IconPath="@FormattingToolbar.Icons.Bold" />
+    <IconButton Label="Italic" IconPath="@FormattingToolbar.Icons.Italic" />
+    <UnlabelledIconButton IconPath="@FormattingToolbar.Icons.Link" />
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Formatting";
+}

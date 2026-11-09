@@ -1,6 +1,7 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
-@* Modal dialog: moves focus into the dialog, keeps it there, closes with Escape and returns focus to the trigger. *@
+@* Modal dialog: moves focus into the dialog, keeps it there, closes with Escape and returns focus to the trigger.
+   Fixed version of FocuslessDialog. *@
 <button type="button" class="secondary" @ref="trigger" aria-haspopup="dialog" aria-expanded="@(open ? "true" : "false")" @onclick="Open">@TriggerText</button>
 
 @if (open)
@@ -87,7 +88,7 @@
         if (activate)
         {
             activate = false;
-            module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorAccessibilityToolkit.Demo.Components/ModalDialog.razor.js");
+            module ??= await JS.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorAccessibilityToolkit.Demo.Components/Accessible/ModalDialog.razor.js");
             await module.InvokeVoidAsync("activate", dialog);
         }
 

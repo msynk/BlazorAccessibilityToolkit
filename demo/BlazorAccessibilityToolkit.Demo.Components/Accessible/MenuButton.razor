@@ -1,0 +1,151 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@* WAI-ARIA menu button: Enter, Space or ArrowDown opens the menu and focuses the first item, ArrowUp opens it on the
+   last item, arrow keys move between items (wrapping), Home and End jump, Escape closes it and returns focus. *@
+<div class="menu-button" @ref="root">
+    <button type="button" id="@buttonId" class="secondary" aria-haspopup="menu" aria-expanded="@(open ? "true" : "false")"
+            aria-controls="@(open ? menuId : null)" @ref="button" @onclick="Toggle" @onkeydown="OnButtonKeyDown">@Label</button>
+    @if (open)
+    {
+        <div role="menu" id="@menuId" aria-labelledby="@buttonId" class="menu" @onkeydown="OnMenuKeyDown">
+            @for (var i = 0; i < Items.Count; i++)
+            {
+                var index = i;
+                <button type="button" role="menuitem" tabindex="-1" @ref="items[index]" @onclick="() => Choose(index)">@Items[index]</button>
+            }
+        </div>
+    }
+    <p role="status" class="status">@status</p>
+</div>
+
+@code {
+    private readonly string buttonId = $"menu-button-{Guid.NewGuid():N}";
+    private readonly string menuId = $"menu-{Guid.NewGuid():N}";
+    private ElementReference root;
+    private ElementReference button;
+    private ElementReference[] items = [];
+    private IJSObjectReference? module;
+    private bool open;
+    private int activeIndex;
+    private int? focusItem;
+    private bool focusButton;
+    private string status = string.Empty;
+
+    [Parameter] public string Label { get; set; } = "Actions";
+
+    [Parameter] public IReadOnlyList<string> Items { get; set; } = ["Edit", "Duplicate", "Archive"];
+
+    protected override void OnParametersSet()
+    {
+        if (items.Length != Items.Count)
+        {
+            items = new ElementReference[Items.Count];
+        }
+    }
+
+    private void Toggle()
+    {
+        if (open)
+        {
+            Close(restoreFocus: true);
+        }
+        else
+        {
+            Open(0);
+        }
+    }
+
+    private void Open(int index)
+    {
+        if (Items.Count == 0)
+        {
+            return;
+        }
+
+        open = true;
+        Focus(index);
+    }
+
+    private void Close(bool restoreFocus)
+    {
+        open = false;
+        focusItem = null;
+        focusButton = restoreFocus;
+    }
+
+    private void Focus(int index)
+    {
+        activeIndex = (index + Items.Count) % Items.Count;
+        focusItem = activeIndex;
+    }
+
+    private void Choose(int index)
+    {
+        status = $"{Items[index]} chosen.";
+        Close(restoreFocus: true);
+    }
+
+    private void OnButtonKeyDown(KeyboardEventArgs e)
+    {
+        // Enter and Space activate the button natively (Toggle); the arrows open the menu as well.
+        if (e.Key == "ArrowDown")
+        {
+            Open(0);
+        }
+        else if (e.Key == "ArrowUp")
+        {
+            Open(Items.Count - 1);
+        }
+    }
+
+    private void OnMenuKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown": Focus(activeIndex + 1); break;
+            case "ArrowUp": Focus(activeIndex - 1); break;
+            case "Home": Focus(0); break;
+            case "End": Focus(Items.Count - 1); break;
+            case "Escape": Close(restoreFocus: true); break;
+            case "Tab": Close(restoreFocus: false); break;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/BlazorAccessibilityToolkit.Demo.Components/Accessible/MenuButton.razor.js");
+            await module.InvokeVoidAsync("preventScrollKeys", root);
+        }
+
+        if (focusItem is { } index && open)
+        {
+            focusItem = null;
+            await items[index].FocusAsync();
+        }
+
+        if (focusButton)
+        {
+            focusButton = false;
+            await button.FocusAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (module is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone, and the page with it: nothing to clean up.
+        }
+    }
+}

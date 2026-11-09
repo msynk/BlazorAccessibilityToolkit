@@ -1,0 +1,55 @@
+@page "/rules"
+@using BlazorAccessibilityToolkit.Rules
+<PageTitle>Rule catalog · Blazor Accessibility Toolkit</PageTitle>
+
+<div class="page-intro">
+    <p class="eyebrow">CI and process</p>
+    <h1>Rule catalog</h1>
+    <p class="lead">
+        Audits combine axe-core 4.14 (WCAG 2.0, 2.1 and 2.2 at levels A and AA by default, best practices on request) with
+        the toolkit's own rules below. Rules marked <em>markup</em> run on bUnit markup; <em>browser</em> rules run in the
+        live DOM. Every finding carries the WCAG criteria, a remediation, a help link and a fingerprint.
+    </p>
+</div>
+
+<div class="table-wrap">
+    <table class="data">
+        <thead>
+            <tr><th scope="col">Statuses</th><th scope="col">Fails ShouldHaveNoViolations()</th><th scope="col">Fails the CI gate</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><span class="badge badge--violation">Violation</span> axe-core violations and confident toolkit rules</td><td>yes</td><td>yes</td></tr>
+            <tr><td><span class="badge badge--potential">Potential issue</span> heuristics that need context</td><td>with <code>AccessibilityExpectation.Strict</code></td><td>with <code>--fail-on-potential</code></td></tr>
+            <tr><td><span class="badge badge--inconclusive">Needs review</span> axe-core "incomplete" results</td><td>with <code>Strict</code> or <code>ShouldBeConclusive()</code></td><td>with <code>--fail-on-inconclusive</code></td></tr>
+            <tr><td><span class="badge badge--manual">Manual review</span> checklist items</td><td>no</td><td>with <code>--fail-on-manual-review</code></td></tr>
+        </tbody>
+    </table>
+</div>
+
+<h2>Toolkit rules (engine blazor-a11y)</h2>
+<div class="table-wrap">
+    <table class="data rules">
+        <thead>
+            <tr>
+                <th scope="col">Rule</th>
+                <th scope="col">What it checks</th>
+                <th scope="col">Status</th>
+                <th scope="col">WCAG</th>
+                <th scope="col">Runs on</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var rule in ToolkitRules.All)
+            {
+                <tr>
+                    <td><code>@rule.Id</code>@(rule.IsBestPractice ? " (best practice)" : null)</td>
+                    <td>@rule.Description</td>
+                    <td>@(rule.Status == FindingStatus.Violation ? "Violation" : "Potential issue")</td>
+                    <td>@(rule.Wcag.Count == 0 ? "—" : string.Join(", ", rule.Wcag))</td>
+                    <td>@string.Join(", ", rule.Environments)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<p>The <code>blazor-markup-*</code> rules are a conservative browserless fallback; they run only when no browser engine is configured, because axe-core covers them.</p>

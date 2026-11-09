@@ -1,0 +1,23 @@
+@* What assistive technologies get for an element: role, name, description and states. *@
+<section class="artifact">
+    <h5 class="artifact__title">@(Caption ?? "Accessibility information")</h5>
+    <dl class="facts-list">
+        <dt>Role</dt>
+        <dd>@(Info.Role ?? "none")</dd>
+        <dt>Accessible name</dt>
+        <dd>"@Info.Name"</dd>
+        <dt>Description</dt>
+        <dd>@(string.IsNullOrEmpty(Info.Description) ? "(none)" : $"\"{Info.Description}\"")</dd>
+        <dt>States</dt>
+        <dd>@(States.Length == 0 ? "(none)" : string.Join(", ", States))</dd>
+    </dl>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public AccessibleElementInfo Info { get; set; } = null!;
+
+    [Parameter] public string? Caption { get; set; }
+
+    // Skips "$id": Playwright's object-identity marker currently leaks into the toolkit's States dictionary.
+    private string[] States => Info.States.Where(s => !s.Key.StartsWith('$')).Select(s => $"{s.Key}={s.Value}").ToArray();
+}

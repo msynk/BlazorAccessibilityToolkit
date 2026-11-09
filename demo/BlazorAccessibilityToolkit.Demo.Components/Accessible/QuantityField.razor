@@ -1,0 +1,14 @@
+@* A reusable field. Its ids are generated per instance, so labels and hints stay connected to the right input no matter
+   how many times the component is rendered. Its broken counterpart is HardcodedQuantityField. *@
+<div class="field field--compact">
+    <label for="@inputId">@Label</label>
+    <input id="@inputId" type="number" min="0" max="10" value="1" aria-describedby="@hintId" />
+    <p id="@hintId" class="hint">Up to 10 per order.</p>
+</div>
+
+@code {
+    private readonly string inputId = $"quantity-{Guid.NewGuid():N}";
+    private readonly string hintId = $"quantity-hint-{Guid.NewGuid():N}";
+
+    [Parameter] public string Label { get; set; } = "Quantity";
+}

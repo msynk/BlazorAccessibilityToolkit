@@ -1,4 +1,5 @@
-@* Asynchronous operation with a status message in a live region that exists before the update. *@
+@* Asynchronous operation with a status message in a live region that exists before the update. Fixed version of
+   ToastSaveButton. *@
 <div class="save">
     <button type="button" class="primary" aria-disabled="@(saving ? "true" : "false")" @onclick="SaveAsync">@Text</button>
     <p role="status" class="status">@status</p>

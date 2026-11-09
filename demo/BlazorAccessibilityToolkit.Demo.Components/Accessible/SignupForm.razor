@@ -1,5 +1,5 @@
 @* Accessible form validation: required fields are indicated, errors are visible and associated with their fields, focus
-   moves to the first invalid field after a failed submit, and success is announced. *@
+   moves to the first invalid field after a failed submit, and success is announced. Fixed version of LegacySignupForm. *@
 <EditForm EditContext="editContext" OnValidSubmit="SubmitAsync" OnInvalidSubmit="OnInvalidSubmit" FormName="signup" novalidate>
     <DataAnnotationsValidator />
     <fieldset>

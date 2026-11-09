@@ -1,0 +1,60 @@
+@page "/keyboard"
+<PageTitle>Keyboard scenarios · Blazor Accessibility Toolkit</PageTitle>
+
+<div class="page-intro">
+    <p class="eyebrow">Browser tests · Playwright</p>
+    <h1>Keyboard scenarios</h1>
+    <p class="lead">
+        Markup can be perfect while the behavior is broken: focus that never moves into a dialog, Escape that does
+        nothing, errors that appear where nobody is looking. <code>BlazorTestHost</code> renders a single component with
+        Interactive Server in a real browser, with in-process parameters. A <code>KeyboardScenario</code> then presses real
+        keys and checks where focus goes.
+    </p>
+</div>
+
+<ul class="reasons">
+    <li>Expectations poll until they hold or time out, so Blazor Server round trips need no fixed delays.</li>
+    <li><code>Audit("state")</code> runs a full axe-core audit in the middle of the interaction.</li>
+    <li>When a step fails, the error contains a transcript of every step and where focus was after it.</li>
+</ul>
+
+<section aria-labelledby="dialogs">
+    <h2 id="dialogs">A modal dialog</h2>
+    <p>
+        Both dialogs have the same, valid markup: <code>role="dialog"</code>, <code>aria-modal="true"</code> and a name.
+        A markup audit passes both. Only keyboard behavior tells them apart. Open each one with the keyboard and press
+        Tab and Escape.
+    </p>
+    <ExampleCard Title="A dialog without focus management" Defect="true" Example="KeyboardExamples.FocuslessDialogScenario" Sources="@(["FocuslessDialog.razor"])">
+        <Stage>
+            <FocuslessDialog TriggerText="Delete account" Title="Delete account?" ConfirmText="Delete">
+                <p>This removes your profile and cannot be undone.</p>
+            </FocuslessDialog>
+        </Stage>
+    </ExampleCard>
+    <ExampleCard Title="A dialog that manages focus" Example="KeyboardExamples.ModalDialogScenario" Sources="@(["ModalDialog.razor"])">
+        <ChildContent><p>Focus moves to Cancel, Tab stays inside, Escape closes it, and focus returns to the button that opened it.</p></ChildContent>
+        <Stage>
+            <ModalDialog TriggerText="Delete account" Title="Delete account?" ConfirmText="Delete">
+                <p>This removes your profile and cannot be undone.</p>
+            </ModalDialog>
+        </Stage>
+    </ExampleCard>
+</section>
+
+<section aria-labelledby="forms">
+    <h2 id="forms">Form errors with the keyboard</h2>
+    <p>
+        After a failed submit, keyboard and screen reader users need focus on the first invalid field, and that field
+        must describe the error. The test also reads the field's accessibility information: role, name, description and
+        states, computed with axe-core's implementation of the accessible name algorithm.
+    </p>
+    <ExampleCard Title="The template form" Defect="true" Example="KeyboardExamples.LegacySignupScenario" Sources="@(["LegacySignupForm.razor"])">
+        <Stage><LegacySignupForm /></Stage>
+    </ExampleCard>
+    <ExampleCard Title="A form that moves focus to the first error" Example="KeyboardExamples.SignupScenario" Sources="@(["SignupForm.razor"])">
+        <Stage><SignupForm /></Stage>
+    </ExampleCard>
+</section>
+
+<p class="next">Next: <a href="focus-order">capture the whole focus order</a>.</p>

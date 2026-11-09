@@ -1,0 +1,89 @@
+@implements IDisposable
+@inject LabRunner Runner
+@* The test of an example: its code, a button that runs it in this process, and the result. *@
+<div class="lab">
+    <div class="lab__head">
+        <h4 class="lab__title">The test</h4>
+        <p class="lab__runtime">
+            @if (Example.NeedsBrowser)
+            {
+                <span class="chip chip--browser">Real browser</span> <span>Playwright, through the in-process component host</span>
+            }
+            else
+            {
+                <span class="chip chip--bunit">No browser</span> <span>bUnit, in this server process</span>
+            }
+        </p>
+    </div>
+
+    <CodeBlock Code="@Example.Snippet" />
+
+    <div class="lab__actions">
+        @* aria-disabled instead of disabled: a disabled button would drop keyboard focus while the test runs. *@
+        <button type="button" class="primary" aria-disabled="@(Busy ? "true" : "false")" @onclick="RunAsync">
+            @(result is null ? "Run this test" : "Run it again")
+        </button>
+        <p role="status" class="lab__status">@status</p>
+    </div>
+
+    @if (result is not null)
+    {
+        <ResultView Result="result" Example="Example" />
+    }
+</div>
+
+@code {
+    private readonly CancellationTokenSource disposed = new();
+    private LabResult? result;
+    private string status = string.Empty;
+    private bool running;
+
+    [Parameter, EditorRequired] public LabExample Example { get; set; } = null!;
+
+    // Prerendered buttons do nothing until the circuit connects.
+    private bool Busy => running || !RendererInfo.IsInteractive;
+
+    private async Task RunAsync()
+    {
+        if (Busy)
+        {
+            return;
+        }
+
+        running = true;
+        status = Example.NeedsBrowser ? "Running the test in a browser…" : "Running the test…";
+        try
+        {
+            result = await Runner.RunAsync(Example, disposed.Token);
+            status = Describe(result);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        finally
+        {
+            running = false;
+        }
+    }
+
+    private string Describe(LabResult r)
+    {
+        var time = r.Duration.TotalSeconds < 1 ? $"{r.Duration.TotalMilliseconds:0} ms" : $"{r.Duration.TotalSeconds:0.0} s";
+        return (r.Outcome, Example.ExpectFailure) switch
+        {
+            (LabOutcome.Failed, true) => $"Test failed after {time}: the toolkit caught the defect.",
+            (LabOutcome.Passed, false) => $"Test passed in {time}.",
+            (LabOutcome.Passed, true) => $"Test passed in {time}, but the defect was not detected.",
+            (LabOutcome.Failed, false) => $"Test failed unexpectedly after {time}.",
+            (LabOutcome.Unavailable, _) => "The test could not run: no browser is installed.",
+            _ => "The test could not run.",
+        };
+    }
+
+    public void Dispose()
+    {
+        disposed.Cancel();
+        disposed.Dispose();
+    }
+}

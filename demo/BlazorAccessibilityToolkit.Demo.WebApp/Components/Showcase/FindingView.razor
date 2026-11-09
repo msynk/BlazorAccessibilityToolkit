@@ -1,0 +1,86 @@
+@* One finding, with everything the toolkit attaches to it. *@
+<div class="finding finding--@StatusClass">
+    <p class="finding__head">
+        <span class="badge badge--@StatusClass">@StatusText</span>
+        @if (Finding.Impact is { } impact)
+        {
+            <span class="badge badge--impact">@impact.ToString().ToLowerInvariant()</span>
+        }
+        @if (Finding.IsBestPractice)
+        {
+            <span class="badge badge--impact">best practice</span>
+        }
+        <code class="finding__rule">@Finding.RuleId</code>
+        <span class="finding__engine">@Finding.Engine</span>
+    </p>
+    <p class="finding__help">@(Finding.Help ?? Finding.Description)</p>
+    <dl class="finding__facts">
+        @if (Finding.Component is { ComponentPath.Count: > 0 } component)
+        {
+            <dt>Rendered by</dt>
+            <dd class="finding__component">@string.Join(" > ", component.ComponentPath.Select(Short))</dd>
+        }
+        @if (Finding.Target.Selector is { } selector)
+        {
+            <dt>Element</dt>
+            <dd><code>@selector</code>@RoleAndName</dd>
+        }
+        @if (Finding.Target.Html is { } html)
+        {
+            <dt>HTML</dt>
+            <dd><code class="finding__html">@html</code></dd>
+        }
+        @if (Finding.Wcag.Count > 0)
+        {
+            <dt>WCAG</dt>
+            <dd>
+                @foreach (var criterion in Finding.Wcag)
+                {
+                    <a class="wcag" href="@criterion.Url">@criterion.Id @criterion.Title (@criterion.Level)</a>
+                }
+            </dd>
+        }
+        @if (Finding.Remediation is { } remediation)
+        {
+            <dt>How to fix</dt>
+            <dd>@remediation</dd>
+        }
+        @if (Finding.Fingerprint is { } fingerprint)
+        {
+            <dt>Fingerprint</dt>
+            <dd><code>@fingerprint</code></dd>
+        }
+    </dl>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public AccessibilityFinding Finding { get; set; } = null!;
+
+    private string StatusClass => Finding.Status switch
+    {
+        FindingStatus.Violation => "violation",
+        FindingStatus.PotentialIssue => "potential",
+        FindingStatus.Inconclusive => "inconclusive",
+        _ => "manual",
+    };
+
+    private string StatusText => Finding.Status switch
+    {
+        FindingStatus.Violation => "Violation",
+        FindingStatus.PotentialIssue => "Potential issue",
+        FindingStatus.Inconclusive => "Needs review",
+        _ => "Manual review",
+    };
+
+    private string? RoleAndName =>
+        Finding.Target.Role is null && Finding.Target.AccessibleName is null
+            ? null
+            : $" (role: {Finding.Target.Role ?? "none"}, name: \"{Finding.Target.AccessibleName}\")";
+
+    private static string Short(string typeName)
+    {
+        var generic = typeName.IndexOf('`');
+        var name = generic < 0 ? typeName : typeName[..generic];
+        return name[(name.LastIndexOf('.') + 1)..];
+    }
+}

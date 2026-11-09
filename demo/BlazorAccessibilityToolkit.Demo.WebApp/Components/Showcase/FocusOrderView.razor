@@ -1,0 +1,36 @@
+@* A captured focus order: the stops in Tab order, how the sequence ended, and the heuristics' findings. *@
+<section class="artifact">
+    <h5 class="artifact__title">Focus order: @Order.Stops.Count stops</h5>
+    <ol class="stops">
+        @foreach (var stop in Order.Stops)
+        {
+            <li>
+                <span class="stops__element">@(stop.Element.Role ?? stop.Element.TagName) "@stop.Element.Name"</span>
+                @if (!stop.Element.Visible)
+                {
+                    <span class="badge badge--violation">not visible</span>
+                }
+                @if (stop.ModalContainer is not null)
+                {
+                    <span class="badge badge--impact">inside a modal dialog</span>
+                }
+            </li>
+        }
+    </ol>
+    <p class="artifact__note">@Termination</p>
+    <FindingList Findings="Order.Findings" Empty="No keyboard traps, stuck focus or hidden focus targets were detected." />
+</section>
+
+@code {
+    [Parameter, EditorRequired] public FocusOrderResult Order { get; set; } = null!;
+
+    private string Termination => Order.Termination switch
+    {
+        FocusOrderTermination.ReachedEnd => "After the last stop, Tab moved focus out of the page.",
+        FocusOrderTermination.Wrapped => "After the last stop, Tab wrapped back to the first stop.",
+        FocusOrderTermination.Cycle => "Tab kept cycling among some of the stops.",
+        FocusOrderTermination.Stuck => "Tab did not move focus any more.",
+        FocusOrderTermination.MaxStopsReached => "The capture stopped at its maximum number of stops.",
+        _ => "Nothing on the page could receive focus.",
+    };
+}

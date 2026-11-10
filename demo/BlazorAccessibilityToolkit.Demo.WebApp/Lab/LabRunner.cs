@@ -1,12 +1,14 @@
 using System.Diagnostics;
 using BlazorAccessibilityToolkit.Playwright;
 using BlazorAccessibilityToolkit.Playwright.Hosting;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Playwright;
 
 namespace BlazorAccessibilityToolkit.Demo.WebApp.Lab;
 
 /// <summary>Runs live examples and turns their exceptions into outcomes the page can explain.</summary>
-public sealed class LabRunner(LabBrowser browser)
+public sealed class LabRunner(LabBrowser browser, IServer server)
 {
     // Browser runs are heavy; a few at a time keeps a shared demo responsive.
     private readonly SemaphoreSlim concurrency = new(3, 3);
@@ -18,7 +20,7 @@ public sealed class LabRunner(LabBrowser browser)
         LabEnvironment? env = null;
         try
         {
-            env = new LabEnvironment(example.NeedsBrowser ? await browser.GetAsync(cancellationToken) : null);
+            env = new LabEnvironment(example.NeedsBrowser ? await browser.GetAsync(cancellationToken) : null, AppAddress());
 
             // Off the circuit's synchronization context, like a test runner: bUnit has its own renderer and dispatcher.
             await Task.Run(() => example.Run(env), cancellationToken);
@@ -47,5 +49,25 @@ public sealed class LabRunner(LabBrowser browser)
         }
 
         LabResult Result(LabOutcome outcome, string? message) => new(outcome, message, env?.Artifacts ?? [], stopwatch.Elapsed);
+    }
+
+    // Where this app listens, so page-audit examples can open its pages. Wildcard bindings are browsed through localhost.
+    private Uri? AppAddress()
+    {
+        var addresses = server.Features.Get<IServerAddressesFeature>()?.Addresses ?? [];
+        var address = addresses.FirstOrDefault(a => a.StartsWith("http://", StringComparison.OrdinalIgnoreCase)) ?? addresses.FirstOrDefault();
+        if (address is null)
+        {
+            return null;
+        }
+
+        var builder = new UriBuilder(address.Replace("://+", "://localhost").Replace("://*", "://localhost"));
+        if (builder.Host is "[::]" or "0.0.0.0")
+        {
+            builder.Host = "localhost";
+        }
+
+        builder.Path = "/";
+        return builder.Uri;
     }
 }

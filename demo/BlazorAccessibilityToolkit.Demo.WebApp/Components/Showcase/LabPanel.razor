@@ -1,5 +1,7 @@
 @implements IDisposable
+@implements ILabPanel
 @inject LabRunner Runner
+@inject LabPage Page
 @* The test of an example: its code, a button that runs it in this process, and the result. *@
 <div class="lab">
     <div class="lab__head">
@@ -40,49 +42,65 @@
 
     [Parameter, EditorRequired] public LabExample Example { get; set; } = null!;
 
+    /// <summary>The title of the example card.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>The id of the example card's heading.</summary>
+    [Parameter, EditorRequired] public string AnchorId { get; set; } = string.Empty;
+
     // Prerendered buttons do nothing until the circuit connects.
     private bool Busy => running || !RendererInfo.IsInteractive;
 
-    private async Task RunAsync()
+    protected override void OnInitialized() => Page.Register(this);
+
+    /// <summary>Runs the test. Also called by the "run all" panel, so it renders explicitly.</summary>
+    public async Task<LabResult?> RunAsync()
     {
         if (Busy)
         {
-            return;
+            return null;
         }
 
         running = true;
         status = Example.NeedsBrowser ? "Running the test in a browser…" : "Running the test…";
+        StateHasChanged();
         try
         {
             result = await Runner.RunAsync(Example, disposed.Token);
             status = Describe(result);
+            return result;
         }
         catch (OperationCanceledException)
         {
-            return;
+            return null;
         }
         finally
         {
             running = false;
+            if (!disposed.IsCancellationRequested)
+            {
+                StateHasChanged();
+            }
         }
     }
 
-    private string Describe(LabResult r)
+    private string Describe(LabResult r) => (r.Outcome, Example.ExpectFailure) switch
     {
-        var time = r.Duration.TotalSeconds < 1 ? $"{r.Duration.TotalMilliseconds:0} ms" : $"{r.Duration.TotalSeconds:0.0} s";
-        return (r.Outcome, Example.ExpectFailure) switch
-        {
-            (LabOutcome.Failed, true) => $"Test failed after {time}: the toolkit caught the defect.",
-            (LabOutcome.Passed, false) => $"Test passed in {time}.",
-            (LabOutcome.Passed, true) => $"Test passed in {time}, but the defect was not detected.",
-            (LabOutcome.Failed, false) => $"Test failed unexpectedly after {time}.",
-            (LabOutcome.Unavailable, _) => "The test could not run: no browser is installed.",
-            _ => "The test could not run.",
-        };
-    }
+        (LabOutcome.Failed, true) => $"Test failed after {Time(r)}: the toolkit caught the defect.",
+        (LabOutcome.Passed, false) => $"Test passed in {Time(r)}.",
+        (LabOutcome.Passed, true) => $"Test passed in {Time(r)}, but the defect was not detected.",
+        (LabOutcome.Failed, false) => $"Test failed unexpectedly after {Time(r)}.",
+        (LabOutcome.Unavailable, _) => "The test could not run: no browser is installed.",
+        _ => "The test could not run.",
+    };
+
+    /// <summary>A run's duration for display: milliseconds below one second.</summary>
+    public static string Time(LabResult r) =>
+        r.Duration.TotalSeconds < 1 ? $"{r.Duration.TotalMilliseconds:0} ms" : $"{r.Duration.TotalSeconds:0.0} s";
 
     public void Dispose()
     {
+        Page.Unregister(this);
         disposed.Cancel();
         disposed.Dispose();
     }

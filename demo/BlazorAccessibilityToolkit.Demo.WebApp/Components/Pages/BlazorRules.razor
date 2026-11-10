@@ -11,6 +11,8 @@
     </p>
 </div>
 
+<RunAllTests />
+
 <div class="callout">
     <p>
         Most of these rules report <strong>potential issues</strong>: likely problems that need a person to confirm.
@@ -27,11 +29,13 @@
         keyboard users cannot reach or activate it, and screen readers do not know it does anything. Browsers cannot see
         Blazor's handler, so axe-core reports nothing. bUnit's render tree shows it.
     </p>
-    <ExampleCard Title="A clickable card" Defect="true" Example="BlazorRuleExamples.ClickableCardAudit" Sources="@(["ClickableCard.razor"])">
+    <ExampleCard Title="A clickable card" Defect="true" Example="BlazorRuleExamples.ClickableCardAudit" Sources="@(["ClickableCard.razor"])"
+                 Hears="Shipping, heading, level 3" HearsLabel="The card is announced as" Affects="@(["Keyboard users", "Screen reader users", "Switch users"])">
         <ChildContent><p>Click the card to open it. Then try with the keyboard: Tab skips it.</p></ChildContent>
         <Stage><ClickableCard Title="Shipping" Details="Ships in 2 days." /></Stage>
     </ExampleCard>
-    <ExampleCard Title="A disclosure button" Example="BlazorRuleExamples.DisclosureCardAudit" Sources="@(["DisclosureCard.razor"])">
+    <ExampleCard Title="A disclosure button" Example="BlazorRuleExamples.DisclosureCardAudit" Sources="@(["DisclosureCard.razor"])"
+                 Hears="Shipping, button, collapsed">
         <Stage><DisclosureCard Title="Shipping" Details="Ships in 2 days." /></Stage>
     </ExampleCard>
 </section>
@@ -44,11 +48,13 @@
         and <code>ValidationMessage</code> shows the error, but nothing links the two: a screen reader says "invalid
         entry" and never reads the message. The test submits the empty form first, then audits.
     </p>
-    <ExampleCard Title="The template form" Defect="true" Example="BlazorRuleExamples.LegacySignupAudit" Sources="@(["LegacySignupForm.razor"])">
+    <ExampleCard Title="The template form" Defect="true" Example="BlazorRuleExamples.LegacySignupAudit" Sources="@(["LegacySignupForm.razor"])"
+                 Hears="Email, edit text, invalid entry" HearsLabel="After a failed submit, the email field is announced as" Affects="@(["Screen reader users"])">
         <ChildContent><p>Submit the empty form to see the errors.</p></ChildContent>
         <Stage><LegacySignupForm /></Stage>
     </ExampleCard>
-    <ExampleCard Title="Errors referenced by aria-describedby" Example="BlazorRuleExamples.SignupAudit" Sources="@(["SignupForm.razor", "FieldError.razor"])">
+    <ExampleCard Title="Errors referenced by aria-describedby" Example="BlazorRuleExamples.SignupAudit" Sources="@(["SignupForm.razor", "FieldError.razor"])"
+                 Hears="Email, edit text, required, invalid entry, Enter your email address." HearsLabel="After a failed submit, the email field is announced as">
         <ChildContent><p>The error text is referenced by the field, focus moves to the first invalid field, and success is announced.</p></ChildContent>
         <Stage><SignupForm /></Stage>
     </ExampleCard>
@@ -61,11 +67,13 @@
         rendered twice. Then both labels point at the first input, the second input has no label, and both hints describe
         the first input.
     </p>
-    <ExampleCard Title="A cart that reuses a field with fixed ids" Defect="true" Example="BlazorRuleExamples.LegacyCartAudit" Sources="@(["LegacyCartLines.razor", "HardcodedQuantityField.razor"])">
+    <ExampleCard Title="A cart that reuses a field with fixed ids" Defect="true" Example="BlazorRuleExamples.LegacyCartAudit" Sources="@(["LegacyCartLines.razor", "HardcodedQuantityField.razor"])"
+                 Hears="edit text" HearsLabel="The second quantity field is announced as" Affects="@(["Screen reader users", "Voice control users"])">
         <ChildContent><p>Click the second "Quantity" label: focus goes to the first input.</p></ChildContent>
         <Stage><LegacyCartLines /></Stage>
     </ExampleCard>
-    <ExampleCard Title="A field with generated ids" Example="BlazorRuleExamples.CartAudit" Sources="@(["CartLines.razor", "QuantityField.razor"])">
+    <ExampleCard Title="A field with generated ids" Example="BlazorRuleExamples.CartAudit" Sources="@(["CartLines.razor", "QuantityField.razor"])"
+                 Hears="Quantity of Paper filters, edit text" HearsLabel="The second quantity field is announced as">
         <Stage><CartLines /></Stage>
     </ExampleCard>
 </section>
@@ -77,12 +85,14 @@
         paragraph. Sighted users see it; screen reader users who tab into the group hear only "Express (next day), radio
         button, 2 of 3". A <code>fieldset</code> with a <code>legend</code> names the group.
     </p>
-    <ExampleCard Title="A styled paragraph as the group label" Defect="true" Example="BlazorRuleExamples.UngroupedRadiosAudit" Sources="@(["UngroupedShippingOptions.razor"])">
+    <ExampleCard Title="A styled paragraph as the group label" Defect="true" Example="BlazorRuleExamples.UngroupedRadiosAudit" Sources="@(["UngroupedShippingOptions.razor"])"
+                 Hears="Standard (3 to 5 days), radio button, checked, 1 of 3" HearsLabel="Tabbing into the options, a screen reader announces" Affects="@(["Screen reader users"])">
         <Stage><UngroupedShippingOptions /></Stage>
     </ExampleCard>
-    <ExampleCard Title="A fieldset with a legend" Example="BlazorRuleExamples.GroupedRadiosAudit" Sources="@(["ShippingOptions.razor"])">
+    <ExampleCard Title="A fieldset with a legend" Example="BlazorRuleExamples.GroupedRadiosAudit" Sources="@(["ShippingOptions.razor"])"
+                 Hears="Delivery speed, grouping, Standard (3 to 5 days), radio button, checked, 1 of 3" HearsLabel="Tabbing into the options, a screen reader announces">
         <Stage><ShippingOptions /></Stage>
     </ExampleCard>
 </section>
 
-<p class="next">More rules: <a href="rules">the rule catalog</a>. Next: <a href="keyboard">keyboard scenarios in a real browser</a>.</p>
+<p>Every toolkit rule, with its WCAG criteria and where it runs, is in <a href="rules">the rule catalog</a>.</p>

@@ -12,6 +12,8 @@
     </p>
 </div>
 
+<RunAllTests />
+
 <ul class="reasons">
     <li><strong>Inserted with content:</strong> a region added together with its text is often not announced.</li>
     <li><strong>Hidden updates:</strong> text changed in a hidden region is never announced.</li>
@@ -26,10 +28,12 @@
         with its text; in the second, the text is written into a <code>role="status"</code> paragraph that was rendered
         from the start.
     </p>
-    <ExampleCard Title="A toast inserted with its message" Defect="true" Example="LiveRegionExamples.ToastLiveRegion" Sources="@(["ToastSaveButton.razor"])">
+    <ExampleCard Title="A toast inserted with its message" Defect="true" Example="LiveRegionExamples.ToastLiveRegion" Sources="@(["ToastSaveButton.razor"])"
+                 Hears="" HearsLabel="After saving, many screen readers announce" Affects="@(["Screen reader users"])">
         <Stage><ToastSaveButton /></Stage>
     </ExampleCard>
-    <ExampleCard Title="A status region that exists before the update" Example="LiveRegionExamples.SaveLiveRegion" Sources="@(["SaveButton.razor"])">
+    <ExampleCard Title="A status region that exists before the update" Example="LiveRegionExamples.SaveLiveRegion" Sources="@(["SaveButton.razor"])"
+                 Hears="Saving… Changes saved" HearsLabel="After saving, a screen reader announces">
         <Stage><SaveButton /></Stage>
     </ExampleCard>
 </section>
@@ -42,4 +46,3 @@
     </p>
 </div>
 
-<p class="next">Next: <a href="accessibility-tree">accessibility-tree snapshots</a>.</p>

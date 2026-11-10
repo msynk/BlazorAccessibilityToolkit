@@ -11,7 +11,7 @@ The toolkit does more than run a scanner in a browser. It knows about Razor and 
 
 > Automated checks find a subset of accessibility problems. They cannot prove WCAG conformance. The toolkit keeps inconclusive results and manual-review items separate, and never reports them as passed.
 
-**See it running.** The [demo showcase](demo) puts realistic broken components next to their fixes, with the test that tells them apart and a button that runs it live:
+**See it running.** The [demo showcase](demo) puts realistic broken components next to their fixes, with the test that tells them apart and a button that runs it live. It covers every feature, has light and dark themes, and audits itself with the toolkit:
 
 ```bash
 dotnet build

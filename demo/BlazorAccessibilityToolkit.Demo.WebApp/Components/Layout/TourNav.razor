@@ -1,0 +1,46 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+@* Previous and next page of the tour, from the navigation menu's order. *@
+@if (Current >= 0)
+{
+    var previous = Current > 0 ? NavMenu.Pages[Current - 1] : default;
+    var next = Current < NavMenu.Pages.Count - 1 ? NavMenu.Pages[Current + 1] : default;
+    <nav class="tour" aria-label="Tour">
+        @if (previous.Text is not null)
+        {
+            <a class="tour__previous" href="@previous.Href">
+                <span class="tour__dir">@Arrow("M19 12H5M12 19l-7-7 7-7")Previous<span class="visually-hidden">@(": ")</span></span>
+                <span>@previous.Text</span>
+            </a>
+        }
+        @if (next.Text is not null)
+        {
+            <a class="tour__next" href="@next.Href">
+                <span class="tour__dir">Next<span class="visually-hidden">@(": ")</span>@Arrow("M5 12h14M12 5l7 7-7 7")</span>
+                <span>@next.Text</span>
+            </a>
+        }
+    </nav>
+}
+
+@code {
+    // Arrows are drawn, not typed: a text glyph would be read aloud and audited (inconclusively) for contrast.
+    private static RenderFragment Arrow(string path) =>
+        @<svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="@path" /></svg>;
+
+    private int Current
+    {
+        get
+        {
+            var path = Navigation.ToBaseRelativePath(Navigation.Uri);
+            path = path.Split('?', '#')[0].TrimEnd('/');
+            return NavMenu.Pages.Select(p => p.Href).ToList().IndexOf(path);
+        }
+    }
+
+    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

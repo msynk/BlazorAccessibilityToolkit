@@ -8,6 +8,49 @@ namespace BlazorAccessibilityToolkit.Demo.WebApp.Lab.Examples;
 /// <summary>Widgets verified against the WAI-ARIA Authoring Practices with real key presses.</summary>
 public static class PatternExamples
 {
+    public static readonly LabExample FocuslessDialogPattern = new()
+    {
+        Id = "focusless-dialog-pattern",
+        ExpectFailure = true,
+        NeedsBrowser = true,
+        Run = async env =>
+        {
+            #region snippet:focusless-dialog-pattern
+            await using var component = await env.Host.RenderAsync<FocuslessDialog>(env.Browser, p => p
+                .Add(c => c.TriggerText, "Delete account")
+                .Add(c => c.Title, "Delete account?"));
+
+            var result = await AriaPatterns.VerifyModalDialogAsync(
+                component.Page.GetByRole(AriaRole.Button, new() { Name = "Delete account" }),
+                options: new PatternOptions { Timeout = TimeSpan.FromSeconds(1) });
+            env.Show(result);
+
+            result.ShouldPass();
+            #endregion
+        },
+    };
+
+    public static readonly LabExample ModalDialogPattern = new()
+    {
+        Id = "modal-dialog-pattern",
+        NeedsBrowser = true,
+        Run = async env =>
+        {
+            #region snippet:modal-dialog-pattern
+            await using var component = await env.Host.RenderAsync<ModalDialog>(env.Browser, p => p
+                .Add(c => c.TriggerText, "Delete account")
+                .Add(c => c.Title, "Delete account?"));
+
+            var result = await AriaPatterns.VerifyModalDialogAsync(
+                component.Page.GetByRole(AriaRole.Button, new() { Name = "Delete account" }),
+                options: new PatternOptions { Timeout = TimeSpan.FromSeconds(1) });
+            env.Show(result);
+
+            result.ShouldPass();
+            #endregion
+        },
+    };
+
     public static readonly LabExample NaiveTabsPattern = new()
     {
         Id = "naive-tabs-pattern",

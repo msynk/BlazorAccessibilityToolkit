@@ -11,6 +11,8 @@
     </p>
 </div>
 
+<RunAllTests />
+
 <CodeBlock Caption="The shape of every component audit" Code="@Shape" />
 
 <section aria-labelledby="attribution">
@@ -21,13 +23,15 @@
         root of the fixture to the innermost component. Run the first test and look for <strong>Rendered by</strong>.
     </p>
     <ExampleCard Title="A toolbar with one legacy button" Defect="true" Example="ComponentAuditExamples.LegacyToolbarAudit"
-                 Sources="@(["LegacyFormattingToolbar.razor", "UnlabelledIconButton.razor"])">
+                 Sources="@(["LegacyFormattingToolbar.razor", "UnlabelledIconButton.razor"])"
+                 Hears="button" HearsLabel="The third button is announced as" Affects="@(["Screen reader users", "Voice control users"])">
         <ChildContent>
             <p>The toolbar reuses the old <code>UnlabelledIconButton</code> for its link button. Tab to the last button: it has no name.</p>
         </ChildContent>
         <Stage><LegacyFormattingToolbar /></Stage>
     </ExampleCard>
-    <ExampleCard Title="The toolbar with labelled buttons" Example="ComponentAuditExamples.ToolbarAudit" Sources="@(["FormattingToolbar.razor", "IconButton.razor"])">
+    <ExampleCard Title="The toolbar with labelled buttons" Example="ComponentAuditExamples.ToolbarAudit" Sources="@(["FormattingToolbar.razor", "IconButton.razor"])"
+                 Hears="Insert link, button" HearsLabel="The third button is announced as">
         <Stage><FormattingToolbar /></Stage>
     </ExampleCard>
 </section>
@@ -68,7 +72,8 @@
         submit. Change the state with bUnit and audit again. Each audit carries the state in its label, in reports and
         in the baseline.
     </p>
-    <ExampleCard Title="A disclosure, collapsed and expanded" Example="ComponentAuditExamples.DisclosureStatesAudit" Sources="@(["DisclosureCard.razor"])">
+    <ExampleCard Title="A disclosure, collapsed and expanded" Example="ComponentAuditExamples.DisclosureStatesAudit" Sources="@(["DisclosureCard.razor"])"
+                 Hears="Shipping, button, collapsed">
         <Stage><DisclosureCard Title="Shipping" Details="Ships in 2 days." /></Stage>
     </ExampleCard>
 </section>

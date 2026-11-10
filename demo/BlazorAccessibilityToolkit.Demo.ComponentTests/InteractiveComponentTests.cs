@@ -234,6 +234,17 @@ public sealed class InteractiveComponentTests(TestEnvironment env)
         Assert.Empty(order.Findings);
     }
 
+    [Fact]
+    public async Task View_switcher_shows_where_focus_is()
+    {
+        await using var component = await env.Host.RenderAsync<ViewSwitcher>(env.Browser);
+
+        var order = await component.CaptureFocusOrderAsync(new FocusOrderOptions { ReportMissingFocusIndicator = true });
+
+        order.ShouldMatch("button List", "button Grid", "button Map");
+        Assert.Empty(order.Findings);
+    }
+
     // Regression tests for the intentional defects that only show in a browser. They assert that each defect is still
     // detected, so the showcase keeps demonstrating something real. They run no audits, so nothing goes to the baseline.
 
@@ -288,6 +299,16 @@ public sealed class InteractiveComponentTests(TestEnvironment env)
         var order = await component.CaptureFocusOrderAsync();
 
         Assert.Equal(3, order.Findings.Count(f => f.RuleId == "blazor-focus-hidden-target"));
+    }
+
+    [Fact]
+    public async Task Regression_outline_free_view_switcher_shows_no_focus_indicator()
+    {
+        await using var component = await env.Host.RenderAsync<OutlineFreeViewSwitcher>(env.Browser);
+
+        var order = await component.CaptureFocusOrderAsync(new FocusOrderOptions { ReportMissingFocusIndicator = true });
+
+        Assert.Equal(3, order.Findings.Count(f => f.RuleId == "blazor-focus-indicator-not-detected"));
     }
 
     [Fact]

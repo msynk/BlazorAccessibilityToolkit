@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+@* data-theme comes from the theme cookie, so the first paint already has the right colors (see wwwroot/app.css). *@
+<html lang="en" data-theme="@Theme">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Blazor Accessibility Toolkit showcase: accessible and broken components side by side, with the tests that tell them apart, running live." />
+    <meta name="color-scheme" content="light dark" />
     <base href="/" />
     <link rel="stylesheet" href="@Assets["_content/BlazorAccessibilityToolkit.Demo.Components/components.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
@@ -11,7 +13,8 @@
     <HeadOutlet @rendermode="PageRenderMode" />
 </head>
 <body>
-    <Routes @rendermode="PageRenderMode" />
+    <Routes @rendermode="PageRenderMode" Theme="@Theme" />
+    <script src="@Assets["theme.js"]"></script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 </html>
@@ -21,4 +24,6 @@
 
     // Interactive Server everywhere, except pages marked [ExcludeFromInteractiveRouting] (the error page).
     private IComponentRenderMode? PageRenderMode => HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+
+    private string Theme => ThemeSwitcher.Normalize(HttpContext.Request.Cookies[ThemeSwitcher.Cookie]);
 }

@@ -11,6 +11,8 @@
     </p>
 </div>
 
+<RunAllTests />
+
 <CodeBlock Caption="Built-in verifiers" Code="@Verifiers" />
 
 <section aria-labelledby="tabs">
@@ -19,7 +21,8 @@
         Try both with the keyboard. In the first, every tab is a separate Tab stop and the arrow keys do nothing. In the
         second, Tab reaches only the selected tab, and arrow keys, Home and End move between tabs.
     </p>
-    <ExampleCard Title="Tabs that only work with a mouse" Defect="true" Example="PatternExamples.NaiveTabsPattern" Sources="@(["NaiveTabs.razor"])">
+    <ExampleCard Title="Tabs that only work with a mouse" Defect="true" Example="PatternExamples.NaiveTabsPattern" Sources="@(["NaiveTabs.razor"])"
+                 Affects="@(["Keyboard users", "Screen reader users"])">
         <Stage><NaiveTabs Label="Sections" Items="DemoData.Tabs" /></Stage>
     </ExampleCard>
     <ExampleCard Title="Tabs with roving tabindex and arrow keys" Example="PatternExamples.TabsPattern" Sources="@(["Tabs.razor"])">
@@ -35,11 +38,37 @@
         open state in the browser, where <code>blazor-expanded-state-mismatch</code> compares the attribute with what is
         actually visible.
     </p>
-    <ExampleCard Title="A disclosure with a stale aria-expanded" Defect="true" Example="PatternExamples.StaleDisclosurePattern" Sources="@(["StaleDisclosure.razor"])">
+    <ExampleCard Title="A disclosure with a stale aria-expanded" Defect="true" Example="PatternExamples.StaleDisclosurePattern" Sources="@(["StaleDisclosure.razor"])"
+                 Hears="Shipping, button, collapsed" HearsLabel="Open, it is still announced as" Affects="@(["Screen reader users"])">
         <Stage><StaleDisclosure Title="Shipping" Details="Ships in 2 days." /></Stage>
     </ExampleCard>
-    <ExampleCard Title="A disclosure that keeps aria-expanded in sync" Example="PatternExamples.DisclosurePattern" Sources="@(["DisclosureCard.razor"])">
+    <ExampleCard Title="A disclosure that keeps aria-expanded in sync" Example="PatternExamples.DisclosurePattern" Sources="@(["DisclosureCard.razor"])"
+                 Hears="Shipping, button, expanded" HearsLabel="Open, it is announced as">
         <Stage><DisclosureCard Title="Shipping" Details="Ships in 2 days." /></Stage>
+    </ExampleCard>
+</section>
+
+<section aria-labelledby="dialog">
+    <h2 id="dialog">Modal dialog</h2>
+    <p>
+        The verifier opens the dialog from its trigger and checks the whole pattern at once: focus moves in, Tab and
+        Shift+Tab stay inside, Escape closes it, and focus returns to the trigger. The
+        <a href="keyboard">keyboard page</a> tests the same two dialogs with a hand-written scenario instead.
+    </p>
+    <ExampleCard Title="A dialog that only looks modal" Defect="true" Example="PatternExamples.FocuslessDialogPattern" Sources="@(["FocuslessDialog.razor"])"
+                 Affects="@(["Keyboard users", "Screen reader users"])">
+        <Stage>
+            <FocuslessDialog TriggerText="Delete account" Title="Delete account?" ConfirmText="Delete">
+                <p>This removes your profile and cannot be undone.</p>
+            </FocuslessDialog>
+        </Stage>
+    </ExampleCard>
+    <ExampleCard Title="A dialog that follows the pattern" Example="PatternExamples.ModalDialogPattern" Sources="@(["ModalDialog.razor"])">
+        <Stage>
+            <ModalDialog TriggerText="Delete account" Title="Delete account?" ConfirmText="Delete">
+                <p>This removes your profile and cannot be undone.</p>
+            </ModalDialog>
+        </Stage>
     </ExampleCard>
 </section>
 
@@ -47,15 +76,14 @@
     <h2 id="menu">Menu button</h2>
     <p>
         Enter, Space or ArrowDown opens the menu on its first item, arrow keys wrap, Escape closes it and returns focus to
-        the button. The modal dialog verifier is used the same way; the <a href="keyboard">keyboard page</a> tests the
-        dialogs with a hand-written scenario instead.
+        the button.
     </p>
-    <ExampleCard Title="An actions menu" Example="PatternExamples.MenuButtonPattern" Sources="@(["MenuButton.razor"])">
+    <ExampleCard Title="An actions menu" Example="PatternExamples.MenuButtonPattern" Sources="@(["MenuButton.razor"])"
+                 Hears="Actions, menu button, collapsed">
         <Stage><MenuButton Label="Actions" /></Stage>
     </ExampleCard>
 </section>
 
-<p class="next">Next: <a href="live-regions">live regions and status messages</a>.</p>
 
 @code {
     private const string Verifiers = """

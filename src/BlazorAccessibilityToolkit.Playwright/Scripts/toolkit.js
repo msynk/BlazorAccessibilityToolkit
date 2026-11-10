@@ -383,6 +383,9 @@
         const expanded = el.getAttribute('aria-expanded');
         const controls = el.getAttribute('aria-controls');
         if ((expanded !== 'true' && expanded !== 'false') || !controls) continue;
+        // A trigger that is not rendered states nothing to anyone, for example a menu button that only appears on
+        // narrow screens while the navigation it controls is always shown on wide ones.
+        if (!isRendered(el)) continue;
         for (const id of controls.split(/\s+/).filter(Boolean)) {
           const target = byId(el, id);
           if (!target) continue;

@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- Browser diagnostics: `blazor-expanded-state-mismatch` skips triggers that are not rendered. A menu button hidden on wide screens, whose navigation is always shown there, is no longer reported.
 - Live regions: `ExpectUpdateAsync` no longer matches text that only remains in a region (for example earlier `log` entries), removals, or updates of hidden regions. Atomic and inserted regions still match on their whole text.
 - Live regions: monitoring after a navigation now works. The observer no longer depends on `document.documentElement` existing when the init script runs, does not report server-rendered regions as inserted, and expectations made before the navigation no longer hide updates on the new page.
 - Live regions and browser diagnostics: empty but rendered elements (an empty status region, an expanded listbox that is still loading, an empty selected tab panel) are no longer treated as hidden.
@@ -24,6 +25,11 @@
 
 ### Demo
 
+- The showcase has a light, a dark and a system theme. Every color is a `light-dark()` token in `app.css` and `components.css` (the components still render in the light theme by default, which is what the component tests audit), the theme switcher is a radio group in the header, and the choice is kept in a cookie so the server renders pages in that theme without a flash. The end-to-end tests audit every page in both themes and test the switcher with the keyboard.
+- The home page shows every feature at a glance, with links to live examples, the toolkit in numbers, and an example of a failing test's output.
+- A **Run all** panel on each page runs every live test on it and lists how each one ended. Defect cards say who the defect locks out and what a screen reader typically announces.
+- New live examples: page audits of the running app, with `ExcludeSelectors` and documented suppressions (one that applies and one that has expired); `AriaPatterns.VerifyModalDialogAsync` on `FocuslessDialog` and `ModalDialog`; missing focus indicators with `ReportMissingFocusIndicator`, on the new `OutlineFreeViewSwitcher` defect and its fix `ViewSwitcher`. Results show suppressions, expired suppressions and stops without a focus indicator.
+- The rule catalog can be searched and filtered, and links each rule to its live example. Every page links to the previous and next page of the tour, and the navigation collapses behind a menu button on narrow screens.
 - The demo web app is now a showcase of the toolkit. Each page explains one feature (component audits, Blazor-aware rules, keyboard scenarios, focus order, ARIA patterns, live regions, accessibility-tree snapshots, the CI gate, manual review and the rule catalog), renders a broken component next to its fix, shows the test that checks them, and runs that test live with a **Run this test** button. The CI gate page simulates baselines, regressions and strict mode, and serves the reports in every format.
 - The component library is split into `Accessible/` and `Defects/` (namespaces `BlazorAccessibilityToolkit.Demo.Components.Accessible` and `.Defects`), with new pairs: `FormattingToolbar` / `LegacyFormattingToolbar`, `FilterPanel` / `AnimatedFilterPanel`, `MenuButton`, `ShippingOptions` / `UngroupedShippingOptions`, `QuantityField` and `CartLines` / `HardcodedQuantityField` and `LegacyCartLines`, and the defects `FocuslessDialog`, `NaiveTabs`, `StaleDisclosure`, `ToastSaveButton` and `LegacySignupForm`.
 - The demo tests cover the new components, keep every intentional defect detected, audit every showcase page (excluding the marked defects) and run every live example. The `Settings` and `Signup` sample pages are replaced by the showcase pages, and the baseline is regenerated.

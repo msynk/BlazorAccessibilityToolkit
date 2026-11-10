@@ -1,6 +1,7 @@
 using System.Net;
 using BlazorAccessibilityToolkit.Playwright;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Playwright;
 
 [assembly: AssemblyFixture(typeof(BlazorAccessibilityToolkit.Demo.EndToEndTests.AppFixture))]
 
@@ -31,10 +32,13 @@ public sealed class AppFixture : IAsyncLifetime
         Browser = await AccessibilityBrowser.LaunchAsync();
     }
 
-    /// <summary>Opens <paramref name="path"/> in a new isolated browser context and waits for Blazor to become interactive.</summary>
-    public async Task<BrowserSession> OpenAsync(string path)
+    /// <summary>
+    /// Opens <paramref name="path"/> in a new isolated browser context and waits for Blazor to become interactive.
+    /// <paramref name="contextOptions"/> can emulate a color scheme, a viewport size and so on.
+    /// </summary>
+    public async Task<BrowserSession> OpenAsync(string path, BrowserNewContextOptions? contextOptions = null)
     {
-        var session = await Browser.NewSessionAsync();
+        var session = await Browser.NewSessionAsync(contextOptions);
         try
         {
             await session.Page.GotoAsync(Url(path));

@@ -26,9 +26,33 @@
     </table>
 </div>
 
-<h2>Toolkit rules (engine blazor-a11y)</h2>
+<h2 id="toolkit-rules">Toolkit rules (engine blazor-a11y)</h2>
+<div class="rule-filters" role="search" aria-label="Filter the rules">
+    <div class="field rule-filters__search">
+        <label for="rule-search">Search</label>
+        <input id="rule-search" class="input" type="search" placeholder="Rule id, words or WCAG criterion, such as 4.1.2" @bind="search" @bind:event="oninput" />
+    </div>
+    <div class="field">
+        <label for="rule-environment">Runs on</label>
+        <select id="rule-environment" class="input" @bind="environment">
+            <option value="">markup or browser</option>
+            <option value="@ToolkitRules.Markup">markup (bUnit)</option>
+            <option value="@ToolkitRules.Browser">browser (Playwright)</option>
+        </select>
+    </div>
+    <div class="field">
+        <label for="rule-status">Status</label>
+        <select id="rule-status" class="input" @bind="status">
+            <option value="">any</option>
+            <option value="Violation">Violation</option>
+            <option value="PotentialIssue">Potential issue</option>
+        </select>
+    </div>
+</div>
+<p role="status" class="rule-filters__count">@(Rules.Count == ToolkitRules.All.Count ? $"All {Rules.Count} rules." : $"{Rules.Count} of {ToolkitRules.All.Count} rules match.")</p>
+
 <div class="table-wrap">
-    <table class="data rules">
+    <table class="data rules" aria-labelledby="toolkit-rules">
         <thead>
             <tr>
                 <th scope="col">Rule</th>
@@ -36,20 +60,78 @@
                 <th scope="col">Status</th>
                 <th scope="col">WCAG</th>
                 <th scope="col">Runs on</th>
+                <th scope="col">Live example</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var rule in ToolkitRules.All)
+            @foreach (var rule in Rules)
             {
                 <tr>
                     <td><code>@rule.Id</code>@(rule.IsBestPractice ? " (best practice)" : null)</td>
                     <td>@rule.Description</td>
-                    <td>@(rule.Status == FindingStatus.Violation ? "Violation" : "Potential issue")</td>
+                    <td>
+                        @if (rule.Status == FindingStatus.Violation)
+                        {
+                            <span class="badge badge--violation">Violation</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge--potential">Potential issue</span>
+                        }
+                    </td>
                     <td>@(rule.Wcag.Count == 0 ? "—" : string.Join(", ", rule.Wcag))</td>
                     <td>@string.Join(", ", rule.Environments)</td>
+                    <td>
+                        @if (Demos.TryGetValue(rule.Id, out var href))
+                        {
+                            <a href="@href">See it live<span class="visually-hidden">@($": {rule.Id}")</span></a>
+                        }
+                        else
+                        {
+                            <span>—</span>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
 <p>The <code>blazor-markup-*</code> rules are a conservative browserless fallback; they run only when no browser engine is configured, because axe-core covers them.</p>
+
+@code {
+    private string search = string.Empty;
+    private string environment = string.Empty;
+    private string status = string.Empty;
+
+    // Where the showcase demonstrates a rule with a live example.
+    private static readonly Dictionary<string, string> Demos = new(StringComparer.Ordinal)
+    {
+        ["blazor-click-handler-semantics"] = "blazor-rules#click-handlers",
+        ["blazor-validation-message-association"] = "blazor-rules#validation",
+        ["blazor-invalid-without-error-reference"] = "blazor-rules#validation",
+        ["blazor-duplicate-id-referenced"] = "blazor-rules#ids",
+        ["blazor-radio-group-ungrouped"] = "blazor-rules#radios",
+        ["blazor-expanded-state-mismatch"] = "aria-patterns#disclosure",
+        ["blazor-markup-control-name"] = "component-audits#attribution",
+        ["blazor-focus-hidden-target"] = "focus-order#collapsed",
+        ["blazor-focus-trap"] = "focus-order#modal",
+        ["blazor-focus-indicator-not-detected"] = "focus-order#indicator",
+        ["blazor-live-region-inserted-with-content"] = "live-regions#toast",
+    };
+
+    private IReadOnlyList<AccessibilityRule> Rules
+    {
+        get
+        {
+            var terms = search.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return ToolkitRules.All
+                .Where(r => environment.Length == 0 || r.Environments.Contains(environment))
+                .Where(r => status.Length == 0 || r.Status.ToString() == status)
+                .Where(r => terms.All(t => Text(r).Contains(t, StringComparison.OrdinalIgnoreCase)))
+                .ToArray();
+        }
+    }
+
+    private static string Text(AccessibilityRule rule) =>
+        string.Join(' ', new[] { rule.Id, rule.Description, rule.Help, rule.Remediation }.Concat(rule.Wcag));
+}

@@ -11,9 +11,14 @@ namespace BlazorAccessibilityToolkit.Demo.WebApp.Lab;
 public sealed class LabEnvironment
 {
     private readonly LabBrowserServices? browser;
+    private readonly Uri? appAddress;
     private readonly List<LabArtifact> artifacts = [];
 
-    internal LabEnvironment(LabBrowserServices? browser) => this.browser = browser;
+    internal LabEnvironment(LabBrowserServices? browser, Uri? appAddress)
+    {
+        this.browser = browser;
+        this.appAddress = appAddress;
+    }
 
     /// <summary>The shared browser (Chromium unless <c>BLAZOR_A11Y_BROWSER</c> selects another one).</summary>
     public AccessibilityBrowser Browser => Services.Browser;
@@ -23,6 +28,10 @@ public sealed class LabEnvironment
 
     /// <summary>bUnit markup audits with axe-core in the browser and the component stylesheet, so contrast is measured.</summary>
     public ComponentAuditSettings BrowserMarkup => Services.BrowserMarkup;
+
+    /// <summary>The absolute URL of a page of this showcase app, for page audits (in a test project: your app fixture).</summary>
+    public string Url(string path) =>
+        new Uri(appAddress ?? throw new InvalidOperationException("The app's address is not known."), path).ToString();
 
     internal IReadOnlyList<LabArtifact> Artifacts => artifacts;
 

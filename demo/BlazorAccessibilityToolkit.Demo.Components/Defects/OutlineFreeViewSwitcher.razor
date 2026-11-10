@@ -1,0 +1,27 @@
+@* INTENTIONAL DEFECT: the same toggle buttons, but the focus outline was removed (outline: none, see components.css)
+   because it "looked ugly", and nothing replaces it. Mouse users never notice. Keyboard users cannot see which button
+   has focus. The markup is identical to the fixed version, so markup audits pass both.
+   Detected by: CaptureFocusOrderAsync with ReportMissingFocusIndicator (blazor-focus-indicator-not-detected).
+   Fixed version: ViewSwitcher. *@
+<div class="view-switcher view-switcher--bare" role="group" aria-label="@Label">
+    @foreach (var view in Views)
+    {
+        <button type="button" aria-pressed="@(view == selected ? "true" : "false")" @onclick="() => selected = view">@view</button>
+    }
+</div>
+
+@code {
+    private string? selected;
+
+    [Parameter] public string Label { get; set; } = "View";
+
+    [Parameter] public IReadOnlyList<string> Views { get; set; } = ["List", "Grid", "Map"];
+
+    protected override void OnParametersSet()
+    {
+        if (selected is null || !Views.Contains(selected))
+        {
+            selected = Views.FirstOrDefault();
+        }
+    }
+}

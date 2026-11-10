@@ -8,6 +8,7 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddSingleton<LabBrowser>();
 builder.Services.AddSingleton<LabRunner>();
 builder.Services.AddSingleton<ReportStore>();
+builder.Services.AddScoped<LabPage>();
 
 var app = builder.Build();
 if (!app.Environment.IsDevelopment())

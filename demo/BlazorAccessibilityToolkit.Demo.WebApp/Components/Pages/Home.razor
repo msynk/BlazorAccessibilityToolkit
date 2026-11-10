@@ -1,35 +1,83 @@
 @page "/"
+@using BlazorAccessibilityToolkit.Reporting
+@using BlazorAccessibilityToolkit.Rules
 <PageTitle>Blazor Accessibility Toolkit showcase</PageTitle>
 
 <div class="hero">
-    <p class="eyebrow">Blazor Accessibility Toolkit</p>
-    <h1>Accessibility tests that understand Blazor</h1>
-    <p class="lead">
-        The toolkit audits Razor components and Blazor apps, drives them with a real keyboard, checks focus, live regions
-        and ARIA patterns, and turns the results into CI reports with baselines. It knows about Blazor: it sees
-        <code>@@onclick</code> handlers that browsers cannot see, and names the Razor component behind every finding.
-    </p>
-    <p class="lead">
-        This showcase runs the toolkit live. Every example has a working component, the test that checks it, and a
-        <strong>Run this test</strong> button that executes that test in this server process.
-    </p>
+    <div class="hero__text">
+        <p class="eyebrow">Blazor Accessibility Toolkit</p>
+        <h1>Accessibility tests that understand Blazor</h1>
+        <p class="lead">
+            Audit Razor components and Blazor apps, drive them with a real keyboard, check focus, ARIA patterns and live
+            regions, and turn the results into a CI gate. Findings name the Razor component behind every problem.
+        </p>
+        <p>
+            This showcase runs the toolkit live. Every example pairs a broken component with its fix and the test that
+            tells them apart, and runs that test in this server when you press its button.
+        </p>
+        <div class="hero__actions">
+            <a class="button-link button-link--primary" href="#try-it" @onclick="GoToTryItAsync" @onclick:preventDefault>Run your first test</a>
+            <a class="button-link button-link--secondary" href="component-audits">Take the tour</a>
+        </div>
+    </div>
+    <figure class="hero__output code code--terminal">
+        <figcaption class="code__caption">What a failing test tells you</figcaption>
+        <pre class="code__body"><code><span class="out-dim">$ dotnet test</span>
+<span class="out-fail">✗ Formatting_toolbar_has_no_violations</span>
+
+Accessibility audit 'LegacyFormattingToolbar' reported 1 failing finding(s):
+
+1. [critical] <span class="out-key">button-name</span> (axe-core, Violation): Buttons must have discernible text
+   WCAG: 4.1.2 Name, Role, Value (A)
+   Element: button:nth-child(3) (role: button, name: "")
+   <span class="out-pass">Rendered by: LegacyFormattingToolbar &gt; UnlabelledIconButton</span></code></pre>
+    </figure>
 </div>
 
+<ul class="stats" aria-label="The toolkit in numbers">
+    <li class="stat"><span class="stat__value">@LabCatalog.Examples.Count</span> <span class="stat__label">live tests on this site</span></li>
+    <li class="stat"><span class="stat__value">@ToolkitRules.All.Count</span> <span class="stat__label">Blazor-aware rules and heuristics</span></li>
+    <li class="stat"><span class="stat__value">WCAG 2.2</span> <span class="stat__label">A and AA, with axe-core 4.14</span></li>
+    <li class="stat"><span class="stat__value">@ReportFormatters.All.Count</span> <span class="stat__label">report formats for CI</span></li>
+</ul>
+
 <section aria-labelledby="try-it">
-    <h2 id="try-it">Try it: one button, two versions</h2>
+    <h2 id="try-it" tabindex="-1" @ref="tryIt">Try it: one button, two versions</h2>
     <p>
-        Both buttons look the same. The first has no accessible name, so a screen reader announces only "button". The
-        test is the same for both: render the component with bUnit, audit it, and assert that there are no violations.
-        It takes a few milliseconds and needs no browser.
+        Both buttons look the same. The first has no accessible name, so a screen reader announces only "button": blind
+        users cannot know what it does, and voice control users cannot say its name to press it. The test is the same for
+        both: render the component with bUnit, audit it, and assert that there are no violations. It takes a few
+        milliseconds and needs no browser. Press <strong>Run this test</strong> on each, or run both at once.
     </p>
+    <RunAllTests />
     <div class="example-pair">
-        <ExampleCard Title="Icon button without a name" Defect="true" Example="ComponentAuditExamples.UnlabelledButtonAudit" Sources="@(["UnlabelledIconButton.razor"])">
+        <ExampleCard Title="Icon button without a name" Defect="true" Example="ComponentAuditExamples.UnlabelledButtonAudit" Sources="@(["UnlabelledIconButton.razor"])"
+                     Hears="button" Affects="@(["Screen reader users", "Voice control users"])">
             <Stage><UnlabelledIconButton /></Stage>
         </ExampleCard>
-        <ExampleCard Title="Icon button with a name" Example="ComponentAuditExamples.LabelledButtonAudit" Sources="@(["IconButton.razor"])">
+        <ExampleCard Title="Icon button with a name" Example="ComponentAuditExamples.LabelledButtonAudit" Sources="@(["IconButton.razor"])"
+                     Hears="Close, button">
             <Stage><IconButton Label="Close" /></Stage>
         </ExampleCard>
     </div>
+</section>
+
+<section aria-labelledby="features">
+    <h2 id="features">Everything it checks, live</h2>
+    <p>Each page of the tour shows one feature on real components, with the test code and a button that runs it.</p>
+    <ul class="features">
+        @foreach (var feature in Features)
+        {
+            <li class="feature">
+                <span class="feature__icon" aria-hidden="true">
+                    <svg focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="@feature.Icon" /></svg>
+                </span>
+                <p class="feature__layer">@feature.Layer</p>
+                <h3><a href="@feature.Href">@feature.Title</a></h3>
+                <p>@feature.Text</p>
+            </li>
+        }
+    </ul>
 </section>
 
 <section aria-labelledby="layers">
@@ -37,40 +85,40 @@
     <p>Most test suites combine all four. Every layer produces the same findings, with WCAG references, component attribution and fingerprints.</p>
     <ol class="layers">
         <li class="layer">
-            <h3>1. Component markup</h3>
+            <span class="layer__number" aria-hidden="true">1</span>
+            <h3>Component markup</h3>
             <p class="layer__tool">bUnit, no browser, about 2 ms per audit</p>
             <p>
                 Render any component in any state and audit the markup. Blazor-aware rules catch clickable
                 <code>&lt;div&gt;</code> elements, unlinked <code>ValidationMessage</code> output and duplicate ids from reused components.
             </p>
-            <p><a href="component-audits">Component audits</a> · <a href="blazor-rules">Blazor-aware rules</a></p>
         </li>
         <li class="layer">
-            <h3>2. axe-core in a browser</h3>
+            <span class="layer__number" aria-hidden="true">2</span>
+            <h3>axe-core in a browser</h3>
             <p class="layer__tool">Playwright and axe-core 4.14, WCAG 2.2 A and AA</p>
             <p>
                 Audit the same bUnit markup with your CSS, or audit whole pages of the running app. Findings name the
                 Razor component that rendered the element.
             </p>
-            <p><a href="component-audits#axe-core">axe-core for components</a> · <a href="legacy">a page audit</a></p>
         </li>
         <li class="layer">
-            <h3>3. Real keyboard behavior</h3>
+            <span class="layer__number" aria-hidden="true">3</span>
+            <h3>Real keyboard behavior</h3>
             <p class="layer__tool">BlazorTestHost: one component, Interactive Server, a real browser</p>
             <p>
                 Press real keys and check where focus goes, verify widgets against the ARIA Authoring Practices, watch
                 live regions and compare the accessibility tree with a reviewed snapshot.
             </p>
-            <p><a href="keyboard">Keyboard</a> · <a href="focus-order">Focus order</a> · <a href="aria-patterns">ARIA patterns</a> · <a href="live-regions">Live regions</a> · <a href="accessibility-tree">Accessibility tree</a></p>
         </li>
         <li class="layer">
-            <h3>4. The CI gate</h3>
+            <span class="layer__number" aria-hidden="true">4</span>
+            <h3>The CI gate</h3>
             <p class="layer__tool">blazor-a11y CLI: JSON, JUnit, SARIF and HTML</p>
             <p>
                 Every audit becomes a result file. The CLI aggregates them, compares them with a committed baseline so
                 that only new problems fail the build, and tracks the manual checks that automation cannot decide.
             </p>
-            <p><a href="ci-gate">CI gate and reports</a> · <a href="manual-review">Manual review</a></p>
         </li>
     </ol>
 </section>
@@ -86,8 +134,20 @@
     </ul>
 </section>
 
+<div class="self-test">
+    <span class="self-test__icon" aria-hidden="true">
+        <svg focusable="false" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></svg>
+    </span>
+    <p>
+        <strong>This site tests itself.</strong> On every commit, the toolkit audits every page of this showcase with
+        axe-core on Chromium, Firefox and WebKit, in the light and the dark theme, checks its keyboard navigation and focus
+        order, and runs every live example. The intentional defects are excluded from the page audits, and regression
+        tests make sure that each one is still detected.
+    </p>
+</div>
+
 <section aria-labelledby="organized">
-    <h2 id="organized">How the demo is organized</h2>
+    <h2 id="organized">Run it yourself</h2>
     <div class="table-wrap">
         <table class="data">
             <thead>
@@ -97,7 +157,7 @@
                 <tr><td><code>demo/BlazorAccessibilityToolkit.Demo.Components</code></td><td>The components under test. <code>Accessible/</code> holds correct patterns, <code>Defects/</code> holds realistic mistakes, each paired with its fix.</td></tr>
                 <tr><td><code>demo/BlazorAccessibilityToolkit.Demo.WebApp</code></td><td>This showcase. Its live tests are in <code>Lab/Examples</code>, and the pages display that code as it runs.</td></tr>
                 <tr><td><code>demo/BlazorAccessibilityToolkit.Demo.ComponentTests</code></td><td>The same checks as a real xUnit test suite: bUnit audits, the interactive host, patterns and snapshots.</td></tr>
-                <tr><td><code>demo/BlazorAccessibilityToolkit.Demo.EndToEndTests</code></td><td>This app on Kestrel through <code>WebApplicationFactory</code>: page audits, navigation and focus.</td></tr>
+                <tr><td><code>demo/BlazorAccessibilityToolkit.Demo.EndToEndTests</code></td><td>This app on Kestrel through <code>WebApplicationFactory</code>: page audits in both themes, navigation and focus.</td></tr>
                 <tr><td><code>demo/a11y-baseline.json</code>, <code>demo/a11y/manual</code></td><td>The committed baseline of known issues and a manual-review checklist, used by the CI gate.</td></tr>
             </tbody>
         </table>
@@ -115,6 +175,50 @@
 </div>
 
 @code {
+    private ElementReference tryIt;
+
+    // Blazor's router scrolls to in-page targets without moving keyboard focus; move it, so Tab continues from there.
+    private async Task GoToTryItAsync() => await tryIt.FocusAsync();
+
+    private sealed record Feature(string Title, string Href, string Layer, string Text, string Icon);
+
+    private static readonly Feature[] Features =
+    [
+        new("Component audits", "component-audits", "bUnit, no browser",
+            "Audit any component, in any state, in milliseconds. Findings name the Razor component that rendered the element.",
+            "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16zM3.3 7 12 12l8.7-5M12 22V12"),
+        new("Blazor-aware rules", "blazor-rules", "bUnit, no browser",
+            "Catch @onclick on a <div>, ValidationMessage without a link to its field, and duplicate ids: problems browsers cannot see.",
+            "M13 2 3 14h9l-1 8 10-12h-9l1-8z"),
+        new("Page audits", "page-audits", "Playwright",
+            "axe-core and the toolkit's browser diagnostics on pages of your running app, with exclusions and documented suppressions.",
+            "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 15l2 2 4-4"),
+        new("Keyboard scenarios", "keyboard", "Playwright",
+            "Press real keys and assert where focus goes: into a dialog, back to its trigger, to the first invalid field.",
+            "M2 6h20v12H2zM6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"),
+        new("Focus order", "focus-order", "Playwright",
+            "Capture the Tab sequence and flag keyboard traps, focus on invisible elements and missing focus indicators.",
+            "M10 6h11M10 12h11M10 18h11M4 6h1v4M4 10h2M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"),
+        new("ARIA patterns", "aria-patterns", "Playwright",
+            "Verify tabs, disclosures, menu buttons and modal dialogs against the ARIA Authoring Practices in one run.",
+            "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"),
+        new("Live regions", "live-regions", "Playwright",
+            "Record status messages in the DOM and flag patterns that keep them from being announced.",
+            "M11 5 6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"),
+        new("Accessibility tree", "accessibility-tree", "Playwright",
+            "Snapshot roles, names and states. Review once; a semantic regression fails with a readable diff.",
+            "M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9"),
+        new("CI gate and reports", "ci-gate", "blazor-a11y CLI",
+            "Baselines that never hide new problems, strict mode, and JSON, JUnit, SARIF and HTML reports with CI exit codes.",
+            "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4"),
+        new("Manual review", "manual-review", "Process",
+            "Track the criteria automation cannot decide. A check without a tester and a date never counts as passed.",
+            "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 2h6v4H9zM9 14l2 2 4-4"),
+        new("Rule catalog", "rules", "Reference",
+            "Every toolkit rule with its WCAG criteria, its status and where it runs, with links to live examples.",
+            "M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"),
+    ];
+
     private const string RunCommands = """
         dotnet build
         pwsh demo/BlazorAccessibilityToolkit.Demo.ComponentTests/bin/Debug/net10.0/playwright.ps1 install chromium

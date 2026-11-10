@@ -1,14 +1,49 @@
 @* One example: a live component, its Razor source and the test that checks it. Defect stages carry
    data-known-defect, which the end-to-end page audits exclude (see PageTests.cs). *@
-<article class="example @(Defect ? "example--defect" : "example--accessible")" aria-labelledby="@HeadingId">
+<article class="example @(Defect ? "example--defect" : Tag is not null ? "example--neutral" : "example--accessible")" aria-labelledby="@HeadingId">
     <header class="example__header">
-        <span class="tag @(Defect ? "tag--defect" : "tag--accessible")">@(Defect ? "Intentional defect" : "Accessible")</span>
+        <span class="tag @(Defect ? "tag--defect" : Tag is not null ? "tag--neutral" : "tag--accessible")">@(Tag ?? (Defect ? "Intentional defect" : "Accessible"))</span>
         <h3 id="@HeadingId" class="example__title">@Title</h3>
     </header>
 
     @if (ChildContent is not null)
     {
         <div class="example__intro">@ChildContent</div>
+    }
+
+    @if (Hears is not null || Affects.Count > 0)
+    {
+        <div class="example__facts">
+            @if (Hears is not null)
+            {
+                <p class="hears">
+                    <span class="hears__label">@(HearsLabel ?? "A screen reader announces")</span>
+                    <span class="hears__speech">
+                        <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" /></svg>
+                        @if (Hears.Length == 0)
+                        {
+                            <span>(nothing)</span>
+                        }
+                        else
+                        {
+                            <q>@Hears</q>
+                        }
+                    </span>
+                </p>
+            }
+            @if (Affects.Count > 0)
+            {
+                <div class="affects">
+                    <span class="affects__label" id="@($"{HeadingId}-affects")">Who it fails</span>
+                    <ul class="affects__list" aria-labelledby="@($"{HeadingId}-affects")">
+                        @foreach (var group in Affects)
+                        {
+                            <li>@group</li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
     }
 
     @if (Stage is not null)
@@ -29,7 +64,7 @@
 
     @if (Example is not null)
     {
-        <LabPanel Example="Example" />
+        <LabPanel Example="Example" Title="@Title" AnchorId="@HeadingId" />
     }
 </article>
 
@@ -39,8 +74,20 @@
     /// <summary>True for components with an intentional defect.</summary>
     [Parameter] public bool Defect { get; set; }
 
+    /// <summary>Replaces the "Intentional defect" or "Accessible" text; without <see cref="Defect"/>, the tag is neutral.</summary>
+    [Parameter] public string? Tag { get; set; }
+
     /// <summary>Explanation shown above the live component.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>What a screen reader typically announces for the key element, to make the problem (or the fix) audible. Empty: nothing.</summary>
+    [Parameter] public string? Hears { get; set; }
+
+    /// <summary>Replaces "A screen reader announces", for example to say which element is meant.</summary>
+    [Parameter] public string? HearsLabel { get; set; }
+
+    /// <summary>Who the defect locks out, for example "Keyboard users".</summary>
+    [Parameter] public IReadOnlyList<string> Affects { get; set; } = [];
 
     /// <summary>The live component.</summary>
     [Parameter] public RenderFragment? Stage { get; set; }

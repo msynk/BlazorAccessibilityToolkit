@@ -58,7 +58,7 @@
       "component": "BlazorAccessibilityToolkit.Demo.Components.Defects.UnlabelledIconButton",
       "scenario": "UnlabelledIconButton",
       "selector": "button.icon-button",
-      "count": 3
+      "count": 4
     },
     {
       "fingerprint": "842d61aa6cf3649a32cb361e4f7010f6",
@@ -70,6 +70,15 @@
       "scenario": "UnlabelledIconButton",
       "selector": "button",
       "count": 1
+    },
+    {
+      "fingerprint": "8bcb369eb1d7167c2507b726c7b42235",
+      "ruleId": "button-name",
+      "engine": "axe-core",
+      "status": "Violation",
+      "audit": "/legacy",
+      "selector": ".icon-button",
+      "count": 2
     },
     {
       "fingerprint": "a32eeaf21d4a9aadb3112b243a6e0de1",

@@ -7,6 +7,10 @@
         <li><span class="facts__label">Status</span> @Audit.Status</li>
         <li><span class="facts__label">Engines</span> @string.Join(", ", Audit.Engines.Select(e => $"{e.Name} {e.Version}"))</li>
         <li><span class="facts__label">Rules passed</span> @Audit.PassedRules.Count</li>
+        @if (Audit.Suppressed.Count > 0)
+        {
+            <li><span class="facts__label">Suppressed</span> @Audit.Suppressed.Count</li>
+        }
         <li><span class="facts__label">Duration</span> @($"{Audit.DurationMs:0} ms")</li>
         @if (Audit.Context.Browser is { } browser)
         {
@@ -20,6 +24,11 @@
     }
 
     <FindingList Findings="Audit.Findings" Empty="No findings." />
+
+    @foreach (var expired in Audit.ExpiredSuppressions)
+    {
+        <p class="artifact__error">Expired suppression of <code>@expired.RuleId</code>@(expired.Expires is { } date ? $" (last day {date:yyyy-MM-dd})" : null): it no longer applies.</p>
+    }
 
     @if (Audit.Warnings.Count > 0)
     {

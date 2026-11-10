@@ -1,0 +1,75 @@
+@page "/page-audits"
+<PageTitle>Page audits · Blazor Accessibility Toolkit</PageTitle>
+
+<div class="page-intro">
+    <p class="eyebrow">Browser tests · Playwright</p>
+    <h1>Page audits</h1>
+    <p class="lead">
+        <code>page.AuditAccessibilityAsync()</code> audits a page of your running app in a real browser: axe-core 4.14
+        against WCAG 2.2 A and AA, plus the toolkit's browser diagnostics, such as an <code>aria-expanded</code> that
+        disagrees with what is visible. The examples below open pages of this very app.
+    </p>
+</div>
+
+<RunAllTests />
+
+<CodeBlock Caption="Page audits in an end-to-end test" Code="@Shape" />
+
+<section aria-labelledby="whole-page">
+    <h2 id="whole-page">Audit a whole page</h2>
+    <p>
+        The <a href="legacy">legacy page</a> stands for a page of an existing app. It uses two old components: an icon
+        button without a name, and a card that opens on click. The page audit finds the button. It does not find the
+        card: axe-core cannot see Blazor's <code>@@onclick</code> handler in the DOM, which is why the
+        <a href="blazor-rules">Blazor-aware rules</a> audit the render tree with bUnit.
+    </p>
+    <ExampleCard Title="A page with a known issue" Defect="true" Example="PageAuditExamples.LegacyPageAudit"
+                 Hears="button" HearsLabel="The icon button is announced as" Affects="@(["Screen reader users", "Voice control users"])">
+        <Stage>
+            <div class="legacy-widgets">
+                <UnlabelledIconButton />
+                <ClickableCard Title="Old card" Details="Only mouse users can open this card." />
+            </div>
+        </Stage>
+    </ExampleCard>
+</section>
+
+<section aria-labelledby="suppressions">
+    <h2 id="suppressions">Accept a known issue, with a reason and a deadline</h2>
+    <p>
+        Sometimes a known issue cannot be fixed right away. A <code>Suppression</code> accepts it in the test code: it
+        needs a reason, can name an owner and has a last day. Suppressed findings stay in the audit and in every report;
+        they just do not fail the test. A suppression should be as narrow as possible: this one matches one rule on one
+        selector. For accessibility debt across a whole app, a <a href="ci-gate">baseline</a> is usually the better tool.
+    </p>
+    <ExampleCard Title="A documented suppression" Tag="Known issue, suppressed" Example="PageAuditExamples.LegacyPageSuppression">
+        <ChildContent><p>The test passes, and the audit still lists the button, marked as suppressed with its reason.</p></ChildContent>
+    </ExampleCard>
+    <ExampleCard Title="An expired suppression" Defect="true" Tag="Expired suppression" Example="PageAuditExamples.ExpiredSuppression">
+        <ChildContent><p>The same suppression, one day after its last day. It stops applying, so a deadline cannot be forgotten.</p></ChildContent>
+    </ExampleCard>
+</section>
+
+<section aria-labelledby="scope">
+    <h2 id="scope">Choose what to audit</h2>
+    <p>
+        Options select the rules (<code>Tags</code>, <code>EnabledRules</code>, <code>DisabledRules</code>,
+        <code>IncludeBestPractices</code>) and the part of the page (<code>ExcludeSelectors</code>, or audit a single
+        region with <code>locator.AuditAccessibilityAsync()</code>). The end-to-end tests of this showcase audit every
+        page this way, in both themes: the intentional defects are excluded, everything else must pass.
+    </p>
+    <ExampleCard Title="A showcase page with its defects excluded" Example="PageAuditExamples.ShowcasePageAudit" />
+</section>
+
+@code {
+    private const string Shape = """
+        // A fixture starts the app (WebApplicationFactory on Kestrel) and a browser; see the demo's end-to-end tests.
+        await using var session = await app.OpenAsync("/checkout");
+
+        var audit = await session.Page.AuditAccessibilityAsync(
+            new AccessibilityAuditOptions { ExcludeSelectors = ["#third-party-widget"] },
+            new AuditLabel { Scenario = "checkout", State = "loaded" });   // the label appears in reports and baselines
+
+        audit.ShouldHaveNoViolations();
+        """;
+}

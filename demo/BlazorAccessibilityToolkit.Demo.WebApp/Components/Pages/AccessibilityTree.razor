@@ -11,6 +11,8 @@
     </p>
 </div>
 
+<RunAllTests />
+
 <ul class="reasons">
     <li>Stored snapshots live in <code>__a11y_snapshots__</code> next to the test file. A missing snapshot is written and the test fails, so the new file gets reviewed.</li>
     <li>Templates can be partial and can use regular expressions, for example <code>- status: /\d+ results/</code>.</li>
@@ -23,7 +25,8 @@
         Both components display the same tabs. The template below was reviewed for the accessible version. The other
         version loses two names: the tablist has none, and the panel is not labelled by its tab.
     </p>
-    <ExampleCard Title="Tabs that only work with a mouse" Defect="true" Example="SnapshotExamples.NaiveTabsSnapshot" Sources="@(["NaiveTabs.razor"])">
+    <ExampleCard Title="Tabs that only work with a mouse" Defect="true" Example="SnapshotExamples.NaiveTabsSnapshot" Sources="@(["NaiveTabs.razor"])"
+                 Affects="@(["Screen reader users"])">
         <Stage><NaiveTabs Label="Sections" Items="DemoData.Tabs" /></Stage>
     </ExampleCard>
     <ExampleCard Title="Tabs with complete semantics" Example="SnapshotExamples.TabsSnapshot" Sources="@(["Tabs.razor"])">
@@ -38,4 +41,3 @@
     </p>
 </div>
 
-<p class="next">Next: <a href="ci-gate">turn all of this into a CI gate</a>.</p>

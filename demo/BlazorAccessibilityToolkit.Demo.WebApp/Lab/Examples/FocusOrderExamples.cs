@@ -68,4 +68,43 @@ public static class FocusOrderExamples
             #endregion
         },
     };
+
+    public static readonly LabExample BareFocusIndicator = new()
+    {
+        Id = "bare-focus-indicator",
+        ExpectFailure = true,
+        NeedsBrowser = true,
+        Run = async env =>
+        {
+            #region snippet:bare-focus-indicator
+            await using var component = await env.Host.RenderAsync<OutlineFreeViewSwitcher>(env.Browser);
+
+            // Opt in: at every stop, check that the focused element draws an outline or a box shadow.
+            var order = await component.CaptureFocusOrderAsync(new FocusOrderOptions { ReportMissingFocusIndicator = true });
+            env.Show(order);
+
+            order.ShouldMatch("button List", "button Grid", "button Map");
+            Assert.Empty(order.Findings);
+            #endregion
+        },
+    };
+
+    public static readonly LabExample VisibleFocusIndicator = new()
+    {
+        Id = "visible-focus-indicator",
+        NeedsBrowser = true,
+        Run = async env =>
+        {
+            #region snippet:visible-focus-indicator
+            await using var component = await env.Host.RenderAsync<ViewSwitcher>(env.Browser);
+
+            // Opt in: at every stop, check that the focused element draws an outline or a box shadow.
+            var order = await component.CaptureFocusOrderAsync(new FocusOrderOptions { ReportMissingFocusIndicator = true });
+            env.Show(order);
+
+            order.ShouldMatch("button List", "button Grid", "button Map");
+            Assert.Empty(order.Findings);
+            #endregion
+        },
+    };
 }

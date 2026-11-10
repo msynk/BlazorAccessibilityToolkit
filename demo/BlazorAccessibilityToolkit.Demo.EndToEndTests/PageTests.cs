@@ -28,6 +28,82 @@ public sealed class PageTests(AppFixture app)
         audit.ShouldHaveNoViolations();
     }
 
+    /// <summary>
+    /// The same pages in the dark theme. The theme follows the operating system by default, so emulating a dark color
+    /// scheme is enough; every color has a dark value that must meet the same contrast requirements.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(ShowcasePages))]
+    public async Task Showcase_pages_have_no_detectable_violations_in_the_dark_theme(string path)
+    {
+        await using var session = await app.OpenAsync(path, new BrowserNewContextOptions { ColorScheme = ColorScheme.Dark });
+        Assert.Equal(DarkPageBackground, await session.Page.EvaluateAsync<string>("getComputedStyle(document.body).backgroundColor"));
+
+        var audit = await session.Page.AuditAccessibilityAsync(ShowcaseAudit, new AuditLabel { Scenario = "page", State = "dark theme" });
+
+        audit.ShouldHaveNoViolations();
+    }
+
+    /// <summary>The page background of the dark theme (--page-bg in app.css), to check that the theme is really applied.</summary>
+    private const string DarkPageBackground = "rgb(15, 18, 24)";
+
+    [Fact]
+    public async Task Theme_switcher_works_with_the_keyboard_and_is_remembered()
+    {
+        await using var session = await app.OpenAsync("/");
+        var page = session.Page;
+        var themes = page.GetByRole(AriaRole.Group, new() { Name = "Theme" });
+        var dark = themes.GetByRole(AriaRole.Radio, new() { Name = "Dark" });
+
+        // One Tab stop on the selected option; arrow keys choose (Light, Dark, System).
+        await KeyboardScenario.For(page)
+            .FocusOn(themes.GetByRole(AriaRole.Radio, new() { Name = "System" }))
+            .PressArrowLeft()
+            .ExpectFocused("radio", "Dark")
+            .ExpectState(dark, "checked", "true")
+            .RunAsync();
+        await page.Locator("html[data-theme=dark]").WaitForAsync();
+        Assert.Equal(DarkPageBackground, await page.EvaluateAsync<string>("getComputedStyle(document.body).backgroundColor"));
+
+        // The choice is stored in a cookie: the server renders the next page in the dark theme, with Dark selected.
+        await page.ReloadAsync();
+        await page.Locator("main[data-interactive=true]").WaitForAsync();
+        Assert.Equal("dark", await page.Locator("html").GetAttributeAsync("data-theme"));
+        await dark.ShouldHaveStateAsync("checked", "true");
+
+        var audit = await page.AuditAccessibilityAsync(ShowcaseAudit, new AuditLabel { Scenario = "theme switcher", State = "dark chosen" });
+        audit.ShouldHaveNoViolations(AccessibilityExpectation.Strict);
+    }
+
+    [Fact]
+    public async Task Navigation_collapses_behind_a_menu_button_on_narrow_screens()
+    {
+        await using var session = await app.OpenAsync("/", new BrowserNewContextOptions { ViewportSize = new() { Width = 390, Height = 844 } });
+        var page = session.Page;
+        var menu = page.GetByRole(AriaRole.Button, new() { Name = "Menu" });
+        var navigation = page.GetByRole(AriaRole.Navigation, new() { Name = "Showcase" });
+        Assert.False(await navigation.IsVisibleAsync());
+
+        await KeyboardScenario.For(page, new KeyboardScenarioOptions { Name = "narrow screen", AuditOptions = ShowcaseAudit })
+            .FocusOn(menu)
+            .PressEnter()
+            .ExpectState(menu, "expanded", "true")
+            .Audit("navigation open")
+            .RunAsync();
+        Assert.True(await navigation.IsVisibleAsync());
+
+        // Choosing a page closes the navigation again, so the page is what the user sees. The rule catalog has the
+        // widest table: at this width it must wrap instead of scrolling the page sideways.
+        await navigation.GetByRole(AriaRole.Link, new() { Name = "Rule catalog" }).ClickAsync();
+        await page.GetByRole(AriaRole.Heading, new() { Name = "Rule catalog", Level = 1 }).WaitForAsync();
+        await menu.ShouldHaveStateAsync("expanded", "false");
+        Assert.False(await navigation.IsVisibleAsync());
+        Assert.True(await page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= window.innerWidth"), "The page scrolls sideways.");
+
+        var audit = await page.AuditAccessibilityAsync(ShowcaseAudit, new AuditLabel { Scenario = "narrow screen", State = "loaded" });
+        audit.ShouldHaveNoViolations();
+    }
+
     [Fact]
     public async Task Skip_link_is_the_first_stop_and_moves_focus_to_main()
     {
@@ -54,15 +130,20 @@ public sealed class PageTests(AppFixture app)
     [Fact]
     public async Task Layout_focus_order_follows_the_visual_order()
     {
-        // The manual review page has a single control in its content, after the skip link, the brand and the navigation.
+        // The manual review page has a single control in its content: after the skip link, the masthead (brand, source
+        // link, theme switcher) and the navigation, and before the links to the previous and next page of the tour.
         await using var session = await app.OpenAsync("/manual-review");
 
         var order = await session.Page.CaptureFocusOrderAsync();
 
-        var links = app.Browser.Name == "webkit"
-            ? Array.Empty<string>() // WebKit skips links on Tab by default (Safari setting).
-            : ["link Skip to main content", "link Blazor Accessibility Toolkit", .. NavMenu.Pages.Select(p => "link " + p.Text)];
-        order.ShouldMatch([.. links, "checkbox Release policy: fail on outstanding manual checks (--fail-on-manual-review)"]).ShouldNotTrapFocus();
+        // WebKit skips links on Tab by default (a Safari setting), but not form controls.
+        var webkit = app.Browser.Name == "webkit";
+        string[] header = webkit
+            ? ["radio System"]
+            : ["link Skip to main content", "link Blazor Accessibility Toolkit", "link Source code on GitHub", "radio System"];
+        string[] navigation = webkit ? [] : [.. NavMenu.Pages.Select(p => "link " + p.Text)];
+        string[] tour = webkit ? [] : ["link Previous: CI gate and reports", "link Next: Rule catalog"];
+        order.ShouldMatch([.. header, .. navigation, "checkbox Release policy: fail on outstanding manual checks (--fail-on-manual-review)", .. tour]).ShouldNotTrapFocus();
         Assert.DoesNotContain(order.Findings, f => f.RuleId == "blazor-focus-hidden-target");
     }
 
@@ -144,6 +225,27 @@ public sealed class PageTests(AppFixture app)
 
         await example.GetByText("blazor-markup-control-name").First.WaitForAsync();
         var audit = await page.AuditAccessibilityAsync(ShowcaseAudit, new AuditLabel { Scenario = "live test", State = "results shown" });
+        audit.ShouldHaveNoViolations(AccessibilityExpectation.Strict);
+    }
+
+    [Fact]
+    public async Task All_live_tests_of_a_page_run_with_one_button()
+    {
+        // The home page has two bUnit examples: one catches a defect, one passes. "Run all" runs both, announces the
+        // outcome in its status region, and lists each result with a link to its example.
+        await using var session = await app.OpenAsync("/");
+        var page = session.Page;
+
+        await KeyboardScenario.For(page, new KeyboardScenarioOptions { ExpectTimeout = TimeSpan.FromSeconds(20) })
+            .FocusOn(page.GetByRole(AriaRole.Button, new() { Name = "Run all 2 tests" }))
+            .PressEnter()
+            .ExpectLiveRegionUpdate("All 2 tests ended as expected: 1 defect caught, 1 accessible component passed.")
+            .RunAsync();
+
+        var results = page.GetByRole(AriaRole.List, new() { Name = "Results" });
+        await results.GetByRole(AriaRole.Link, new() { Name = "Icon button without a name" }).WaitForAsync();
+        await results.GetByRole(AriaRole.Link, new() { Name = "Icon button with a name" }).WaitForAsync();
+        var audit = await page.AuditAccessibilityAsync(ShowcaseAudit, new AuditLabel { Scenario = "run all", State = "results shown" });
         audit.ShouldHaveNoViolations(AccessibilityExpectation.Strict);
     }
 

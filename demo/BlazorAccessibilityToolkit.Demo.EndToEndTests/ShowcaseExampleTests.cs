@@ -1,4 +1,3 @@
-using System.Reflection;
 using BlazorAccessibilityToolkit.Demo.WebApp.Lab;
 using Assert = Xunit.Assert;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,12 +13,7 @@ public sealed class ShowcaseExampleTests(AppFixture app)
 {
     public static TheoryData<string> Examples => [.. All.Keys.Order(StringComparer.Ordinal)];
 
-    private static Dictionary<string, LabExample> All { get; } = typeof(LabExample).Assembly.GetTypes()
-        .Where(t => t.Namespace == "BlazorAccessibilityToolkit.Demo.WebApp.Lab.Examples")
-        .SelectMany(t => t.GetFields(BindingFlags.Public | BindingFlags.Static))
-        .Select(f => f.GetValue(null))
-        .OfType<LabExample>()
-        .ToDictionary(e => e.Id);
+    private static Dictionary<string, LabExample> All { get; } = LabCatalog.Examples.ToDictionary(e => e.Id);
 
     [Theory]
     [MemberData(nameof(Examples))]

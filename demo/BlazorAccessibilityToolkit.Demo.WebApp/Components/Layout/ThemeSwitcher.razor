@@ -1,0 +1,45 @@
+@* Light, dark or the operating system's theme. A radio group: one Tab stop, arrow keys choose, and the legend names the
+   group. wwwroot/theme.js applies the choice and stores it in a cookie; App.razor renders the stored choice. *@
+<fieldset class="theme-switch">
+    <legend>Theme</legend>
+    @foreach (var (value, text) in Options)
+    {
+        <label class="theme-switch__option">
+            <input type="radio" name="theme" value="@value" checked="@(preference == value)" @onchange="() => preference = value" />
+            <svg aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                @switch (value)
+                {
+                    case "light":
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                        break;
+                    case "dark":
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                        break;
+                    default:
+                        <rect x="2" y="3" width="20" height="14" rx="2" />
+                        <path d="M8 21h8M12 17v4" />
+                        break;
+                }
+            </svg>
+            <span class="theme-switch__text">@text</span>
+        </label>
+    }
+</fieldset>
+
+@code {
+    /// <summary>The name of the cookie that stores the choice (see wwwroot/theme.js).</summary>
+    public const string Cookie = "theme";
+
+    private static readonly (string Value, string Text)[] Options = [("light", "Light"), ("dark", "Dark"), ("system", "System")];
+
+    private string preference = "system";
+
+    /// <summary>The stored choice when the page was rendered: light, dark or system.</summary>
+    [Parameter] public string Initial { get; set; } = "system";
+
+    protected override void OnInitialized() => preference = Normalize(Initial);
+
+    /// <summary>A valid preference from a cookie value: light, dark, or system for anything else.</summary>
+    public static string Normalize(string? value) => value is "light" or "dark" ? value : "system";
+}

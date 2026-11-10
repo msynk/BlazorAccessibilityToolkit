@@ -124,6 +124,14 @@ public sealed class ComponentMarkupTests(TestEnvironment env)
         await ShouldHaveNoFindingsAsync<QuantityField>();
     }
 
+    [Fact]
+    public async Task View_switchers_have_the_same_valid_markup_with_or_without_a_focus_indicator()
+    {
+        // The defect of OutlineFreeViewSwitcher is in its CSS, not its markup: only a focus-order capture detects it.
+        await ShouldHaveNoFindingsAsync<ViewSwitcher>();
+        await ShouldHaveNoFindingsAsync<OutlineFreeViewSwitcher>();
+    }
+
     private async Task ShouldHaveNoFindingsAsync<T>()
         where T : Microsoft.AspNetCore.Components.IComponent
     {

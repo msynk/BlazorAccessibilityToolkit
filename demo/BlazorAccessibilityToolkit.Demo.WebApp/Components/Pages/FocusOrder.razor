@@ -7,9 +7,11 @@
     <p class="lead">
         <code>CaptureFocusOrderAsync</code> presses Tab until focus leaves the page, wraps around, cycles or gets stuck,
         and records every stop with its role and accessible name. You compare it with the order you expect, and
-        heuristics flag keyboard traps, stuck focus and focus on invisible elements.
+        heuristics flag keyboard traps, stuck focus, focus on invisible elements and focus without a visible indicator.
     </p>
 </div>
+
+<RunAllTests />
 
 <div class="table-wrap">
     <table class="data">
@@ -21,6 +23,7 @@
             <tr><td><code>blazor-focus-trap</code></td><td>focus cycles within part of the page that is not a modal dialog</td></tr>
             <tr><td><code>blazor-focus-stuck</code></td><td>Tab does not move focus</td></tr>
             <tr><td><code>blazor-focus-repeated</code></td><td>one element is reached twice in a single pass</td></tr>
+            <tr><td><code>blazor-focus-indicator-not-detected</code></td><td>the focused element draws neither an outline nor a box shadow (opt-in: <code>ReportMissingFocusIndicator</code>)</td></tr>
         </tbody>
     </table>
 </div>
@@ -36,12 +39,34 @@
         from the keyboard. Collapse both panels below, then press Tab from the Filters button: in the first one, focus
         disappears into three invisible controls before it reaches "Show 24 results".
     </p>
-    <ExampleCard Title="A filter panel collapsed with CSS only" Defect="true" Example="FocusOrderExamples.AnimatedFilterOrder" Sources="@(["AnimatedFilterPanel.razor"])">
+    <ExampleCard Title="A filter panel collapsed with CSS only" Defect="true" Example="FocusOrderExamples.AnimatedFilterOrder" Sources="@(["AnimatedFilterPanel.razor"])"
+                 Affects="@(["Keyboard users", "Screen magnifier users"])">
         <Stage><AnimatedFilterPanel /></Stage>
     </ExampleCard>
     <ExampleCard Title="A filter panel collapsed with hidden" Example="FocusOrderExamples.FilterOrder" Sources="@(["FilterPanel.razor"])">
         <Stage><FilterPanel /></Stage>
     </ExampleCard>
+</section>
+
+<section aria-labelledby="indicator">
+    <h2 id="indicator">Where is focus?</h2>
+    <p>
+        A designer removes the focus ring because it "looks ugly". Mouse users never notice; keyboard users lose track
+        of where they are. Both switchers below have the same markup, so a markup audit passes both. Click the text
+        above each one and press Tab: in the first, nothing shows which button has focus.
+    </p>
+    <ExampleCard Title="Toggle buttons without a focus indicator" Defect="true" Example="FocusOrderExamples.BareFocusIndicator" Sources="@(["OutlineFreeViewSwitcher.razor"])"
+                 Affects="@(["Keyboard users", "Low vision users"])">
+        <Stage><OutlineFreeViewSwitcher /></Stage>
+    </ExampleCard>
+    <ExampleCard Title="Toggle buttons with a visible focus outline" Example="FocusOrderExamples.VisibleFocusIndicator" Sources="@(["ViewSwitcher.razor"])"
+                 Hears="List, toggle button, pressed">
+        <Stage><ViewSwitcher /></Stage>
+    </ExampleCard>
+    <p>
+        The check looks for an outline or a box shadow, the usual indicators. An indicator made another way, such as a
+        change of background, is reported as well, as a potential issue: a person decides whether it is visible enough.
+    </p>
 </section>
 
 <section aria-labelledby="modal">
@@ -59,4 +84,3 @@
     </ExampleCard>
 </section>
 
-<p class="next">Next: <a href="aria-patterns">verify whole widgets against the ARIA Authoring Practices</a>.</p>

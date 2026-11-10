@@ -1,7 +1,11 @@
 @* One finding, with everything the toolkit attaches to it. *@
-<div class="finding finding--@StatusClass">
+<div class="finding finding--@(Finding.IsSuppressed ? "suppressed" : StatusClass)">
     <p class="finding__head">
         <span class="badge badge--@StatusClass">@StatusText</span>
+        @if (Finding.IsSuppressed)
+        {
+            <span class="badge badge--suppressed">suppressed</span>
+        }
         @if (Finding.Impact is { } impact)
         {
             <span class="badge badge--impact">@impact.ToString().ToLowerInvariant()</span>
@@ -37,6 +41,17 @@
                 @foreach (var criterion in Finding.Wcag)
                 {
                     <a class="wcag" href="@criterion.Url">@criterion.Id @criterion.Title (@criterion.Level)</a>
+                }
+            </dd>
+        }
+        @if (Finding.Suppression is { } suppression)
+        {
+            <dt>Suppressed</dt>
+            <dd>
+                @suppression.Reason
+                @if (suppression.Owner is not null)
+                {
+                    <span>(owner: @suppression.Owner@(suppression.Expires is { } expires ? $", until {expires:yyyy-MM-dd}" : null))</span>
                 }
             </dd>
         }

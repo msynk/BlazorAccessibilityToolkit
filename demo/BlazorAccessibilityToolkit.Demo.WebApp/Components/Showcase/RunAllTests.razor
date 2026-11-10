@@ -1,0 +1,160 @@
+@implements IDisposable
+@inject LabPage Lab
+@* Runs every live test on the page, one after the other, and sums up how each one ended. *@
+@if (Lab.Panels.Count > 0)
+{
+    <div class="run-all">
+        <div class="run-all__head">
+            <p class="run-all__text">
+                <strong>@Lab.Panels.Count live @(Lab.Panels.Count == 1 ? "test" : "tests") on this page</strong>
+                <span>@Summary</span>
+            </p>
+            <button type="button" class="primary" aria-disabled="@(Busy ? "true" : "false")" @onclick="RunAllAsync">
+                @(results.Count == 0 ? $"Run all {Lab.Panels.Count} tests" : "Run them all again")
+            </button>
+        </div>
+
+        @if (running)
+        {
+            <p class="run-all__progress">
+                <progress max="@total" value="@results.Count" aria-labelledby="@progressId"></progress>
+                <span id="@progressId">@results.Count of @total done@(current is null ? null : $". Now running: {current}")</span>
+            </p>
+        }
+
+        <p role="status" class="run-all__status">@status</p>
+
+        @if (!running && results.Count > 0)
+        {
+            <ul class="scoreboard" aria-label="Results">
+                @foreach (var (panel, result) in results)
+                {
+                    var expected = result.AsExpected(panel.Example);
+                    <li>
+                        <span class="scoreboard__icon @(result.Outcome == LabOutcome.Unavailable ? "scoreboard__icon--info" : expected ? null : "scoreboard__icon--bad")"
+                              aria-hidden="true" data-icon="@(result.Outcome == LabOutcome.Unavailable ? "i" : expected ? "✓" : "✗")"></span>
+                        <a href="@($"{Navigation.ToBaseRelativePath(Navigation.Uri).Split('#')[0]}#{panel.AnchorId}")">@panel.Title</a>
+                        <span class="scoreboard__outcome">@Outcome(panel, result)</span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+}
+
+@code {
+    private readonly CancellationTokenSource disposed = new();
+    private readonly string progressId = $"run-all-progress-{Guid.NewGuid():N}";
+    private readonly List<(ILabPanel Panel, LabResult Result)> results = [];
+    private string status = string.Empty;
+    private string? current;
+    private bool running;
+    private int total;
+
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
+
+    private bool Busy => running || !RendererInfo.IsInteractive;
+
+    private string Summary
+    {
+        get
+        {
+            var defects = Lab.Panels.Count(p => p.Example.ExpectFailure);
+            var browser = Lab.Panels.Count(p => p.Example.NeedsBrowser);
+            var parts = new List<string>();
+            if (defects > 0)
+            {
+                parts.Add($"{defects} should catch an intentional defect");
+            }
+
+            if (Lab.Panels.Count - defects > 0)
+            {
+                parts.Add($"{Lab.Panels.Count - defects} should pass");
+            }
+
+            var where = browser == 0 ? "All run without a browser." : browser == Lab.Panels.Count ? "All run in a real browser." : $"{browser} run in a real browser.";
+            return $"{string.Join(", ", parts)}. {where}";
+        }
+    }
+
+    protected override void OnInitialized() => Lab.Changed += OnPanelsChanged;
+
+    private void OnPanelsChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task RunAllAsync()
+    {
+        if (Busy)
+        {
+            return;
+        }
+
+        running = true;
+        results.Clear();
+        var panels = Lab.Panels.ToArray();
+        total = panels.Length;
+        status = $"Running {total} tests…";
+        try
+        {
+            foreach (var panel in panels)
+            {
+                if (disposed.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                if (!Lab.Panels.Contains(panel))
+                {
+                    continue;
+                }
+
+                current = panel.Title;
+                StateHasChanged();
+                if (await panel.RunAsync() is { } result)
+                {
+                    results.Add((panel, result));
+                }
+            }
+
+            status = Conclusion();
+        }
+        finally
+        {
+            running = false;
+            current = null;
+        }
+    }
+
+    private string Conclusion()
+    {
+        var expected = results.Count(r => r.Result.AsExpected(r.Panel.Example));
+        var caught = results.Count(r => r.Panel.Example.ExpectFailure && r.Result.Outcome == LabOutcome.Failed);
+        var passed = results.Count(r => !r.Panel.Example.ExpectFailure && r.Result.Outcome == LabOutcome.Passed);
+        var unavailable = results.Count(r => r.Result.Outcome == LabOutcome.Unavailable);
+        var tally = $"{caught} {(caught == 1 ? "defect" : "defects")} caught, {passed} accessible {(passed == 1 ? "component" : "components")} passed";
+        if (expected == results.Count)
+        {
+            return $"All {results.Count} tests ended as expected: {tally}.";
+        }
+
+        return unavailable > 0
+            ? $"{expected} of {results.Count} tests ended as expected ({tally}). {unavailable} need a browser: install Chromium and run them again."
+            : $"{expected} of {results.Count} tests ended as expected ({tally}). See the tests marked with a cross.";
+    }
+
+    private static string Outcome(ILabPanel panel, LabResult result) => (result.Outcome, panel.Example.ExpectFailure) switch
+    {
+        (LabOutcome.Failed, true) => $"defect detected ({LabPanel.Time(result)})",
+        (LabOutcome.Passed, false) => $"passed ({LabPanel.Time(result)})",
+        (LabOutcome.Passed, true) => "passed, but the defect was not detected",
+        (LabOutcome.Failed, false) => "failed unexpectedly",
+        (LabOutcome.Unavailable, _) => "needs a browser",
+        _ => "could not run",
+    };
+
+    public void Dispose()
+    {
+        Lab.Changed -= OnPanelsChanged;
+        disposed.Cancel();
+        disposed.Dispose();
+    }
+}

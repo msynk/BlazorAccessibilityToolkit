@@ -12,6 +12,8 @@
     </p>
 </div>
 
+<RunAllTests />
+
 <ul class="reasons">
     <li>Expectations poll until they hold or time out, so Blazor Server round trips need no fixed delays.</li>
     <li><code>Audit("state")</code> runs a full axe-core audit in the middle of the interaction.</li>
@@ -25,7 +27,8 @@
         A markup audit passes both. Only keyboard behavior tells them apart. Open each one with the keyboard and press
         Tab and Escape.
     </p>
-    <ExampleCard Title="A dialog without focus management" Defect="true" Example="KeyboardExamples.FocuslessDialogScenario" Sources="@(["FocuslessDialog.razor"])">
+    <ExampleCard Title="A dialog without focus management" Defect="true" Example="KeyboardExamples.FocuslessDialogScenario" Sources="@(["FocuslessDialog.razor"])"
+                 Affects="@(["Keyboard users", "Screen reader users", "Screen magnifier users"])">
         <Stage>
             <FocuslessDialog TriggerText="Delete account" Title="Delete account?" ConfirmText="Delete">
                 <p>This removes your profile and cannot be undone.</p>
@@ -49,7 +52,8 @@
         must describe the error. The test also reads the field's accessibility information: role, name, description and
         states, computed with axe-core's implementation of the accessible name algorithm.
     </p>
-    <ExampleCard Title="The template form" Defect="true" Example="KeyboardExamples.LegacySignupScenario" Sources="@(["LegacySignupForm.razor"])">
+    <ExampleCard Title="The template form" Defect="true" Example="KeyboardExamples.LegacySignupScenario" Sources="@(["LegacySignupForm.razor"])"
+                 Affects="@(["Keyboard users", "Screen reader users"])">
         <Stage><LegacySignupForm /></Stage>
     </ExampleCard>
     <ExampleCard Title="A form that moves focus to the first error" Example="KeyboardExamples.SignupScenario" Sources="@(["SignupForm.razor"])">
@@ -57,4 +61,3 @@
     </ExampleCard>
 </section>
 
-<p class="next">Next: <a href="focus-order">capture the whole focus order</a>.</p>

@@ -79,7 +79,7 @@ Engine `blazor-a11y`. Environments: *markup* means bUnit markup without a browse
 | `blazor-idref-missing-target` | Potential | 1.3.1, 4.1.2 | markup, browser | IDREF attributes and `label[for]` pointing at missing ids |
 | `blazor-radio-group-ungrouped` | Potential | 1.3.1 | markup, browser | related radio buttons without a named fieldset or radiogroup |
 | `blazor-fieldset-missing-legend` | Potential | 1.3.1 | markup, browser | fieldset without a legend or name |
-| `blazor-expanded-state-mismatch` | Potential | 4.1.2 | browser | `aria-expanded` contradicts the visibility of the `aria-controls` target |
+| `blazor-expanded-state-mismatch` | Potential | 4.1.2 | browser | `aria-expanded` contradicts the visibility of the `aria-controls` target (triggers that are not rendered are skipped) |
 | `blazor-tab-selection-mismatch` | Potential | 4.1.2, 1.3.1 | browser | not exactly one selected tab, or panel visibility contradicts selection |
 | `blazor-markup-image-alt`, `-control-name`, `-form-label`, `-aria-hidden-focusable`, `-invalid-aria-attribute`, `-invalid-role`, `-positive-tabindex` | mostly Violation | various | markup (fallback only) | conservative browserless equivalents of axe rules, only when no browser engine runs |
 | `blazor-focus-*` | Potential | 2.1.2, 2.4.3, 2.4.7 | browser | see [focus order](interactive-testing.md#focus-order) |

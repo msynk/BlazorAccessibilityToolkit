@@ -62,6 +62,19 @@ public sealed class DiagnosticsTests(BrowserFixture browser)
     }
 
     [Fact]
+    public async Task Expanded_state_of_triggers_that_are_not_rendered_is_not_checked()
+    {
+        // A responsive layout: the menu button only appears on narrow screens, the navigation it controls is always
+        // shown on wide ones. While the button is not rendered, its aria-expanded="false" contradicts nothing.
+        var audit = await AuditAsync(
+            "<style>.menu-toggle { display: none; }</style>" +
+            "<button class=\"menu-toggle\" aria-expanded=\"false\" aria-controls=\"site-nav\">Menu</button>" +
+            "<nav id=\"site-nav\" aria-label=\"Site\"><a href=\"#a\">Home</a></nav>" +
+            "<button hidden aria-expanded=\"true\" aria-controls=\"details\">Details</button><div id=\"details\" hidden>More</div>");
+        audit.ShouldNotHaveFinding("blazor-expanded-state-mismatch");
+    }
+
+    [Fact]
     public async Task Blazor_validation_messages_must_be_associated()
     {
         // Markup produced by Blazor's InputText + ValidationMessage after a failed submit.

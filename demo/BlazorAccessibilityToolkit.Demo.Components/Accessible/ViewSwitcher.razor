@@ -1,0 +1,25 @@
+@* A view switcher: toggle buttons in a labelled group. aria-pressed tells screen readers which view is active, and the
+   shared :focus-visible outline shows keyboard users where focus is. Fixed version of OutlineFreeViewSwitcher. *@
+<div class="view-switcher" role="group" aria-label="@Label">
+    @foreach (var view in Views)
+    {
+        <button type="button" aria-pressed="@(view == selected ? "true" : "false")" @onclick="() => selected = view">@view</button>
+    }
+</div>
+
+@code {
+    private string? selected;
+
+    /// <summary>Accessible name of the group.</summary>
+    [Parameter] public string Label { get; set; } = "View";
+
+    [Parameter] public IReadOnlyList<string> Views { get; set; } = ["List", "Grid", "Map"];
+
+    protected override void OnParametersSet()
+    {
+        if (selected is null || !Views.Contains(selected))
+        {
+            selected = Views.FirstOrDefault();
+        }
+    }
+}

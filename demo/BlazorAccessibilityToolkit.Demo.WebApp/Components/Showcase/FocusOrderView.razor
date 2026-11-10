@@ -10,6 +10,10 @@
                 {
                     <span class="badge badge--violation">not visible</span>
                 }
+                @if (stop.Indicator == FocusIndicator.NotDetected)
+                {
+                    <span class="badge badge--potential">no focus indicator detected</span>
+                }
                 @if (stop.ModalContainer is not null)
                 {
                     <span class="badge badge--impact">inside a modal dialog</span>

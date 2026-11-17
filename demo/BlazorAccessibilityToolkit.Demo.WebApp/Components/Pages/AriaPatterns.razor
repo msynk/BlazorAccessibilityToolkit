@@ -84,6 +84,22 @@
     </ExampleCard>
 </section>
 
+<section aria-labelledby="form-validation">
+    <h2 id="form-validation">Form validation</h2>
+    <p>
+        After a failed submit with the keyboard, every invalid field is marked with <code>aria-invalid</code>, linked to its
+        error text, focus moves to the first invalid field or to an error summary, and the errors reach screen reader
+        users. The forms are shown on the <a href="blazor-rules">Blazor rules</a> page.
+    </p>
+    <ExampleCard Title="The template form" Defect="true" Example="PatternExamples.LegacySignupValidation" Sources="@(["LegacySignupForm.razor"])"
+                 Affects="@(["Screen reader users", "Keyboard users"])">
+        <ChildContent><p>InputText sets aria-invalid, but ValidationMessage is not linked and focus stays on the button.</p></ChildContent>
+    </ExampleCard>
+    <ExampleCard Title="Errors linked and focused" Example="PatternExamples.SignupValidation" Sources="@(["SignupForm.razor", "FieldError.razor"])">
+        <ChildContent><p>The error text is referenced by the field, and focus moves to the first invalid field.</p></ChildContent>
+    </ExampleCard>
+</section>
+
 
 @code {
     private const string Verifiers = """

@@ -35,6 +35,35 @@ public sealed record ReflowOptions
     public int MaxFindings { get; init; } = 20;
 }
 
+/// <summary>Settings for <see cref="AdaptationAudits.AuditMotionAsync"/>.</summary>
+public sealed record MotionOptions
+{
+    /// <summary>Audit options (excluded selectors, suppressions).</summary>
+    public AccessibilityAuditOptions? AuditOptions { get; init; }
+
+    /// <summary>How long to let the page react to the reduced-motion preference. Default 500 ms.</summary>
+    public TimeSpan SettleTime { get; init; } = TimeSpan.FromMilliseconds(500);
+
+    /// <summary>Maximum number of animations reported. Default 20.</summary>
+    public int MaxFindings { get; init; } = 20;
+}
+
+/// <summary>Settings for <see cref="AdaptationAudits.AuditOrientationAsync"/>.</summary>
+public sealed record OrientationOptions
+{
+    /// <summary>The shorter side of the emulated device in CSS pixels. Default 390.</summary>
+    public int ShortSide { get; init; } = 390;
+
+    /// <summary>The longer side of the emulated device in CSS pixels. Default 844.</summary>
+    public int LongSide { get; init; } = 844;
+
+    /// <summary>How long to let the layout settle after rotating. Default 300 ms.</summary>
+    public TimeSpan SettleTime { get; init; } = TimeSpan.FromMilliseconds(300);
+
+    /// <summary>Audit options (suppressions).</summary>
+    public AccessibilityAuditOptions? AuditOptions { get; init; }
+}
+
 /// <summary>Settings for <see cref="AdaptationAudits.AuditTextSpacingAsync"/>.</summary>
 public sealed record TextSpacingOptions
 {
@@ -105,7 +134,8 @@ public sealed record DisplayConditions
 
 /// <summary>
 /// Audits of how content adapts to users' display needs: reflow at 320 CSS pixels (WCAG 1.4.10), increased text
-/// spacing (WCAG 1.4.12) and preference media features (dark mode, forced colors, increased contrast). Findings are
+/// spacing (WCAG 1.4.12), orientation (WCAG 1.3.4), reduced motion (WCAG 2.2.2, 2.3.3) and preference media features
+/// (dark mode, forced colors, increased contrast). Findings are
 /// <see cref="FindingStatus.PotentialIssue"/>: they show where content overflows or is clipped, which usually means
 /// lost content, but the decision whether content is lost or exempt needs a person.
 /// </summary>
@@ -223,6 +253,158 @@ public static class AdaptationAudits
         }
 
         return PlaywrightAccessibility.Persist(builder.Build());
+    }
+
+    /// <summary>
+    /// Emulates <c>prefers-reduced-motion: reduce</c>, waits for the page to react, and reports animations that still
+    /// move content (transforms, position, size) or run for more than five seconds, and media that still plays for
+    /// more than five seconds (WCAG 2.2.2, 2.3.3). Loading indicators are not reported. The preference is restored.
+    /// </summary>
+    public static async Task<AccessibilityAudit> AuditMotionAsync(this IPage page, MotionOptions? options = null, AuditLabel? label = null)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        options ??= new MotionOptions();
+        var auditOptions = options.AuditOptions ?? AccessibilityAuditOptions.Default;
+        var builder = CreateBuilder(page, auditOptions, label, label?.State ?? "reduced motion");
+        DisplayConditions? previous = null;
+        try
+        {
+            previous = await CurrentConditionsAsync(page).ConfigureAwait(false);
+            await page.EmulateMediaAsync(new PageEmulateMediaOptions { ReducedMotion = Microsoft.Playwright.ReducedMotion.Reduce }).ConfigureAwait(false);
+            await SettleAsync(page, options.SettleTime).ConfigureAwait(false);
+            await ToolkitScript.EnsureAsync(page).ConfigureAwait(false);
+            var json = await page.EvaluateAsync<JsonElement>(
+                "o => window.__blazorA11y.motionReport(o)",
+                new { exclude = auditOptions.ExcludeSelectors.ToArray(), max = Math.Max(1, options.MaxFindings) }).ConfigureAwait(false);
+            var offenders = ToolkitScript.Deserialize<MotionDto[]>(json) ?? [];
+            builder.AddEngine(ToolkitRules.EngineName, ToolkitScript.ToolkitVersion);
+            foreach (var offender in offenders)
+            {
+                builder.AddFinding(ToolkitRules.MotionNotReduced.CreateFinding(
+                    new FindingTarget { Selector = offender.Selector, Html = offender.Html, Role = offender.Role, AccessibleName = offender.Name, ElementOrdinal = offender.Ordinal },
+                    remediation: DescribeMotion(offender) + " " + ToolkitRules.MotionNotReduced.Remediation,
+                    data: new Dictionary<string, string>
+                    {
+                        ["kind"] = offender.Kind ?? string.Empty,
+                        ["properties"] = offender.Properties ?? string.Empty,
+                        ["durationMs"] = offender.Duration.ToString(CultureInfo.InvariantCulture),
+                        ["infinite"] = offender.Infinite.ToString(),
+                    }));
+            }
+
+            if (offenders.Length == 0)
+            {
+                builder.AddPassedRule(ToolkitRules.MotionNotReduced.Id);
+            }
+        }
+        catch (Exception ex) when (ex is PlaywrightException or InvalidOperationException or JsonException)
+        {
+            builder.AddError(ExecutionError.FromException(ex is PlaywrightException ? "browser" : "engine", ex));
+        }
+        finally
+        {
+            if (previous is not null && !page.IsClosed)
+            {
+                try
+                {
+                    await page.EmulateMediaAsync(new PageEmulateMediaOptions { ReducedMotion = previous.ReducedMotion }).ConfigureAwait(false);
+                }
+                catch (PlaywrightException)
+                {
+                    // The page closed meanwhile.
+                }
+            }
+        }
+
+        return PlaywrightAccessibility.Persist(builder.Build());
+    }
+
+    /// <summary>
+    /// Shows the page in portrait and in landscape (WCAG 1.3.4) and reports when one orientation hides most of the
+    /// content, rotates the whole page, or shows a "rotate your device" message. The viewport is restored afterwards.
+    /// </summary>
+    public static async Task<AccessibilityAudit> AuditOrientationAsync(this IPage page, OrientationOptions? options = null, AuditLabel? label = null)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        options ??= new OrientationOptions();
+        var auditOptions = options.AuditOptions ?? AccessibilityAuditOptions.Default;
+        var builder = CreateBuilder(page, auditOptions, label, label?.State ?? "orientation");
+        var original = page.ViewportSize;
+        if (original is null)
+        {
+            builder.AddError(new ExecutionError { Source = "browser", Message = "The page has no fixed viewport (the context was created with ViewportSize.NoViewport), so it cannot be rotated and restored." });
+            return PlaywrightAccessibility.Persist(builder.Build());
+        }
+
+        try
+        {
+            var portrait = await OrientationSnapshotAsync(page, options.ShortSide, options.LongSide, options.SettleTime).ConfigureAwait(false);
+            var landscape = await OrientationSnapshotAsync(page, options.LongSide, options.ShortSide, options.SettleTime).ConfigureAwait(false);
+            builder.AddEngine(ToolkitRules.EngineName, ToolkitScript.ToolkitVersion);
+
+            var problems = new List<(string Orientation, string Problem, string? Selector)>();
+            foreach (var (name, snapshot, other) in new[] { ("portrait", portrait, landscape), ("landscape", landscape, portrait) })
+            {
+                if (snapshot.Rotated && !other.Rotated)
+                {
+                    problems.Add((name, "the page is rotated by 90 degrees", "html"));
+                }
+
+                foreach (var message in snapshot.Messages.Except(other.Messages, StringComparer.Ordinal))
+                {
+                    problems.Add((name, "a message asks users to rotate their device", message));
+                }
+
+                if (other.Text >= 200 && snapshot.Text < other.Text / 4)
+                {
+                    problems.Add((name, string.Create(CultureInfo.InvariantCulture, $"only {snapshot.Text} characters of text are shown, compared with {other.Text}"), "body"));
+                }
+            }
+
+            foreach (var (orientation, problem, selector) in problems)
+            {
+                builder.AddFinding(ToolkitRules.OrientationLocked.CreateFinding(
+                    new FindingTarget { Selector = selector },
+                    remediation: $"In {orientation} orientation, {problem}. {ToolkitRules.OrientationLocked.Remediation}",
+                    data: new Dictionary<string, string> { ["orientation"] = orientation }));
+            }
+
+            if (problems.Count == 0)
+            {
+                builder.AddPassedRule(ToolkitRules.OrientationLocked.Id);
+            }
+        }
+        catch (Exception ex) when (ex is PlaywrightException or InvalidOperationException or JsonException)
+        {
+            builder.AddError(ExecutionError.FromException(ex is PlaywrightException ? "browser" : "engine", ex));
+        }
+        finally
+        {
+            await RestoreViewportAsync(page, original).ConfigureAwait(false);
+        }
+
+        return PlaywrightAccessibility.Persist(builder.Build());
+    }
+
+    private static async Task<OrientationDto> OrientationSnapshotAsync(IPage page, int width, int height, TimeSpan settle)
+    {
+        await page.SetViewportSizeAsync(width, height).ConfigureAwait(false);
+        await SettleAsync(page, settle).ConfigureAwait(false);
+        await ToolkitScript.EnsureAsync(page).ConfigureAwait(false);
+        return ToolkitScript.Deserialize<OrientationDto>(await page.EvaluateAsync<JsonElement>("() => window.__blazorA11y.orientationSnapshot()").ConfigureAwait(false)) ?? new OrientationDto();
+    }
+
+    private static string DescribeMotion(MotionDto offender)
+    {
+        if (offender.Kind == "media")
+        {
+            return "Media keeps playing" + (offender.Infinite ? " in a loop" : string.Empty) + (offender.Controls ? "." : " and has no controls to pause it.");
+        }
+
+        var name = string.IsNullOrEmpty(offender.Name2) ? string.Empty : $" '{offender.Name2}'";
+        var properties = string.IsNullOrEmpty(offender.Properties) ? "properties unknown" : offender.Properties;
+        var infinite = offender.Infinite ? ", infinite" : string.Empty;
+        return string.Create(CultureInfo.InvariantCulture, $"Animation{name} ({properties}, {offender.Duration} ms{infinite}) keeps running with reduced motion requested.");
     }
 
     /// <summary>

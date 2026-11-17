@@ -87,11 +87,16 @@ Engine `blazor-a11y`. Environments: *markup* means bUnit markup without a browse
 | `blazor-error-ui-not-accessible` | Potential | 2.1.1, 4.1.2, 4.1.3 | browser | `#blazor-error-ui` is not a live region, or its `.dismiss` control is a `span` that keyboard users cannot reach (the project template's markup) |
 | `blazor-reflow-horizontal-scroll` | Potential | 1.4.10 | browser | see [adaptation](interactive-testing.md#adaptation-reflow-text-spacing-and-display-preferences) |
 | `blazor-text-spacing-clipped` | Potential | 1.4.12 | browser | see [adaptation](interactive-testing.md#adaptation-reflow-text-spacing-and-display-preferences) |
+| `blazor-motion-not-reduced` | Potential | 2.2.2, 2.3.3 | browser | animations that keep moving content, or run longer than five seconds, while `prefers-reduced-motion: reduce` is emulated, and media that keeps playing; see [adaptation](interactive-testing.md#adaptation-reflow-text-spacing-and-display-preferences) |
+| `blazor-orientation-locked` | Potential | 1.3.4 | browser | one orientation rotates the page, shows a "rotate your device" message or hides most of the text |
+| `blazor-paste-blocked` | Potential | 3.3.8 | markup, browser | `@onpaste:preventDefault` (bUnit sees it as an attribute; the browser check dispatches an empty paste event to credential fields and reports a cancelled one; this runs the page's paste handlers, and disabling the rule skips it), or a password field with `autocomplete="off"` |
+| `blazor-dragging-alternative` | Potential | 2.5.7 | markup, browser | `draggable="true"` content (one finding per container): check that a single-pointer alternative exists |
+| `blazor-redundant-entry` | Potential | 3.3.7 | markup, browser | a second field for information already asked for (`ConfirmEmail`, `EmailConfirmation`, `repeat-phone` ...); repeated passwords are exempt |
 | `blazor-markup-image-alt`, `-control-name`, `-form-label`, `-aria-hidden-focusable`, `-invalid-aria-attribute`, `-invalid-role`, `-positive-tabindex` | mostly Violation | various | markup (fallback only) | conservative browserless equivalents of axe rules, only when no browser engine runs |
 | `blazor-focus-*` | Potential | 2.1.2, 2.4.3, 2.4.7, 2.4.11 | browser | see [focus order](interactive-testing.md#focus-order) |
 | `blazor-live-region-*` | Potential | 4.1.3 | browser | see [live regions](interactive-testing.md#live-regions) |
 
-The full metadata (descriptions and remediation) is in `ToolkitRules.All`; `blazor-a11y rules` prints it. Compile-time checks of `.razor` files (`BA11Y001` to `BA11Y013`) are described in [Razor analyzers](analyzers.md).
+The full metadata (descriptions and remediation) is in `ToolkitRules.All`; `blazor-a11y rules` prints it. Compile-time checks of `.razor` files (`BA11Y001` to `BA11Y037`) are described in [Razor analyzers](analyzers.md).
 
 ## Fingerprints
 

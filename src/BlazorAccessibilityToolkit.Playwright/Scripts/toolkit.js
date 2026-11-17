@@ -3,7 +3,7 @@
 // (axe.commons), which must be loaded before these helpers are called.
 (() => {
   'use strict';
-  const VERSION = '9';
+  const VERSION = '10';
   if (window.__blazorA11y && window.__blazorA11y.version === VERSION) {
     return;
   }
@@ -590,6 +590,33 @@
         if (text) report('blazor-required-not-exposed', el, { label: truncate(text, 120) });
       }
 
+      // WCAG 2.2: accessible authentication (3.3.8), redundant entry (3.3.7) and dragging (2.5.7).
+      if (opts.wcag22 !== false) {
+        for (const el of all) {
+          if (el.localName !== 'input' || !isRendered(el)) continue;
+          const type = (el.getAttribute('type') || 'text').toLowerCase();
+          const autocomplete = (el.getAttribute('autocomplete') || '').toLowerCase().split(/\s+/).filter(Boolean);
+          if (type === 'password' && autocomplete.length === 1 && autocomplete[0] === 'off') {
+            report('blazor-paste-blocked', el, { reason: 'autocomplete-off', credential: 'True' },
+              '<input type="password" autocomplete="off"> asks password managers not to fill the field. Use autocomplete="current-password" or "new-password".');
+          }
+          const credential = type === 'password' || autocomplete.some((t) => t === 'username' || t === 'current-password' || t === 'new-password' || t === 'one-time-code');
+          if (credential && opts.pasteProbe !== false && !el.disabled && !el.readOnly && pasteIsBlocked(el)) {
+            report('blazor-paste-blocked', el, { reason: 'paste', credential: 'True' },
+              'Pasting into this field is cancelled (an event handler calls preventDefault, for example @onpaste:preventDefault). Allow pasting: people who cannot memorize or transcribe passwords and codes rely on it.');
+          }
+          const purpose = redundantEntryPurpose(el, type);
+          if (purpose) report('blazor-redundant-entry', el, { purpose });
+        }
+        const draggableGroups = new Map();
+        for (const el of all) {
+          if (el.getAttribute('draggable') !== 'true' || !isRendered(el) || isHiddenForAT(axe, el)) continue;
+          const group = draggableGroups.get(el.parentElement);
+          if (group) group.count++; else draggableGroups.set(el.parentElement, { first: el, count: 1 });
+        }
+        for (const { first, count } of draggableGroups.values()) report('blazor-dragging-alternative', first, { draggable: String(count) });
+      }
+
       // The Blazor error notification must be announced and dismissible with the keyboard. It is hidden until an error
       // occurs, so it is checked whether or not it is rendered.
       const errorUi = document.getElementById('blazor-error-ui');
@@ -651,6 +678,39 @@
       }
     }
     return PURPOSE_BY_TYPE[type] || null;
+  }
+
+  // Dispatches a synthetic, empty paste event and reports whether a handler cancelled it. Blazor implements
+  // @onpaste:preventDefault in its event delegation, which is invisible in the DOM, so this is the only way to see it.
+  function pasteIsBlocked(el) {
+    let event;
+    try {
+      event = new ClipboardEvent('paste', { bubbles: true, cancelable: true, composed: true, clipboardData: new DataTransfer() });
+    } catch (e) {
+      event = new Event('paste', { bubbles: true, cancelable: true, composed: true });
+    }
+    const value = el.value;
+    try {
+      el.dispatchEvent(event);
+    } catch (e) {
+      return false;
+    }
+    if (el.value !== value) el.value = value;
+    return event.defaultPrevented;
+  }
+
+  // "ConfirmEmail", "Model.EmailConfirmation", "repeat-email": a second field for information already asked for.
+  // Repeated passwords are exempt (re-entering a new password is accepted for security).
+  const REDUNDANT_ENTRY = /^(?:(?:confirm|repeat|verify|retype|reenter)(e?mail|emailaddress|phone|phonenumber|username)|(e?mail|emailaddress|phone|phonenumber|username)(?:confirm|confirmation|again|repeat|verify|verification))$/;
+  function redundantEntryPurpose(el, type) {
+    if (NON_TEXT_TYPES.has(type) || type === 'password') return null;
+    for (const value of [el.getAttribute('name'), el.id]) {
+      if (!value) continue;
+      const token = (value.split(/[.[\]]/).filter(Boolean).pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const match = REDUNDANT_ENTRY.exec(token);
+      if (match) return match[1] || match[2];
+    }
+    return null;
   }
 
   // Native form controls that can be required.
@@ -729,6 +789,145 @@
     const y = clips(cs.overflowY) && el.scrollHeight > el.clientHeight + 1;
     const clamped = !!cs.webkitLineClamp && cs.webkitLineClamp !== 'none' && el.scrollHeight > el.clientHeight + 1;
     return { clipped: x || y || clamped, x, y: y || clamped };
+  }
+
+  // ---------------------------------------------------------------------------------------------------------------
+  // Accessibility tree for virtual screen-reader transcripts (same shape as the bUnit tree in ComponentTesting).
+  // ---------------------------------------------------------------------------------------------------------------
+  const ATOMIC_ROLES = new Set(['button', 'link', 'checkbox', 'radio', 'switch', 'img', 'textbox', 'searchbox', 'combobox', 'slider', 'spinbutton',
+    'progressbar', 'meter', 'scrollbar', 'separator', 'option', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'heading', 'columnheader', 'rowheader']);
+  const TREE_STATES = ['level', 'checked', 'pressed', 'expanded', 'selected', 'current', 'haspopup', 'disabled', 'readonly', 'required', 'invalid', 'busy', 'valuetext', 'valuenow'];
+
+  function mergeTree(nodes) {
+    const result = [];
+    let text = [];
+    const flush = () => { if (text.length) { result.push({ role: 'text', name: norm(text.join(' ')) }); text = []; } };
+    for (const n of nodes) {
+      if (n.role === 'text') text.push(n.name);
+      else { flush(); if (n.role !== 'break') result.push(n); }
+    }
+    flush();
+    return result.filter((n) => n.role !== 'text' || n.name);
+  }
+
+  function accessibilityTree(arg) {
+    const root = arg && arg.element ? arg.element : document.body;
+    if (!root) throw new Error('The page has no body.');
+    return withAxe((axe) => {
+      const children = (el) => {
+        const out = [];
+        for (const c of (el.shadowRoot ? el.shadowRoot.childNodes : el.childNodes)) build(c, out);
+        return out;
+      };
+      const build = (node, out) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const t = norm(node.textContent);
+          if (t) out.push({ role: 'text', name: t });
+          return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        const el = node;
+        if (/^(script|style|template|noscript)$/.test(el.localName) || isHiddenForAT(axe, el)) return;
+        // A label that wraps its control is read as part of the control, not twice.
+        if (el.localName === 'label' && el.querySelector('input:not([type=hidden]), select, textarea, meter, progress, output')) {
+          for (const n of children(el)) if (n.role !== 'text') out.push(n);
+          return;
+        }
+        const d = describe(axe, el);
+        const role = d.role;
+        if (!role || role === 'none' || role === 'presentation' || role === 'generic') {
+          const block = el.localName === 'br' || /^(block|flex|grid|list-item|table)/.test(getComputedStyle(el).display);
+          if (block) out.push({ role: 'break' });
+          out.push(...children(el));
+          if (block) out.push({ role: 'break' });
+          return;
+        }
+        const states = {};
+        for (const key of TREE_STATES) {
+          if (d.states[key] != null && d.states[key] !== '') states[key] = String(d.states[key]).trim();
+        }
+        out.push({ role, name: d.name, description: d.description || '', states, children: ATOMIC_ROLES.has(role) ? [] : mergeTree(children(el)) });
+      };
+      const out = [];
+      // The page tree starts below <body>, which axe-core gives the role "document".
+      if (arg && arg.element) build(root, out);
+      else for (const c of root.childNodes) build(c, out);
+      return mergeTree(out);
+    });
+  }
+
+  // ---------------------------------------------------------------------------------------------------------------
+  // Motion (WCAG 2.2.2, 2.3.3) and orientation (WCAG 1.3.4).
+  // ---------------------------------------------------------------------------------------------------------------
+  const MOVING_PROPERTIES = /^(transform|translate|rotate|scale|left|right|top|bottom|margin.*|inset.*|background-?position.*|offset.*|width|height)$/i;
+  // Loading indicators are commonly accepted as essential motion.
+  const LOADING_INDICATOR = '[role=progressbar], [role=status], [aria-busy=true], [class*=spinner], [class*=loading], [class*=loader]';
+
+  // Animations and auto-playing media still running (call it with prefers-reduced-motion: reduce emulated).
+  function motionReport(opts) {
+    opts = opts || {};
+    const exclude = opts.exclude || [];
+    const max = opts.max || 20;
+    const offenders = [];
+    return withAxe((axe) => {
+      const seen = new Set();
+      const animations = typeof document.getAnimations === 'function' ? document.getAnimations() : [];
+      for (const animation of animations) {
+        if (offenders.length >= max) break;
+        if (animation.playState !== 'running' || !animation.effect) continue;
+        const target = animation.effect.target;
+        if (!target || seen.has(target) || !target.isConnected || !inScope(target, null, exclude) || !isVisible(target) || target.closest(LOADING_INDICATOR)) continue;
+        const timing = animation.effect.getComputedTiming();
+        const duration = Number(timing.duration) || 0;
+        const iterations = timing.iterations;
+        const total = iterations === Infinity ? Infinity : duration * (iterations || 1);
+        const keyframes = typeof animation.effect.getKeyframes === 'function' ? animation.effect.getKeyframes() : [];
+        const properties = Array.from(new Set(keyframes.flatMap((k) => Object.keys(k)).filter((p) => !/^(offset|easing|composite|computedOffset)$/.test(p))));
+        const moves = properties.some((p) => MOVING_PROPERTIES.test(p.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase())));
+        // Report motion that moves things, and anything that runs longer than five seconds.
+        if (!moves && total <= 5000) continue;
+        seen.add(target);
+        const d = describe(axe, target);
+        offenders.push({
+          selector: d.selector, html: d.html, role: d.role, name: d.name, ordinal: d.ordinal,
+          kind: 'animation',
+          name2: animation.animationName || animation.id || '',
+          properties: properties.join(' '),
+          duration: Math.round(duration),
+          infinite: iterations === Infinity,
+        });
+      }
+      for (const media of document.querySelectorAll('video, audio')) {
+        if (offenders.length >= max) break;
+        if (media.paused || media.ended || !inScope(media, null, exclude) || (media.localName === 'video' && !isVisible(media))) continue;
+        const length = isFinite(media.duration) ? media.duration * 1000 : Infinity;
+        if (!media.loop && length <= 5000) continue;
+        const d = describe(axe, media);
+        offenders.push({ selector: d.selector, html: d.html, role: d.role, name: d.name, ordinal: d.ordinal, kind: 'media', name2: '', properties: '', duration: isFinite(length) ? Math.round(length) : -1, infinite: !!media.loop, controls: media.controls });
+      }
+      return offenders;
+    });
+  }
+
+  // What is visible in the current orientation: the amount of text, whether the root is rotated, and visible
+  // messages that ask to rotate the device.
+  function orientationSnapshot() {
+    const transform = (el) => (el ? getComputedStyle(el).transform : 'none');
+    const rotated = (t) => {
+      if (!t || t === 'none') return false;
+      const m = /matrix\(([^)]+)\)/.exec(t);
+      if (!m) return /rotate/.test(t);
+      const [a, b] = m[1].split(',').map(Number);
+      return Math.abs(Math.round(Math.atan2(b, a) * 180 / Math.PI)) % 180 === 90;
+    };
+    const rotateMessages = Array.from(document.body ? document.body.querySelectorAll('*') : [])
+      .filter((el) => el.children.length < 5 && isVisible(el) && /\b(rotate|turn) (your|the) (device|phone|screen|tablet)\b|\b(landscape|portrait) (mode|orientation) (only|is required)\b|\bplease use (landscape|portrait)\b/i.test(el.textContent || ''))
+      .map((el) => selectorFor(el));
+    return {
+      text: norm(document.body ? document.body.innerText : '').length,
+      rotated: rotated(transform(document.documentElement)) || rotated(transform(document.body)),
+      messages: rotateMessages.slice(0, 5),
+    };
   }
 
   // Measures which text containers clip their content, applies the WCAG text-spacing values, measures again and
@@ -984,6 +1183,9 @@
     runDiagnostics,
     reflowReport,
     textSpacingReport,
+    motionReport,
+    accessibilityTree,
+    orientationSnapshot,
     recordFocusBaselines,
     describeSelectors,
     inspectSelector,

@@ -103,7 +103,7 @@ public static class ComponentAudits
                 var results = RazorMarkupRules.Run(snapshot.Elements, browserless, options);
                 if (!settings.RazorRules)
                 {
-                    results = results.Where(r => r.Rule != ToolkitRules.ClickHandlerSemantics).ToArray();
+                    results = results.Where(r => !RazorMarkupRules.IsRazorSpecific(r)).ToArray();
                 }
 
                 var ordinals = snapshot.Elements.Select((e, i) => (e, i)).ToDictionary(x => x.e, x => x.i);
@@ -114,12 +114,13 @@ public static class ComponentAudits
                         new FindingTarget { Selector = SelectorFor(result.Element, snapshot.Elements), Html = StartTag(result.Element), ElementOrdinal = ordinal },
                         remediation: result.Message,
                         status: result.Status,
+                        impact: result.Impact,
                         data: result.Data);
                     builder.AddFinding(finding with { Component = snapshot.Attribute(ordinal, rootType) });
                 }
 
                 var reported = results.Select(r => r.Rule.Id).ToHashSet(StringComparer.Ordinal);
-                foreach (var rule in RazorMarkupRules.Evaluated(browserless, options).Where(r => (settings.RazorRules || r != ToolkitRules.ClickHandlerSemantics) && !reported.Contains(r.Id)))
+                foreach (var rule in RazorMarkupRules.Evaluated(browserless, options).Where(r => (settings.RazorRules || r != ToolkitRules.ClickHandlerSemantics) && (settings.RazorRules || browserless || r != ToolkitRules.PasteBlocked) && !reported.Contains(r.Id)))
                 {
                     builder.AddPassedRule(rule.Id);
                 }

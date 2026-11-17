@@ -119,6 +119,13 @@ enum BlazorAccessibilityToolkit.AccessibilityImpact
   Moderate
   Serious
   Critical
+sealed class BlazorAccessibilityToolkit.AccessibilityNode
+  System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> States { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityNode> Children { get; init; }
+  System.String Description { get; init; }
+  System.String Name { get; init; }
+  System.String Role { get; init; }
+  ctor()
 static class BlazorAccessibilityToolkit.AccessibilityStandard
   const System.String BestPracticeTag
   const System.String ExperimentalTag
@@ -326,6 +333,22 @@ sealed class BlazorAccessibilityToolkit.Reporting.AccessibilityResultStore
   const System.String FileSuffix
   ctor(System.String directory)
   static BlazorAccessibilityToolkit.Reporting.AccessibilityResultStore Default { get; }
+sealed class BlazorAccessibilityToolkit.Reporting.AccessibilityStatementFormatter
+  BlazorAccessibilityToolkit.Reporting.ConformanceReportInfo Info { get; init; }
+  System.String DefaultFileName { get; }
+  System.String Name { get; }
+  System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
+  ctor()
+sealed class BlazorAccessibilityToolkit.Reporting.ConformanceReportInfo
+  BlazorAccessibilityToolkit.WcagLevel Level { get; init; }
+  System.Nullable<System.DateOnly> Date { get; init; }
+  System.String ContactEmail { get; init; }
+  System.String ContactName { get; init; }
+  System.String Organization { get; init; }
+  System.String ProductDescription { get; init; }
+  System.String ProductName { get; init; }
+  System.String ProductVersion { get; init; }
+  ctor()
 sealed class BlazorAccessibilityToolkit.Reporting.ConsoleReportFormatter
   System.Int32 MaxFindingsPerAudit { get; init; }
   System.String DefaultFileName { get; }
@@ -366,6 +389,14 @@ sealed class BlazorAccessibilityToolkit.Reporting.MarkdownReportFormatter
   System.String Name { get; }
   System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
   ctor()
+sealed class BlazorAccessibilityToolkit.Reporting.OpenAcrReportFormatter
+  BlazorAccessibilityToolkit.Reporting.ConformanceReportInfo Info { get; init; }
+  System.String DefaultFileName { get; }
+  System.String Name { get; }
+  System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
+  const System.String Catalog
+  ctor()
+  static System.String AdherenceLevel(BlazorAccessibilityToolkit.Reporting.CriterionConformance conformance)
 static class BlazorAccessibilityToolkit.Reporting.QualityGate
   static BlazorAccessibilityToolkit.Reporting.QualityGateResult Evaluate(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, BlazorAccessibilityToolkit.Reporting.QualityGateOptions options = null, System.Collections.Generic.IEnumerable<System.String> loadErrors = null)
 sealed class BlazorAccessibilityToolkit.Reporting.QualityGateOptions
@@ -392,6 +423,7 @@ sealed class BlazorAccessibilityToolkit.Reporting.QualityGateResult
 static class BlazorAccessibilityToolkit.Reporting.ReportFormatters
   static BlazorAccessibilityToolkit.Reporting.IReportFormatter Find(System.String name)
   static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Reporting.IReportFormatter> All { get; }
+  static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Reporting.IReportFormatter> Conformance { get; }
   static System.String Format(BlazorAccessibilityToolkit.Reporting.IReportFormatter formatter, BlazorAccessibilityToolkit.Reporting.AccessibilityReport report)
   static System.Void WriteToFile(BlazorAccessibilityToolkit.Reporting.IReportFormatter formatter, BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.String path)
 static class BlazorAccessibilityToolkit.Reporting.ReportJson
@@ -459,6 +491,7 @@ static class BlazorAccessibilityToolkit.Rules.ToolkitRules
   const System.String EngineName
   const System.String Markup
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ClickHandlerSemantics { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule DraggingAlternative { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule DuplicateId { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule DuplicateIdReferenced { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ErrorUiNotAccessible { get; }
@@ -484,14 +517,23 @@ static class BlazorAccessibilityToolkit.Rules.ToolkitRules
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupInvalidAriaAttribute { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupInvalidRole { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupPositiveTabIndex { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule MotionNotReduced { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule NavLinkCurrent { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule OrientationLocked { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule PasteBlocked { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule RadioGroupUngrouped { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule RedundantEntry { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ReflowHorizontalScroll { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule RequiredNotExposed { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule TabSelectionMismatch { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule TextSpacingClipped { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ValidationMessageAssociation { get; }
   static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Rules.AccessibilityRule> All { get; }
+static class BlazorAccessibilityToolkit.ScreenReaderTranscript
+  static System.Collections.Generic.IReadOnlySet<System.String> AtomicRoles { get; }
+  static System.String Compare(System.String expected, System.String actual)
+  static System.String Format(System.Collections.Generic.IEnumerable<BlazorAccessibilityToolkit.AccessibilityNode> nodes)
+  static System.Void ShouldMatch(System.String actual, System.String expected)
 sealed class BlazorAccessibilityToolkit.Suppression
   System.Nullable<System.DateOnly> Expires { get; init; }
   System.String Component { get; init; }

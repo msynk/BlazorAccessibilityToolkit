@@ -294,4 +294,26 @@ public sealed class PageTests(AppFixture app)
         var audit = await session.Page.AuditAccessibilityAsync(label: new AuditLabel { Scenario = "page", State = "error" });
         audit.ShouldHaveNoViolations(AccessibilityExpectation.Strict);
     }
+    /// <summary>
+    /// Every routable page of the app, found by reflection, so that a new page cannot be left out of the audits. The
+    /// legacy page (known issues) and the error page (tested above) are excluded.
+    /// </summary>
+    [Fact]
+    public async Task Every_discovered_route_has_no_detectable_violations()
+    {
+        var routes = BlazorRoutes.Discover([typeof(Program).Assembly], new RouteDiscoveryOptions { Exclude = ["/legacy", "/error"] });
+        Assert.Contains(routes, r => r.Template == "/not-found");
+        Assert.All(NavMenu.Pages.Select(p => "/" + p.Href).Where(p => p != "/legacy"), path => Assert.Contains(routes, r => r.Template == path));
+
+        await using var session = await app.Browser.NewSessionAsync();
+        var result = await session.Page.AuditRoutesAsync(
+            app.BaseAddress,
+            routes,
+            ShowcaseAudit,
+            beforeAudit: (page, _) => page.Locator("main[data-interactive=true]").WaitForAsync());
+
+        Assert.Empty(result.Skipped);
+        Assert.Equal(routes.Count, result.Audits.Count);
+        result.ShouldHaveNoViolations();
+    }
 }

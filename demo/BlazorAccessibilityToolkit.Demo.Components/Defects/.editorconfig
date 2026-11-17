@@ -1,0 +1,4 @@
+# The components in this folder contain intentional accessibility defects, so the Razor analyzers are off here.
+# RazorAccessibilityAnalyzerTests verifies that the analyzers do report them.
+[*.razor]
+blazor_a11y_analyzer.enabled = false

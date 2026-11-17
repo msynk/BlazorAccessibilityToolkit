@@ -166,4 +166,41 @@ public static class PatternExamples
             #endregion
         },
     };
+
+    public static readonly LabExample LegacySignupValidation = new()
+    {
+        Id = "legacy-signup-validation",
+        ExpectFailure = true,
+        NeedsBrowser = true,
+        Run = async env =>
+        {
+            #region snippet:legacy-signup-validation
+            await using var component = await env.Host.RenderAsync<LegacySignupForm>(env.Browser);
+
+            var result = await AriaPatterns.VerifyFormValidationAsync(
+                component.Page.Locator("form"),
+                options: new PatternOptions { Timeout = TimeSpan.FromSeconds(1) });
+            env.Show(result);
+
+            result.ShouldPass();
+            #endregion
+        },
+    };
+
+    public static readonly LabExample SignupValidation = new()
+    {
+        Id = "signup-validation",
+        NeedsBrowser = true,
+        Run = async env =>
+        {
+            #region snippet:signup-validation
+            await using var component = await env.Host.RenderAsync<SignupForm>(env.Browser);
+
+            var result = await AriaPatterns.VerifyFormValidationAsync(component.Page.Locator("form"));
+            env.Show(result);
+
+            result.ShouldPass();
+            #endregion
+        },
+    };
 }

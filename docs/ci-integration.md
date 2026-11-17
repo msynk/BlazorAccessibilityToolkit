@@ -41,6 +41,7 @@ blazor-a11y manual init --name "Checkout" --scope "/checkout" --output a11y/manu
 blazor-a11y manual init --name "Site" --template wcag22aa --output a11y/manual/wcag.json   # one item per WCAG 2.2 A/AA criterion
 blazor-a11y manual validate a11y/manual/*.json                            # exit 1 when entries are incompletely recorded
 blazor-a11y rules                                                         # the toolkit's own rules with status, impact and WCAG
+blazor-a11y report --input a11y-results --format openacr,statement --product "Contoso Shop"   # conformance drafts, see below
 ```
 
 ## Baselines
@@ -107,6 +108,21 @@ The JSON schema is versioned. Readers accept `1.x`, and fields are only added wi
   "baseline": { "new": [], "existing": [], "resolved": [], "resolvedIsReliable": true }
 }
 ```
+
+### Conformance report drafts (OpenACR, accessibility statement)
+
+Two formats are written only when you ask for them:
+
+```bash
+blazor-a11y report --input a11y-results --manual-review a11y/manual/wcag22aa.json --output a11y-report \
+  --format openacr,statement --product "Contoso Shop" --product-version 3.1 --organization Contoso \
+  --contact "Accessibility team" --contact-email a11y@contoso.example --level AA
+```
+
+- `openacr` writes `accessibility-conformance-report.openacr.yaml` in the [OpenACR](https://github.com/GSA/openacr) format of the US General Services Administration, catalog `2.5-edition-wcag-2.2-en` (the VPAT 2.5 WCAG edition), for web content. Each criterion's adherence follows the coverage table: `supports` only after a recorded, passed manual review; `does-not-support` when a violation or failed manual check maps to it; `not-applicable` when every manual check says so; otherwise `not-evaluated`, with a note on the evidence that exists.
+- `statement` writes `accessibility-statement.md`, a draft accessibility statement with the sections of the EU model statement and the information the European Accessibility Act asks service providers to publish: compliance status, non-accessible content (the failing criteria with their EN 301 549 clauses), preparation of the statement, feedback and contact, and the enforcement procedure.
+
+Both are **drafts**. They never claim full conformance, leave `TODO` placeholders for what automation cannot know, and must be completed and reviewed by an accessibility specialist before they are published. In code, use `OpenAcrReportFormatter` and `AccessibilityStatementFormatter` with a `ConformanceReportInfo`.
 
 ## GitHub Actions
 

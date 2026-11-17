@@ -34,6 +34,24 @@
     </ExampleCard>
 </section>
 
+<section aria-labelledby="transcript">
+    <h2 id="transcript">Virtual screen-reader transcripts</h2>
+    <p>
+        A transcript reads the same tree the way a screen reader in browse mode lists it, one item per line:
+        <code>role, name, states, description</code>. Unlike a snapshot, it keeps states that are false
+        (<code>not pressed</code>, <code>collapsed</code>), <code>aria-current</code>, required fields and descriptions.
+        The same format comes from bUnit markup (<code>cut.ShouldMatchTranscript</code>) and from the browser
+        (<code>locator.ShouldMatchTranscriptAsync</code>). It is a regression record, not the output of a real screen reader.
+    </p>
+    <ExampleCard Title="Tabs that only work with a mouse" Defect="true" Example="SnapshotExamples.NaiveTabsTranscript" Sources="@(["NaiveTabs.razor"])"
+                 Affects="@(["Screen reader users"])">
+        <Stage><NaiveTabs Label="Sections" Items="DemoData.Tabs" /></Stage>
+    </ExampleCard>
+    <ExampleCard Title="Tabs with complete semantics" Example="SnapshotExamples.TabsTranscript" Sources="@(["Tabs.razor"])">
+        <Stage><Tabs Label="Sections" Items="DemoData.Tabs" /></Stage>
+    </ExampleCard>
+</section>
+
 <div class="callout">
     <p>
         Snapshots catch semantic regressions. They do not prove accessibility: a snapshot of an inaccessible component

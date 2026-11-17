@@ -1,0 +1,11 @@
+@* Sign-in fields that block paste and password managers, and a list that can only be reordered by dragging. *@
+<label for="user">Username</label>
+<input id="user" autocomplete="username" />
+<label for="pw">Password</label>
+<input id="pw" type="password" autocomplete="off" @onpaste:preventDefault />
+<label for="code">One-time code</label>
+<input id="code" inputmode="numeric" autocomplete="one-time-code" @onpaste="() => { }" @onpaste:preventDefault="true" />
+<ul>
+    <li draggable="true" @ondragstart="() => { }" @ondrop="() => { }">First</li>
+    <li draggable="true" @ondragstart="() => { }" @ondrop="() => { }">Second</li>
+</ul>

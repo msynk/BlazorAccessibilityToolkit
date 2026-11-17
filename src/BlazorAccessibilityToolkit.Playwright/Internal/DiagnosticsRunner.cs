@@ -12,7 +12,7 @@ internal static class DiagnosticsRunner
         var disabled = options.DisabledRules.ToHashSet(StringComparer.Ordinal);
         var json = await page.EvaluateAsync<JsonElement>(
             "o => window.__blazorA11y.runDiagnostics(o)",
-            new { root = scopeSelector, exclude = options.ExcludeSelectors.ToArray() }).ConfigureAwait(false);
+            new { root = scopeSelector, exclude = options.ExcludeSelectors.ToArray(), pasteProbe = !disabled.Contains(ToolkitRules.PasteBlocked.Id) }).ConfigureAwait(false);
         var results = ToolkitScript.Deserialize<DiagnosticDto[]>(json) ?? [];
 
         output.Engines.Add(new EngineInfo { Name = ToolkitRules.EngineName, Version = ToolkitScript.ToolkitVersion });
@@ -67,5 +67,8 @@ internal static class DiagnosticsRunner
         ToolkitRules.InputPurposeMissing.Id,
         ToolkitRules.RequiredNotExposed.Id,
         ToolkitRules.ErrorUiNotAccessible.Id,
+        ToolkitRules.PasteBlocked.Id,
+        ToolkitRules.DraggingAlternative.Id,
+        ToolkitRules.RedundantEntry.Id,
     };
 }

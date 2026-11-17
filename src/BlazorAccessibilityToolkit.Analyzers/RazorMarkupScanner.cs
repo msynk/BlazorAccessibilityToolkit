@@ -38,10 +38,22 @@ internal sealed class RazorElement
 
     public string Name { get; }
 
-    public string LowerName { get; }
+    /// <summary>Lower-case element name, or the native element a mapped component renders.</summary>
+    public string LowerName { get; private set; }
 
-    /// <summary>True for Razor components (names starting with an upper-case letter or containing a namespace).</summary>
-    public bool IsComponent { get; }
+    /// <summary>True for Razor components (names starting with an upper-case letter or containing a namespace) that are not mapped to a native element.</summary>
+    public bool IsComponent { get; private set; }
+
+    /// <summary>True when the component is checked as the native element it renders (<c>blazor_a11y_analyzer.component_map</c>).</summary>
+    public bool IsMapped { get; private set; }
+
+    /// <summary>Checks this component as the native element <paramref name="element"/>.</summary>
+    public void MapTo(string element)
+    {
+        LowerName = element.ToLowerInvariant();
+        IsComponent = false;
+        IsMapped = true;
+    }
 
     public int Start { get; }
 
@@ -51,6 +63,12 @@ internal sealed class RazorElement
     public RazorElement? Parent { get; }
 
     public List<RazorAttribute> Attributes { get; } = [];
+
+    /// <summary>Child elements and components, in source order.</summary>
+    public List<RazorElement> Children { get; } = [];
+
+    /// <summary>Static text content readable by assistive technologies (HTML entities not decoded).</summary>
+    public System.Text.StringBuilder Text { get; } = new();
 
     /// <summary>Static text that assistive technologies can read (not inside aria-hidden content).</summary>
     public bool HasText { get; set; }
@@ -174,7 +192,7 @@ internal static class RazorMarkupScanner
 
                 if (At(text, i, "@@"))
                 {
-                    MarkText(stack);
+                    MarkText(stack, "@");
                     i += 2;
                     continue;
                 }
@@ -182,7 +200,7 @@ internal static class RazorMarkupScanner
                 // An e-mail address: Razor treats "name@host" as text.
                 if (i > 0 && char.IsLetterOrDigit(text[i - 1]))
                 {
-                    MarkText(stack);
+                    MarkText(stack, "@");
                     i++;
                     continue;
                 }
@@ -210,7 +228,7 @@ internal static class RazorMarkupScanner
 
                 if (word.Length == 0)
                 {
-                    MarkText(stack);
+                    MarkText(stack, "@");
                     i++;
                     continue;
                 }
@@ -321,6 +339,7 @@ internal static class RazorMarkupScanner
 
                     element.IgnoresAll |= fileIgnoresAll;
                     elements.Add(element);
+                    parent?.Children.Add(element);
                     if (element.IsComponent)
                     {
                         foreach (var open in stack)
@@ -349,7 +368,7 @@ internal static class RazorMarkupScanner
                     continue;
                 }
 
-                MarkText(stack);
+                MarkText(stack, "<");
                 i++;
                 continue;
             }
@@ -394,9 +413,10 @@ internal static class RazorMarkupScanner
                 next++;
             }
 
-            if (IsReadableText(text.Substring(i, next - i)))
+            var segment = text.Substring(i, next - i);
+            if (IsReadableText(segment))
             {
-                MarkText(stack);
+                MarkText(stack, segment);
             }
 
             i = next;
@@ -425,7 +445,11 @@ internal static class RazorMarkupScanner
         }
     }
 
-    private static void MarkText(List<RazorElement> stack) => MarkUntilHidden(stack, e => e.HasText = true);
+    private static void MarkText(List<RazorElement> stack, string text) => MarkUntilHidden(stack, e =>
+    {
+        e.HasText = true;
+        e.Text.Append(text);
+    });
 
     private static void MarkDynamic(List<RazorElement> stack)
     {

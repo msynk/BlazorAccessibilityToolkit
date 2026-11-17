@@ -90,7 +90,10 @@ public sealed class RazorAccessibilityAnalyzerTests
             }
             """;
         var results = RazorAccessibilityAnalyzer.Analyze(markup).ToArray();
-        var only = Assert.Single(results);
+
+        // The routable page has no <PageTitle> (reported at the @page directive).
+        Assert.Equal(0, Assert.Single(results, r => r.Descriptor.Id == "BA11Y031").Span.Start);
+        var only = Assert.Single(results, r => r.Descriptor.Id != "BA11Y031");
         Assert.Equal("BA11Y008", only.Descriptor.Id);
         Assert.Equal(14, markup[..only.Span.Start].Count(c => c == '\n')); // the empty button in the else branch
     }
@@ -148,8 +151,11 @@ public sealed class RazorAccessibilityAnalyzerTests
     public void Demo_components_are_judged_correctly()
     {
         var root = Path.GetFullPath(Path.Combine(SourceDirectory(), "..", "..", "demo", "BlazorAccessibilityToolkit.Demo.Components"));
-        var accessible = Directory.GetFiles(Path.Combine(root, "Accessible"), "*.razor");
-        Assert.NotEmpty(accessible);
+        var showcase = Path.GetFullPath(Path.Combine(root, "..", "BlazorAccessibilityToolkit.Demo.WebApp", "Components"));
+        var accessible = Directory.GetFiles(Path.Combine(root, "Accessible"), "*.razor")
+            .Concat(Directory.GetFiles(showcase, "*.razor", SearchOption.AllDirectories))
+            .ToArray();
+        Assert.True(accessible.Length > 20);
         foreach (var file in accessible)
         {
             var findings = RazorAccessibilityAnalyzer.Analyze(File.ReadAllText(file)).Select(r => $"{r.Descriptor.Id} at {r.Span}").ToArray();

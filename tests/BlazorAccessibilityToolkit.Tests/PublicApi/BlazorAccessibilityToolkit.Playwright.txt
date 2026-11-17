@@ -40,6 +40,8 @@ sealed class BlazorAccessibilityToolkit.Playwright.AccessibleElementInfo
   ctor()
 static class BlazorAccessibilityToolkit.Playwright.AdaptationAudits
   static System.Threading.Tasks.Task EmulateDisplayConditionsAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.DisplayConditions conditions)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditMotionAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.MotionOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditOrientationAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.OrientationOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditReflowAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.ReflowOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditTextSpacingAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.TextSpacingOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditUnderAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.DisplayConditions conditions, BlazorAccessibilityToolkit.AccessibilityAuditOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)
@@ -48,6 +50,7 @@ static class BlazorAccessibilityToolkit.Playwright.AriaPatterns
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyCheckboxAsync(Microsoft.Playwright.ILocator control, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyComboboxAsync(Microsoft.Playwright.ILocator combobox, Microsoft.Playwright.ILocator popup = null, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyDisclosureAsync(Microsoft.Playwright.ILocator button, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyFormValidationAsync(Microsoft.Playwright.ILocator form, Microsoft.Playwright.ILocator submit = null, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyListboxAsync(Microsoft.Playwright.ILocator listbox, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyMenuButtonAsync(Microsoft.Playwright.ILocator button, Microsoft.Playwright.ILocator menu = null, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyModalDialogAsync(Microsoft.Playwright.ILocator trigger, Microsoft.Playwright.ILocator dialog = null, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
@@ -78,6 +81,10 @@ sealed class BlazorAccessibilityToolkit.Playwright.AuditLabel
   System.String Scenario { get; init; }
   System.String State { get; init; }
   ctor()
+static class BlazorAccessibilityToolkit.Playwright.BlazorRoutes
+  static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Playwright.DiscoveredRoute> Discover(System.Collections.Generic.IEnumerable<System.Reflection.Assembly> assemblies, BlazorAccessibilityToolkit.Playwright.RouteDiscoveryOptions options)
+  static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Playwright.DiscoveredRoute> Discover(System.Reflection.Assembly[] assemblies)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.RouteAuditResult> AuditRoutesAsync(Microsoft.Playwright.IPage page, System.Uri baseAddress, System.Collections.Generic.IEnumerable<BlazorAccessibilityToolkit.Playwright.DiscoveredRoute> routes, BlazorAccessibilityToolkit.AccessibilityAuditOptions options = null, System.Func<Microsoft.Playwright.IPage, BlazorAccessibilityToolkit.Playwright.DiscoveredRoute, System.Threading.Tasks.Task> beforeAudit = null, System.Threading.CancellationToken cancellationToken = null)
 sealed class BlazorAccessibilityToolkit.Playwright.BrowserNotAvailableException : System.InvalidOperationException
   ctor()
   ctor(System.String message)
@@ -86,6 +93,13 @@ sealed class BlazorAccessibilityToolkit.Playwright.BrowserSession
   Microsoft.Playwright.IBrowserContext Context { get; }
   Microsoft.Playwright.IPage Page { get; }
   System.Threading.Tasks.ValueTask DisposeAsync()
+sealed class BlazorAccessibilityToolkit.Playwright.DiscoveredRoute
+  System.Collections.Generic.IReadOnlyList<System.String> Parameters { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> RequiredParameters { get; init; }
+  System.String Template { get; init; }
+  System.String Url { get; init; }
+  System.Type ComponentType { get; init; }
+  ctor()
 sealed class BlazorAccessibilityToolkit.Playwright.DisplayConditions
   System.Nullable<Microsoft.Playwright.ColorScheme> ColorScheme { get; init; }
   System.Nullable<Microsoft.Playwright.Contrast> Contrast { get; init; }
@@ -301,8 +315,19 @@ sealed class BlazorAccessibilityToolkit.Playwright.LiveRegionMonitor
   System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Playwright.LiveRegionInfo>> GetRegionsAsync()
   System.TimeSpan DefaultTimeout { get; init; }
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.LiveRegionMonitor> StartAsync(Microsoft.Playwright.IPage page)
+sealed class BlazorAccessibilityToolkit.Playwright.MotionOptions
+  BlazorAccessibilityToolkit.AccessibilityAuditOptions AuditOptions { get; init; }
+  System.Int32 MaxFindings { get; init; }
+  System.TimeSpan SettleTime { get; init; }
+  ctor()
 static class BlazorAccessibilityToolkit.Playwright.NavigationChecks
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyNavigationAsync(Microsoft.Playwright.ILocator link, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
+sealed class BlazorAccessibilityToolkit.Playwright.OrientationOptions
+  BlazorAccessibilityToolkit.AccessibilityAuditOptions AuditOptions { get; init; }
+  System.Int32 LongSide { get; init; }
+  System.Int32 ShortSide { get; init; }
+  System.TimeSpan SettleTime { get; init; }
+  ctor()
 sealed class BlazorAccessibilityToolkit.Playwright.PatternCheck
   System.Boolean Passed { get; init; }
   System.String Detail { get; init; }
@@ -341,6 +366,15 @@ sealed class BlazorAccessibilityToolkit.Playwright.ReflowOptions
   System.Int32 Width { get; init; }
   System.TimeSpan SettleTime { get; init; }
   ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.RouteAuditResult
+  BlazorAccessibilityToolkit.Playwright.RouteAuditResult ShouldHaveNoViolations(BlazorAccessibilityToolkit.AccessibilityExpectation expectation = null)
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityAudit> Audits { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Playwright.DiscoveredRoute> Skipped { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.RouteDiscoveryOptions
+  System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> ParameterValues { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Exclude { get; init; }
+  ctor()
 enum BlazorAccessibilityToolkit.Playwright.ScenarioStepKind
   Action
   Expectation
@@ -354,6 +388,12 @@ sealed class BlazorAccessibilityToolkit.Playwright.ScenarioStepResult
   System.String Description { get; init; }
   System.String Error { get; init; }
   ctor()
+static class BlazorAccessibilityToolkit.Playwright.ScreenReaderTranscripts
+  static System.Threading.Tasks.Task ShouldMatchTranscriptAsync(Microsoft.Playwright.ILocator locator, System.String expected, System.Nullable<System.TimeSpan> timeout = null)
+  static System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityNode>> GetAccessibilityTreeAsync(Microsoft.Playwright.ILocator locator)
+  static System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityNode>> GetAccessibilityTreeAsync(Microsoft.Playwright.IPage page)
+  static System.Threading.Tasks.Task<System.String> GetScreenReaderTranscriptAsync(Microsoft.Playwright.ILocator locator)
+  static System.Threading.Tasks.Task<System.String> GetScreenReaderTranscriptAsync(Microsoft.Playwright.IPage page)
 enum BlazorAccessibilityToolkit.Playwright.TextMatch
   Contains
   Exact

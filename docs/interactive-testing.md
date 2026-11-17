@@ -113,12 +113,16 @@ var spacing = await page.AuditTextSpacingAsync();                   // WCAG 1.4.
 var dark = await page.AuditUnderAsync(DisplayConditions.Dark);      // full audit labelled "dark"
 var forced = await page.AuditUnderAsync(DisplayConditions.ForcedColorsActive);   // Windows high contrast (Chromium)
 await page.EmulateDisplayConditionsAsync(DisplayConditions.MoreContrast);         // for your own scenarios
+var motion = await page.AuditMotionAsync();                         // prefers-reduced-motion: reduce, then restored
+var orientation = await page.AuditOrientationAsync();               // portrait and landscape, then the viewport is restored
 ```
 
 | Rule | WCAG | What it reports |
 | --- | --- | --- |
 | `blazor-reflow-horizontal-scroll` | 1.4.10 | At 320 CSS pixels the page scrolls horizontally, and this element is where the overflow starts. Content inside tables, grids, toolbars, `pre`, `svg`, `canvas`, video, maps and `[data-a11y-allow-horizontal-scroll]` is exempt (a warning lists it); `ReflowOptions.IncludeTwoDimensionalContent` reports it too. `AuditAtWidth = true` also runs axe-core at that width. |
 | `blazor-text-spacing-clipped` | 1.4.12 | With line height 1.5, paragraph spacing 2, letter spacing 0.12 and word spacing 0.16 times the font size, the element's text overflows a container that hides overflow (or line clamping). Elements that clipped before the change are not reported. |
+| `blazor-motion-not-reduced` | 2.2.2, 2.3.3 | With `prefers-reduced-motion: reduce`, an animation still moves content (transform, position, size, background position) or runs longer than five seconds, or media keeps playing for longer than five seconds. Loading indicators (`role="progressbar"`, `role="status"`, `aria-busy`, spinner and loader classes) are not reported. |
+| `blazor-orientation-locked` | 1.3.4 | In portrait or landscape (390 x 844 CSS pixels by default), the page is rotated by 90 degrees, a "rotate your device" message appears, or less than a quarter of the text of the other orientation is shown. |
 
 These are potential issues: they show where content overflows, which usually means lost content, but whether content is really lost or exempt needs a person. Display conditions matter because contrast, `box-shadow` focus rings and background-image icons often fail only in dark mode or with forced colors. Forced colors emulation is supported by Chromium only.
 
@@ -143,6 +147,7 @@ More verifiers cover composite widgets and form controls:
 | `VerifyCheckboxAsync(control)` | Checkbox or switch: named, exposes its checked state, in the tab sequence, Space toggles both ways. |
 | `VerifyTooltipAsync(trigger)` | Tooltip pattern and WCAG 1.4.13: appears on focus and hover, is referenced by `aria-describedby`, Escape dismisses it without moving focus, it stays while the pointer moves onto it and does not disappear on its own. |
 | `VerifyAccordionAsync(container)` | Every header is a button inside a heading and behaves as a disclosure. |
+| `VerifyFormValidationAsync(form, submit?)` | Submitting a form that has errors with the keyboard marks each invalid field with `aria-invalid`, links each one to its error text (`aria-describedby` or `aria-errormessage`), moves focus to the first invalid field or to an error summary, and makes the errors perceivable (that focus move, or a live region that contains them). Fill the form with invalid values first. Browser constraint validation is accepted. Default `EditForm` markup fails: `ValidationMessage` is not linked to its field and focus stays on the submit button. |
 
 Each verifier drives the widget with real keys and records every APG requirement as a pass or fail check, so one run shows all problems:
 
@@ -162,6 +167,39 @@ Blazor's router and enhanced navigation replace page content without loading a n
 ```
 
 It presses Enter on the link and checks that the URL changes, the new page has a non-empty title that differs from the previous one (2.4.2) and a language (3.1.1), and that after a client-side navigation focus moved into the new content (`main` or the main heading) or a live region announced the change, instead of staying on the link or falling back to the document body (2.4.3, 4.1.3). A full document load passes the focus check, because browsers announce new documents.
+
+## Every page of the app
+
+`BlazorRoutes.Discover` finds the routable components (`@page`, `[Route]`) of your app by reflection, so a new page cannot be left out of the audits, as pa11y-ci does with a sitemap:
+
+```csharp
+var routes = BlazorRoutes.Discover([typeof(Program).Assembly], new RouteDiscoveryOptions
+{
+    Exclude = ["/admin/*", "/error"],
+    ParameterValues = new Dictionary<string, string> { ["id"] = "42", ["/docs/{*path}"] = "/docs/install" },
+});
+
+var result = await page.AuditRoutesAsync(baseAddress, routes, options,
+    beforeAudit: (p, route) => p.Locator("main[data-interactive=true]").WaitForAsync());
+result.ShouldHaveNoViolations();     // lists every failing route
+Assert.Empty(result.Skipped);         // routes whose required parameters have no value
+```
+
+Optional (`{tab?}`) and catch-all (`{*path}`) parameters are left out when they have no value; routes with a required parameter that has no value are returned in `Skipped` instead of being dropped silently. Each audit is labelled with its route template.
+
+## Virtual screen-reader transcripts
+
+`GetScreenReaderTranscriptAsync()` (page or locator) and `ShouldMatchTranscriptAsync()` read the accessibility tree computed in the browser, one item per line, in the same format as the [bUnit transcript](component-testing.md#virtual-screen-reader-transcripts):
+
+```csharp
+await page.Locator("form").ShouldMatchTranscriptAsync("""
+    form, Sign up
+    textbox, Email, required, invalid, Enter your email address
+    button, Create account
+    """);
+```
+
+Unlike [ARIA snapshots](#accessibility-tree-snapshots), transcripts keep "false" states (`not pressed`, `collapsed`, `not checked`), `aria-current`, required fields and descriptions. They are a regression record of semantics, not what a particular screen reader says; test with real assistive technologies for conformance.
 
 ## Live regions
 

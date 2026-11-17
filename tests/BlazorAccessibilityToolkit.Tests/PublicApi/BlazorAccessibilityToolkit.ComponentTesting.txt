@@ -22,6 +22,62 @@ sealed class BlazorAccessibilityToolkit.ComponentTesting.AccessibilityFixture<TC
   System.String Name { get; }
   System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditAsync(System.String state = null, BlazorAccessibilityToolkit.AccessibilityAuditOptions options = null, System.Threading.CancellationToken cancellationToken = null)
   System.Threading.Tasks.ValueTask DisposeAsync()
+static class BlazorAccessibilityToolkit.ComponentTesting.AccessibilityTree
+  static BlazorAccessibilityToolkit.AccessibilityNode ToNode(BlazorAccessibilityToolkit.ComponentTesting.AccessibilityTreeNode node)
+  static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.ComponentTesting.AccessibilityTreeNode> GetAccessibilityTree<TComponent>(Bunit.IRenderedComponent<TComponent> cut)
+  static System.String GetScreenReaderTranscript<TComponent>(Bunit.IRenderedComponent<TComponent> cut)
+  static System.String ToTranscript(System.Collections.Generic.IEnumerable<BlazorAccessibilityToolkit.ComponentTesting.AccessibilityTreeNode> nodes)
+  static System.Void ShouldMatchTranscript<TComponent>(Bunit.IRenderedComponent<TComponent> cut, System.String expected)
+sealed class BlazorAccessibilityToolkit.ComponentTesting.AccessibilityTreeNode
+  AngleSharp.Dom.IElement Element { get; init; }
+  System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> States { get; init; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.ComponentTesting.AccessibilityTreeNode> Children { get; init; }
+  System.String Description { get; init; }
+  System.String Name { get; init; }
+  System.String Role { get; init; }
+  ctor()
+static class BlazorAccessibilityToolkit.ComponentTesting.AccessibleElementAssertions
+  static AngleSharp.Dom.IElement ShouldBeChecked(AngleSharp.Dom.IElement element, System.String expected = true)
+  static AngleSharp.Dom.IElement ShouldBeDisabled(AngleSharp.Dom.IElement element)
+  static AngleSharp.Dom.IElement ShouldBeEnabled(AngleSharp.Dom.IElement element)
+  static AngleSharp.Dom.IElement ShouldBeExpanded(AngleSharp.Dom.IElement element, System.Boolean expected = True)
+  static AngleSharp.Dom.IElement ShouldBeInvalid(AngleSharp.Dom.IElement element)
+  static AngleSharp.Dom.IElement ShouldBePressed(AngleSharp.Dom.IElement element, System.String expected = true)
+  static AngleSharp.Dom.IElement ShouldBeRequired(AngleSharp.Dom.IElement element)
+  static AngleSharp.Dom.IElement ShouldBeValid(AngleSharp.Dom.IElement element)
+  static AngleSharp.Dom.IElement ShouldHaveAccessibleDescription(AngleSharp.Dom.IElement element, System.String expected)
+  static AngleSharp.Dom.IElement ShouldHaveAccessibleErrorMessage(AngleSharp.Dom.IElement element, System.String expected)
+  static AngleSharp.Dom.IElement ShouldHaveAccessibleName(AngleSharp.Dom.IElement element, System.String expected)
+  static AngleSharp.Dom.IElement ShouldHaveAccessibleName(AngleSharp.Dom.IElement element, System.Text.RegularExpressions.Regex pattern)
+  static AngleSharp.Dom.IElement ShouldHaveRole(AngleSharp.Dom.IElement element, System.String expected)
+static class BlazorAccessibilityToolkit.ComponentTesting.AccessibleQueries
+  static AngleSharp.Dom.IElement FindByLabelText<TComponent>(Bunit.IRenderedComponent<TComponent> cut, System.String text)
+  static AngleSharp.Dom.IElement FindByRole(AngleSharp.Dom.IElement container, System.String role, BlazorAccessibilityToolkit.ComponentTesting.ByRoleOptions options = null)
+  static AngleSharp.Dom.IElement FindByRole<TComponent>(Bunit.IRenderedComponent<TComponent> cut, System.String role, BlazorAccessibilityToolkit.ComponentTesting.ByRoleOptions options = null)
+  static AngleSharp.Dom.IElement FindByRole<TComponent>(Bunit.IRenderedComponent<TComponent> cut, System.String role, System.String name)
+  static AngleSharp.Dom.IElement QueryByRole<TComponent>(Bunit.IRenderedComponent<TComponent> cut, System.String role, BlazorAccessibilityToolkit.ComponentTesting.ByRoleOptions options = null)
+  static System.Collections.Generic.IReadOnlyList<AngleSharp.Dom.IElement> FindAllByRole<TComponent>(Bunit.IRenderedComponent<TComponent> cut, System.String role, BlazorAccessibilityToolkit.ComponentTesting.ByRoleOptions options = null)
+  static System.String DescribeRoles<TComponent>(Bunit.IRenderedComponent<TComponent> cut)
+  static System.String GetAccessibleDescription(AngleSharp.Dom.IElement element)
+  static System.String GetAccessibleErrorMessage(AngleSharp.Dom.IElement element)
+  static System.String GetAccessibleName(AngleSharp.Dom.IElement element)
+  static System.String GetAccessibleState(AngleSharp.Dom.IElement element, System.String state)
+  static System.String GetRole(AngleSharp.Dom.IElement element)
+sealed class BlazorAccessibilityToolkit.ComponentTesting.ByRoleOptions
+  System.Boolean Hidden { get; init; }
+  System.Boolean QueryFallbacks { get; init; }
+  System.Nullable<System.Boolean> Busy { get; init; }
+  System.Nullable<System.Boolean> Checked { get; init; }
+  System.Nullable<System.Boolean> Disabled { get; init; }
+  System.Nullable<System.Boolean> Expanded { get; init; }
+  System.Nullable<System.Boolean> Pressed { get; init; }
+  System.Nullable<System.Boolean> Selected { get; init; }
+  System.Nullable<System.Int32> Level { get; init; }
+  System.String Current { get; init; }
+  System.String Description { get; init; }
+  System.String Name { get; init; }
+  System.Text.RegularExpressions.Regex NamePattern { get; init; }
+  ctor()
 sealed class BlazorAccessibilityToolkit.ComponentTesting.ComponentAuditSettings
   BlazorAccessibilityToolkit.AccessibilityAuditOptions Options { get; init; }
   BlazorAccessibilityToolkit.ComponentTesting.ComponentAuditSettings WithEngine(BlazorAccessibilityToolkit.Engines.IMarkupAuditEngine engine)

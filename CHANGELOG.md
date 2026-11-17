@@ -4,6 +4,45 @@
 
 ### Added
 
+The first group of entries closes the gaps found by the second cross-stack survey ([ADR 0003](docs/adr/0003-second-survey.md)).
+
+- **24 more analyzer rules, `BA11Y014` to `BA11Y037`.**
+  - Rules modeled on jsx-a11y, vue and angular-eslint:
+    - autofocus, accesskey, `<marquee>`/`<blink>`, video without captions, invalid `scope`,
+    - invalid `autocomplete` tokens, `aria-activedescendant` on unfocusable elements,
+    - roles without their required ARIA attributes, invalid ARIA attribute values, redundant roles,
+    - non-interactive elements in the tab order, hover handlers without focus equivalents, nested interactive controls,
+    - ambiguous link text, invalid BCP 47 `lang`, viewport tags that disable zoom, timed meta refresh,
+    - redundant alt words, and presentational roles on focusable elements.
+  - Blazor-only rules:
+    - a routable page without `<PageTitle>` (`BA11Y031`),
+    - a `<Router>` without `<FocusOnNavigate>` (`BA11Y032`),
+    - paste blocked with `@onpaste:preventDefault` or password managers turned away (`BA11Y033`),
+    - drag interactions to review (`BA11Y034`),
+    - **ARIA states bound to a bool** (`BA11Y035`). Blazor drops attributes whose value is `false`, so `aria-expanded="@open"` never says "collapsed".
+  - `BA11Y002` now also covers `<input type="image">`, `<area>` and `<svg role="img">`, and `BA11Y010` covers an empty `lang`.
+  - Informational rules report suggestions, not warnings.
+- **Component mapping in the analyzer:** `blazor_a11y_analyzer.component_map = MudIconButton:button, MudImage:img, ...` checks library components as the native element they render. `blazor_a11y_analyzer.component_label_attributes` names the parameters that label them.
+- **ARIA 1.3:** the roles `comment`, `suggestion`, `sectionheader` and `sectionfooter`, and the attribute `aria-actions`, are known to the analyzer and the markup rules.
+- **Role queries and accessible-name assertions for bUnit**, modeled on Testing Library and jest-dom:
+  - Queries: `FindByRole` (filters for name, description and states such as checked, pressed, expanded, selected, disabled, busy, level and current, plus hidden elements and fallback roles), `FindAllByRole`, `QueryByRole`, `FindByLabelText` and `DescribeRoles`.
+  - Helpers: `GetAccessibleName`, `GetAccessibleDescription`, `GetAccessibleErrorMessage`, `GetRole` and `GetAccessibleState`.
+  - Assertions: `ShouldHaveAccessibleName`, `ShouldHaveAccessibleDescription`, `ShouldHaveAccessibleErrorMessage`, `ShouldHaveRole`, `ShouldBeInvalid`, `ShouldBeRequired`, `ShouldBeDisabled`, `ShouldBeChecked`, `ShouldBePressed` and `ShouldBeExpanded`.
+  - It is built on a C# implementation of WAI-ARIA and HTML-AAM roles and accname 1.2.
+- **Virtual screen-reader transcripts:**
+  - For bUnit markup: `cut.GetAccessibilityTree()`, `cut.GetScreenReaderTranscript()` and `cut.ShouldMatchTranscript()`.
+  - In the browser: `GetAccessibilityTreeAsync()`, `GetScreenReaderTranscriptAsync()` and `ShouldMatchTranscriptAsync()`.
+  - Both use one format, `ScreenReaderTranscript` in the core package. Lines look like `heading, Settings, level 2` or `button, Bold, not pressed`, and include the states and descriptions that ARIA snapshots omit.
+- **`AriaPatterns.VerifyFormValidationAsync`**: after a keyboard submit with errors, it checks that invalid fields are marked, linked to their error text, focused or summarized, and announced. Default `EditForm` markup fails it, and the demo's `SignupForm` passes.
+- **WCAG 2.2 heuristics** in bUnit and browser audits:
+  - `blazor-paste-blocked` (3.3.8): `@onpaste:preventDefault` seen by bUnit, or a cancelled paste on credential fields in the browser, and `autocomplete="off"` on passwords.
+  - `blazor-dragging-alternative` (2.5.7).
+  - `blazor-redundant-entry` (3.3.7): confirmation fields such as `ConfirmEmail`.
+- **Adaptation audits:**
+  - `page.AuditMotionAsync()` (`blazor-motion-not-reduced`, 2.2.2 and 2.3.3) reports animations and media that keep running with `prefers-reduced-motion: reduce`.
+  - `page.AuditOrientationAsync()` (`blazor-orientation-locked`, 1.3.4) reports pages rotated, hidden or replaced by a "rotate your device" message in one orientation.
+- **Route discovery:** `BlazorRoutes.Discover(assemblies, options)` finds every `@page` and `[Route]` component, with parameter values and exclusions. `page.AuditRoutesAsync(baseAddress, routes)` audits each page and lists routes it skipped, rather than dropping them silently.
+- **Conformance drafts:** the `openacr` report format writes an OpenACR YAML file (catalog `2.5-edition-wcag-2.2-en`, the VPAT 2.5 WCAG edition). The `statement` format writes an accessibility statement draft as required by the European Accessibility Act. The CLI adds `--product`, `--product-version`, `--organization`, `--contact`, `--contact-email` and `--level`. Both formats are written only on request and never claim support without a recorded manual review.
 - **Razor analyzers** (new package `BlazorAccessibilityToolkit.Analyzers`): compile-time checks of `.razor` and `.cshtml` markup with the Razor file and line, `BA11Y001` to `BA11Y013`: clickable elements without keyboard support, images without `alt`, positive `tabindex`, unknown ARIA attributes (with typo suggestions) and roles, focusable content inside `aria-hidden`, unlabeled fields (including Blazor's `Input*` components), unnamed buttons and links, empty headings, `<html>` without `lang`, untitled frames, links used as buttons, and interactive roles that cannot receive focus. Configurable with `.editorconfig` (`blazor_a11y_analyzer.enabled`, severities) and ignorable per element or file with `@* blazor-a11y-ignore ... *@`. See [docs/analyzers.md](docs/analyzers.md).
 - **New diagnostics** (browser and browserless bUnit audits):
   - `blazor-navlink-missing-aria-current`: an active navigation link without `aria-current`.
@@ -42,6 +81,10 @@
 
 ### Demo
 
+- The demo projects run the Razor analyzers at build time (`demo/Directory.Build.targets`). They are switched off only for the intentional defects in `Defects/`, and a test checks that every accessible component and showcase page is free of analyzer findings.
+- New tests:
+  - the form validation pattern on `SignupForm` (passes) and `LegacySignupForm` (fails),
+  - an end-to-end audit of every route discovered by reflection.
 - The committed baseline includes the new `blazor-input-purpose-missing` finding of the intentional `LegacySignupForm` defect. A test verifies that the Razor analyzers report the `ClickableCard` and `UnlabelledIconButton` defects and nothing in the accessible components.
 - The showcase has a light, a dark and a system theme. Every color is a `light-dark()` token in `app.css` and `components.css` (the components still render in the light theme by default, which is what the component tests audit), the theme switcher is a radio group in the header, and the choice is kept in a cookie so the server renders pages in that theme without a flash. The end-to-end tests audit every page in both themes and test the switcher with the keyboard.
 - The home page shows every feature at a glance, with links to live examples, the toolkit in numbers, and an example of a failing test's output.

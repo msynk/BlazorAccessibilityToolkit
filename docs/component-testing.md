@@ -85,8 +85,65 @@ Rendered by: Toolbar > IconButton
 | `blazor-validation-message-association` | `ValidationMessage` text not referenced by any `aria-describedby`/`aria-errormessage`. Blazor does not create this link. |
 | `blazor-invalid-without-error-reference` | `aria-invalid="true"` (set by `InputBase`) without a referenced error message. |
 | `blazor-duplicate-id`, `blazor-duplicate-id-referenced` | Hard-coded ids in reusable components rendered more than once. |
+| `blazor-paste-blocked` | `@onpaste:preventDefault`, which a browser cannot see, and password fields with `autocomplete="off"` (WCAG 3.3.8). |
+| `blazor-dragging-alternative`, `blazor-redundant-entry` | Draggable content that needs a single-pointer alternative (2.5.7), and confirmation fields such as `ConfirmEmail` (3.3.7). Browserless only; the browser engine runs the same checks. |
 
 See [rules](rules.md) for the full catalog.
+
+## Queries by role and accessible name
+
+Find elements the way assistive technologies see them, as with Testing Library's `*ByRole` queries and jest-dom's matchers. Roles follow WAI-ARIA 1.2 and HTML-AAM, and names follow the accessible name computation (accname 1.2):
+
+```csharp
+var cut = Render<SettingsPanel>();
+
+cut.FindByRole("button", "Save").Click();                                  // throws when none or several match
+cut.FindByRole("button", new ByRoleOptions { Name = "Bold", Pressed = true });
+cut.FindByRole("heading", new ByRoleOptions { Level = 2, NamePattern = new Regex("^Sett") });
+cut.FindByRole("link", new ByRoleOptions { Current = "page" });
+var tabs = cut.FindAllByRole("tab", new ByRoleOptions { Selected = false });
+var maybe = cut.QueryByRole("dialog");                                      // null when absent
+var nav = cut.FindByRole("navigation", "Sections");
+nav.FindByRole("link", new ByRoleOptions { Name = "Privacy" });              // within a container
+
+cut.FindByLabelText("Nickname")
+    .ShouldHaveRole("textbox")
+    .ShouldHaveAccessibleName("Nickname")
+    .ShouldHaveAccessibleDescription("Shown to other users.")
+    .ShouldHaveAccessibleErrorMessage("Nickname is taken.")               // aria-errormessage, only while invalid
+    .ShouldBeInvalid()
+    .ShouldBeRequired();
+```
+
+- Filters: `Name`, `NamePattern`, `Description`, `Checked`, `Pressed`, `Expanded`, `Selected`, `Disabled` (native, `fieldset` and `aria-disabled`), `Busy`, `Level`, `Current`, `Hidden` (include hidden elements) and `QueryFallbacks`. A mixed checkbox matches neither `Checked = true` nor `false`.
+- Helpers: `GetAccessibleName()`, `GetAccessibleDescription()`, `GetAccessibleErrorMessage()`, `GetRole()`, `GetAccessibleState("expanded")` and `cut.DescribeRoles()`. A failed query lists the roles and names that do exist.
+- Assertions: `ShouldHaveAccessibleName`, `ShouldHaveAccessibleDescription`, `ShouldHaveAccessibleErrorMessage`, `ShouldHaveRole`, `ShouldBeInvalid`/`ShouldBeValid`, `ShouldBeRequired`, `ShouldBeDisabled`/`ShouldBeEnabled`, `ShouldBeChecked`, `ShouldBePressed` and `ShouldBeExpanded`.
+- There is no CSS: an element is hidden by `hidden`, `inert`, `aria-hidden="true"`, a closed `<details>` or an inline `display: none`/`visibility: hidden` style. Content hidden by stylesheets counts as visible, and names do not include CSS generated content. The browser equivalents are the `GetAccessibilityInfoAsync` helpers in BlazorAccessibilityToolkit.Playwright.
+
+## Virtual screen-reader transcripts
+
+`GetAccessibilityTree()` computes the accessibility tree of the rendered markup, and `GetScreenReaderTranscript()` reads it as a screen reader in browse mode would list it, one item per line:
+
+```csharp
+cut.ShouldMatchTranscript("""
+    region, Settings
+    heading, Settings, level 2
+    navigation, Sections
+    list, 2 items
+    link, General, current page
+    link, Privacy
+    button, Bold, not pressed
+    button, Advanced, collapsed
+    checkbox, Email me updates, checked
+    Nickname
+    textbox, Nickname, required, invalid, Shown to other users.
+    img, Your avatar
+    """);
+```
+
+Each line is `role, name, states, description`; static text has a line of its own, and a label that wraps its control is read once with the control. A failure shows a line diff. The same format is produced in a real browser by `locator.ShouldMatchTranscriptAsync(...)` in BlazorAccessibilityToolkit.Playwright.
+
+A transcript is a readable regression record of semantics, **not** what a particular screen reader says: NVDA, JAWS, VoiceOver and TalkBack word, order and abbreviate announcements differently. It does not replace testing with assistive technologies.
 
 ## Regression tests for known defects
 

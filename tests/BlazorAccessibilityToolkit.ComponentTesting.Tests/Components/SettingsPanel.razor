@@ -1,0 +1,22 @@
+@* A small settings panel used by the role-query and transcript tests. *@
+<section aria-labelledby="settings-title">
+    <h2 id="settings-title">Settings</h2>
+    <nav aria-label="Sections">
+        <ul>
+            <li><a href="/general" aria-current="page">General</a></li>
+            <li><a href="/privacy">Privacy</a></li>
+        </ul>
+    </nav>
+    <button type="button" aria-pressed="@(bold ? "true" : "false")" @onclick="() => bold = !bold">Bold</button>
+    <button type="button" aria-expanded="false" aria-controls="advanced"><span aria-hidden="true">▸</span> Advanced</button>
+    <label><input type="checkbox" checked /> Email me updates</label>
+    <label for="nick">Nickname</label>
+    <input id="nick" aria-describedby="nick-hint" aria-invalid="true" aria-errormessage="nick-error" required />
+    <p id="nick-hint">Shown to other users.</p>
+    <p id="nick-error">Nickname is taken.</p>
+    <img src="avatar.png" alt="Your avatar" />
+    <img src="divider.png" alt="" />
+</section>
+@code {
+    private bool bold;
+}

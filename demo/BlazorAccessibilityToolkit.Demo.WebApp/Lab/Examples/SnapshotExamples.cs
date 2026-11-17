@@ -57,4 +57,55 @@ public static class SnapshotExamples
             #endregion
         },
     };
+
+    public static readonly LabExample NaiveTabsTranscript = new()
+    {
+        Id = "naive-tabs-transcript",
+        ExpectFailure = true,
+        NeedsBrowser = true,
+        Run = async env =>
+        {
+            #region snippet:naive-tabs-transcript
+            await using var component = await env.Host.RenderAsync<NaiveTabs>(env.Browser, p => p
+                .Add(c => c.Label, "Sections")
+                .Add(c => c.Items, DemoData.Tabs));
+            env.Show(new LabText(await component.Root.GetScreenReaderTranscriptAsync()), "Virtual screen-reader transcript");
+
+            // The same reviewed transcript as for the accessible Tabs component.
+            await component.Root.ShouldMatchTranscriptAsync("""
+                tablist, Sections, 3 items
+                tab, Profile, selected
+                tab, Notifications
+                tab, Privacy
+                tabpanel, Profile
+                Name and photo.
+                """, timeout: TimeSpan.FromSeconds(1));
+            #endregion
+        },
+    };
+
+    public static readonly LabExample TabsTranscript = new()
+    {
+        Id = "tabs-transcript",
+        NeedsBrowser = true,
+        Run = async env =>
+        {
+            #region snippet:tabs-transcript
+            await using var component = await env.Host.RenderAsync<Tabs>(env.Browser, p => p
+                .Add(c => c.Label, "Sections")
+                .Add(c => c.Items, DemoData.Tabs));
+            env.Show(new LabText(await component.Root.GetScreenReaderTranscriptAsync()), "Virtual screen-reader transcript");
+
+            // Unlike an ARIA snapshot, a transcript also lists states that are false and descriptions.
+            await component.Root.ShouldMatchTranscriptAsync("""
+                tablist, Sections, 3 items
+                tab, Profile, selected
+                tab, Notifications
+                tab, Privacy
+                tabpanel, Profile
+                Name and photo.
+                """, timeout: TimeSpan.FromSeconds(1));
+            #endregion
+        },
+    };
 }

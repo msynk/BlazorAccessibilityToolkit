@@ -24,7 +24,10 @@ public static class CliApp
           --input <path>          Result directory or file (repeatable). Default: $BLAZOR_A11Y_RESULTS_DIR or ./a11y-results
           --baseline <file>       Baseline to compare with (report) or to write (baseline)
           --manual-review <file>  Manual-review checklist to include (repeatable)
-          --format <name>         console, json, junit, sarif, html, markdown (repeatable). Default: all
+          --format <name>         console, json, junit, sarif, html, markdown (repeatable). Default: all of these
+                                  Conformance drafts on request: openacr (OpenACR/VPAT 2.5 YAML), statement (EAA accessibility statement)
+          --product <name>        (openacr, statement) Product name; also --product-version, --organization, --contact, --contact-email
+          --level <A|AA|AAA>      (openacr, statement) Highest WCAG level to include. Default: AA
           --output <dir>          Report directory. Default: ./a11y-report
           --fail-on <level>       none, minor, moderate, serious, critical. Default: minor (any violation)
           --fail-on-potential     Also fail on toolkit heuristics (potential issues)
@@ -95,9 +98,20 @@ public static class CliApp
         }
 
         var formatters = formats.Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(name => ReportFormatters.Find(name) ?? throw new UsageException($"Unknown format '{name}'. Use console, json, junit, sarif, html or markdown."))
+            .Select(name => ReportFormatters.Find(name) ?? throw new UsageException($"Unknown format '{name}'. Use console, json, junit, sarif, html, markdown, openacr or statement."))
             .ToArray();
         var sourceResolver = CreateSourceResolver(args.One("source-root"));
+        var conformanceInfo = new ConformanceReportInfo
+        {
+            ProductName = args.One("product"),
+            ProductVersion = args.One("product-version"),
+            Organization = args.One("organization"),
+            ContactName = args.One("contact"),
+            ContactEmail = args.One("contact-email"),
+            Level = args.One("level") is { } level
+                ? Enum.TryParse<WcagLevel>(level, ignoreCase: true, out var parsed) && Enum.IsDefined(parsed) ? parsed : throw new UsageException($"Invalid --level value '{level}'. Use A, AA or AAA.")
+                : WcagLevel.AA,
+        };
 
         var (audits, loadErrors) = ReportLoader.LoadAudits(Inputs(args));
         var checklists = args.All("manual-review").Select(ManualReviewEvaluator.Load).ToArray();
@@ -120,6 +134,15 @@ public static class CliApp
             if (formatter is SarifReportFormatter)
             {
                 formatter = new SarifReportFormatter { SourceResolver = sourceResolver, FallbackUri = args.One("sarif-fallback-uri") };
+            }
+
+            if (formatter is OpenAcrReportFormatter)
+            {
+                formatter = new OpenAcrReportFormatter { Info = conformanceInfo };
+            }
+            else if (formatter is AccessibilityStatementFormatter)
+            {
+                formatter = new AccessibilityStatementFormatter { Info = conformanceInfo };
             }
 
             if (formatter is ConsoleReportFormatter)
@@ -388,7 +411,7 @@ public static class CliApp
 
         private void Add(string name, string value)
         {
-            var known = new[] { "input", "baseline", "manual-review", "format", "output", "fail-on", "source-root", "sarif-fallback-uri", "name", "scope", "template" };
+            var known = new[] { "input", "baseline", "manual-review", "format", "output", "fail-on", "source-root", "sarif-fallback-uri", "name", "scope", "template", "product", "product-version", "organization", "contact", "contact-email", "level" };
             if (!Flags.Contains(name) && !known.Contains(name))
             {
                 throw new UsageException($"Unknown option --{name}.");

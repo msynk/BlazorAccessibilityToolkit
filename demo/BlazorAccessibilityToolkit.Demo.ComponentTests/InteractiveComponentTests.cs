@@ -264,6 +264,26 @@ public sealed class InteractiveComponentTests(TestEnvironment env)
     }
 
     [Fact]
+    public async Task Signup_form_links_errors_and_focuses_the_first_invalid_field()
+    {
+        await using var component = await env.Host.RenderAsync<SignupForm>(env.Browser);
+
+        (await AriaPatterns.VerifyFormValidationAsync(component.Page.Locator("form"))).ShouldPass();
+    }
+
+    [Fact]
+    public async Task Regression_legacy_signup_form_fails_the_form_validation_pattern()
+    {
+        await using var component = await env.Host.RenderAsync<LegacySignupForm>(env.Browser);
+
+        var result = await AriaPatterns.VerifyFormValidationAsync(component.Page.Locator("form"), options: new PatternOptions { Timeout = TimeSpan.FromSeconds(1) });
+
+        Assert.Contains(result.Checks, c => c.Requirement.StartsWith("Submitting with errors marks", StringComparison.Ordinal) && c.Passed);
+        Assert.Contains(result.Checks, c => c.Requirement.StartsWith("Each invalid field references", StringComparison.Ordinal) && !c.Passed);
+        Assert.Contains(result.Checks, c => c.Requirement.StartsWith("Focus moves", StringComparison.Ordinal) && !c.Passed);
+    }
+
+    [Fact]
     public async Task Regression_naive_tabs_fail_the_tabs_pattern()
     {
         await using var component = await env.Host.RenderAsync<NaiveTabs>(env.Browser, p => p

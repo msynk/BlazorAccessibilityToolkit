@@ -87,3 +87,37 @@ internal sealed class TabbableDto
 
     public int TabIndex { get; set; }
 }
+
+internal sealed class MotionDto
+{
+    public string? Selector { get; set; }
+
+    public string? Html { get; set; }
+
+    public string? Role { get; set; }
+
+    public string? Name { get; set; }
+
+    public int? Ordinal { get; set; }
+
+    public string? Kind { get; set; }
+
+    public string? Name2 { get; set; }
+
+    public string? Properties { get; set; }
+
+    public int Duration { get; set; }
+
+    public bool Infinite { get; set; }
+
+    public bool Controls { get; set; }
+}
+
+internal sealed class OrientationDto
+{
+    public int Text { get; set; }
+
+    public bool Rotated { get; set; }
+
+    public List<string> Messages { get; set; } = [];
+}

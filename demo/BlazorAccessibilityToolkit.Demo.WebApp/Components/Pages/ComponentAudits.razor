@@ -78,6 +78,24 @@
     </ExampleCard>
 </section>
 
+<section aria-labelledby="queries">
+    <h2 id="queries">Queries by role and accessible name</h2>
+    <p>
+        Find elements the way assistive technologies see them, as with Testing Library: <code>FindByRole("button", "Save")</code>,
+        <code>FindByLabelText("Email")</code>, and assertions such as <code>ShouldHaveAccessibleName</code>,
+        <code>ShouldHaveAccessibleDescription</code>, <code>ShouldHaveAccessibleErrorMessage</code> and <code>ShouldBeInvalid</code>.
+        A virtual screen-reader transcript shows the whole component at once. The forms are shown on the
+        <a href="blazor-rules">Blazor rules</a> page.
+    </p>
+    <ExampleCard Title="The template form after a failed submit" Defect="true" Example="QueryExamples.LegacySignupQueries" Sources="@(["LegacySignupForm.razor"])"
+                 Affects="@(["Screen reader users"])">
+        <ChildContent><p>The field is invalid, but its accessible description is empty: the error is not linked.</p></ChildContent>
+    </ExampleCard>
+    <ExampleCard Title="The accessible form after a failed submit" Example="QueryExamples.SignupQueries" Sources="@(["SignupForm.razor", "FieldError.razor"])">
+        <ChildContent><p>Each invalid field is described by its error message.</p></ChildContent>
+    </ExampleCard>
+</section>
+
 <section aria-labelledby="regressions">
     <h2 id="regressions">Keep known defects detected</h2>
     <p>

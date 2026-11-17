@@ -31,9 +31,19 @@ public static class ReportFormatters
         new MarkdownReportFormatter(),
     ];
 
-    /// <summary>Finds a formatter by name (case-insensitive).</summary>
+    /// <summary>
+    /// Conformance documentation drafts, written only when requested: openacr (OpenACR / VPAT 2.5 YAML) and statement
+    /// (an accessibility statement in Markdown, as required by the European Accessibility Act).
+    /// </summary>
+    public static IReadOnlyList<IReportFormatter> Conformance { get; } =
+    [
+        new OpenAcrReportFormatter(),
+        new AccessibilityStatementFormatter(),
+    ];
+
+    /// <summary>Finds a formatter by name (case-insensitive) among <see cref="All"/> and <see cref="Conformance"/>.</summary>
     public static IReportFormatter? Find(string name) =>
-        All.FirstOrDefault(f => string.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase));
+        All.Concat(Conformance).FirstOrDefault(f => string.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Formats the report as a string.</summary>
     public static string Format(this IReportFormatter formatter, AccessibilityReport report)

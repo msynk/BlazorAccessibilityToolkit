@@ -1,0 +1,8 @@
+@page "/orders/{Id:int}"
+@page "/orders/{Id:int}/{Tab?}"
+<PageTitle>Order</PageTitle>
+<h1>Order @Id</h1>
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string? Tab { get; set; }
+}

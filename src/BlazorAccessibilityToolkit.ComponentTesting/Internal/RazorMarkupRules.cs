@@ -8,7 +8,7 @@ using BlazorAccessibilityToolkit.Rules;
 namespace BlazorAccessibilityToolkit.ComponentTesting.Internal;
 
 /// <summary>A rule result on a bUnit element.</summary>
-internal sealed record MarkupRuleResult(AccessibilityRule Rule, IElement Element, string? Message = null, IReadOnlyDictionary<string, string>? Data = null, FindingStatus? Status = null);
+internal sealed record MarkupRuleResult(AccessibilityRule Rule, IElement Element, string? Message = null, IReadOnlyDictionary<string, string>? Data = null, FindingStatus? Status = null, AccessibilityImpact? Impact = null);
 
 /// <summary>
 /// Rules evaluated on bUnit's rendered markup (AngleSharp DOM). The Razor-specific rule uses bUnit's
@@ -35,7 +35,7 @@ internal static partial class RazorMarkupRules
 
     private static readonly FrozenSet<string> AriaAttributes = FrozenSet.ToFrozenSet(
     [
-        "aria-activedescendant", "aria-atomic", "aria-autocomplete", "aria-braillelabel", "aria-brailleroledescription", "aria-busy", "aria-checked",
+        "aria-actions", "aria-activedescendant", "aria-atomic", "aria-autocomplete", "aria-braillelabel", "aria-brailleroledescription", "aria-busy", "aria-checked",
         "aria-colcount", "aria-colindex", "aria-colindextext", "aria-colspan", "aria-controls", "aria-current", "aria-describedby", "aria-description",
         "aria-details", "aria-disabled", "aria-dropeffect", "aria-errormessage", "aria-expanded", "aria-flowto", "aria-grabbed", "aria-haspopup",
         "aria-hidden", "aria-invalid", "aria-keyshortcuts", "aria-label", "aria-labelledby", "aria-level", "aria-live", "aria-modal", "aria-multiline",
@@ -47,11 +47,11 @@ internal static partial class RazorMarkupRules
     private static readonly FrozenSet<string> Roles = FrozenSet.ToFrozenSet(
     [
         "alert", "alertdialog", "application", "article", "banner", "blockquote", "button", "caption", "cell", "checkbox", "code", "columnheader",
-        "combobox", "complementary", "contentinfo", "definition", "deletion", "dialog", "directory", "document", "emphasis", "feed", "figure", "form",
+        "combobox", "comment", "complementary", "contentinfo", "definition", "deletion", "dialog", "directory", "document", "emphasis", "feed", "figure", "form",
         "generic", "grid", "gridcell", "group", "heading", "img", "image", "insertion", "link", "list", "listbox", "listitem", "log", "main", "mark",
         "marquee", "math", "menu", "menubar", "menuitem", "menuitemcheckbox", "menuitemradio", "meter", "navigation", "none", "note", "option",
-        "paragraph", "presentation", "progressbar", "radio", "radiogroup", "region", "row", "rowgroup", "rowheader", "scrollbar", "search", "searchbox",
-        "separator", "slider", "spinbutton", "status", "strong", "subscript", "superscript", "switch", "tab", "table", "tablist", "tabpanel", "term",
+        "paragraph", "presentation", "progressbar", "radio", "radiogroup", "region", "row", "rowgroup", "rowheader", "scrollbar", "search", "searchbox", "sectionfooter", "sectionheader",
+        "separator", "slider", "spinbutton", "status", "strong", "subscript", "suggestion", "superscript", "switch", "tab", "table", "tablist", "tabpanel", "term",
         "textbox", "time", "timer", "toolbar", "tooltip", "tree", "treegrid", "treeitem",
     ], StringComparer.Ordinal);
 
@@ -62,6 +62,7 @@ internal static partial class RazorMarkupRules
         var scope = elements.Where(e => !excluded.Contains(e) && !e.Ancestors<IElement>().Any(excluded.Contains)).ToArray();
         var results = new List<MarkupRuleResult>();
         ClickHandlers(scope, results);
+        PastePrevented(scope, results);
         if (browserless)
         {
             var byId = elements.Where(e => !string.IsNullOrEmpty(e.Id)).GroupBy(e => e.Id!, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.ToArray(), StringComparer.Ordinal);
@@ -72,6 +73,7 @@ internal static partial class RazorMarkupRules
             NamesAndLabels(scope, elements, byId, results);
             Aria(scope, results);
             Forms(scope, elements, byId, results);
+            Wcag22(scope, results);
         }
 
         var disabled = options.DisabledRules.ToHashSet(StringComparer.Ordinal);
@@ -81,7 +83,7 @@ internal static partial class RazorMarkupRules
     /// <summary>Rules evaluated in the given mode (reported as passed when they found nothing).</summary>
     public static IEnumerable<AccessibilityRule> Evaluated(bool browserless, AccessibilityAuditOptions options)
     {
-        var rules = new List<AccessibilityRule> { ToolkitRules.ClickHandlerSemantics };
+        var rules = new List<AccessibilityRule> { ToolkitRules.ClickHandlerSemantics, ToolkitRules.PasteBlocked };
         if (browserless)
         {
             rules.AddRange(
@@ -90,7 +92,7 @@ internal static partial class RazorMarkupRules
                 ToolkitRules.InvalidWithoutErrorReference, ToolkitRules.RadioGroupUngrouped, ToolkitRules.FieldsetMissingLegend, ToolkitRules.MarkupImageAlt,
                 ToolkitRules.MarkupControlName, ToolkitRules.MarkupFormLabel, ToolkitRules.MarkupAriaHiddenFocusable, ToolkitRules.MarkupInvalidAriaAttribute,
                 ToolkitRules.MarkupInvalidRole, ToolkitRules.MarkupPositiveTabIndex, ToolkitRules.NavLinkCurrent, ToolkitRules.InputPurposeMissing,
-                ToolkitRules.RequiredNotExposed,
+                ToolkitRules.RequiredNotExposed, ToolkitRules.DraggingAlternative, ToolkitRules.RedundantEntry,
             ]);
         }
 
@@ -150,6 +152,85 @@ internal static partial class RazorMarkupRules
             }));
         }
     }
+
+    /// <summary>True for results that come from Blazor event handler attributes (turned off with ComponentAuditSettings.RazorRules).</summary>
+    public static bool IsRazorSpecific(MarkupRuleResult result) =>
+        result.Rule == ToolkitRules.ClickHandlerSemantics || (result.Rule == ToolkitRules.PasteBlocked && result.Data is { } data && data.TryGetValue("reason", out var reason) && reason == "paste");
+
+    // Razor-specific: @onpaste:preventDefault is invisible in the browser's DOM, but bUnit renders it as an attribute.
+    private static void PastePrevented(IEnumerable<IElement> scope, List<MarkupRuleResult> results)
+    {
+        foreach (var element in scope.Where(e => e.Attributes.Any(a => string.Equals(a.Name, "blazor:onpaste:preventdefault", StringComparison.OrdinalIgnoreCase))))
+        {
+            var credential = IsCredentialField(element);
+            results.Add(new MarkupRuleResult(
+                ToolkitRules.PasteBlocked,
+                element,
+                $"<{element.LocalName}> cancels paste with @onpaste:preventDefault. Remove it: people who cannot memorize or transcribe {(credential ? "passwords and codes" : "text")} rely on pasting.",
+                new Dictionary<string, string> { ["reason"] = "paste", ["credential"] = credential.ToString() },
+                Impact: credential ? null : AccessibilityImpact.Moderate));
+        }
+    }
+
+    // WCAG 2.2 heuristics: password managers turned away, draggable content and repeated entry.
+    private static void Wcag22(IReadOnlyCollection<IElement> scope, List<MarkupRuleResult> results)
+    {
+        foreach (var element in scope.Where(e => !IsHiddenFromAT(e)))
+        {
+            if (element.LocalName == "input" && Is(element, "type", "password") && Is(element, "autocomplete", "off"))
+            {
+                results.Add(new MarkupRuleResult(
+                    ToolkitRules.PasteBlocked,
+                    element,
+                    "<input type=\"password\" autocomplete=\"off\"> asks password managers not to fill the field. Use autocomplete=\"current-password\" or \"new-password\".",
+                    new Dictionary<string, string> { ["reason"] = "autocomplete-off", ["credential"] = "True" }));
+            }
+
+            if (RedundantEntryPurpose(element) is { } repeated)
+            {
+                results.Add(new MarkupRuleResult(ToolkitRules.RedundantEntry, element, Data: new Dictionary<string, string> { ["purpose"] = repeated }));
+            }
+        }
+
+        // One finding per container of draggable items, not one per item.
+        foreach (var group in scope.Where(e => Is(e, "draggable", "true") && !IsHiddenFromAT(e)).GroupBy(e => e.ParentElement))
+        {
+            var items = group.ToArray();
+            results.Add(new MarkupRuleResult(
+                ToolkitRules.DraggingAlternative,
+                items[0],
+                Data: new Dictionary<string, string> { ["draggable"] = items.Length.ToString(CultureInfo.InvariantCulture) }));
+        }
+    }
+
+    private static bool IsCredentialField(IElement element) =>
+        Is(element, "type", "password")
+        || (element.GetAttribute("autocomplete") ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).Any(t => t is "username" or "current-password" or "new-password" or "one-time-code");
+
+    // "ConfirmEmail", "Model.EmailConfirmation", "repeat-email": a second field for information already asked for.
+    // Repeated passwords are exempt (re-entering a new password is accepted for security).
+    private static string? RedundantEntryPurpose(IElement element)
+    {
+        if (element.LocalName != "input" || NonTextInputTypes.Contains(element.GetAttribute("type") ?? "text") || Is(element, "type", "password"))
+        {
+            return null;
+        }
+
+        foreach (var value in new[] { element.GetAttribute("name"), element.Id })
+        {
+            var last = (value ?? string.Empty).Split(['.', '[', ']'], StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? string.Empty;
+            var token = new string(last.ToLowerInvariant().Where(char.IsAsciiLetterOrDigit).ToArray());
+            if (RedundantEntry().Match(token) is { Success: true } match)
+            {
+                return match.Groups["purpose"].Value;
+            }
+        }
+
+        return null;
+    }
+
+    [GeneratedRegex("^(?:(?:confirm|repeat|verify|retype|reenter)(?<purpose>e?mail|emailaddress|phone|phonenumber|username)|(?<purpose>e?mail|emailaddress|phone|phonenumber|username)(?:confirm|confirmation|again|repeat|verify|verification))$", RegexOptions.CultureInvariant)]
+    private static partial Regex RedundantEntry();
 
     private static void Ids(IEnumerable<IElement> scope, Dictionary<string, IElement[]> byId, HashSet<string> referenced, List<MarkupRuleResult> results)
     {

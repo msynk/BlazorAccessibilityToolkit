@@ -1,0 +1,12 @@
+<Project>
+  <!-- The demo dogfoods the Razor analyzers: every .razor file is checked at compile time. -->
+  <ItemGroup Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true' And '$(IsTestProject)' != 'true'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\src\BlazorAccessibilityToolkit.Analyzers\BlazorAccessibilityToolkit.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <!-- MSBuild only discovers .editorconfig files above source files, not in folders that contain only .razor files, so
+       the one that switches the analyzers off for the intentional defects is passed to the compiler explicitly. -->
+  <ItemGroup Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true' And Exists('$(MSBuildProjectDirectory)\Defects\.editorconfig')">
+    <EditorConfigFiles Include="$(MSBuildProjectDirectory)\Defects\.editorconfig" />
+  </ItemGroup>
+</Project>

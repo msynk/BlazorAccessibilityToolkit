@@ -20,7 +20,7 @@ namespace BlazorAccessibilityToolkit.Analyzers;
 /// severities with <c>dotnet_diagnostic.BA11Y001.severity</c>.</para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
+public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
 {
     private const string Category = "Accessibility";
     private const string Docs = "https://github.com/msynk/BlazorAccessibilityToolkit/blob/main/docs/analyzers.md#";
@@ -29,7 +29,7 @@ public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
     public static readonly DiagnosticDescriptor ClickHandlerSemantics = Rule("BA11Y001", "Clickable element is not keyboard accessible", "<{0}> has a Blazor @{1} handler, but {2}; use a <button>, or add an interactive role, tabindex=\"0\" and an @onkeydown handler", "2.1.1, 4.1.2");
 
     /// <summary>Image without alt.</summary>
-    public static readonly DiagnosticDescriptor ImageAlt = Rule("BA11Y002", "Image has no text alternative", "<img> has no alt attribute; add alt=\"description\", or alt=\"\" for a decorative image", "1.1.1");
+    public static readonly DiagnosticDescriptor ImageAlt = Rule("BA11Y002", "Image has no text alternative", "{0}; add alt=\"description\" (or an accessible name), or alt=\"\" for a decorative <img>", "1.1.1");
 
     /// <summary>Positive tabindex.</summary>
     public static readonly DiagnosticDescriptor PositiveTabIndex = Rule("BA11Y003", "Positive tabindex", "tabindex=\"{0}\" overrides the document focus order; use tabindex=\"0\" and order the markup instead", "2.4.3");
@@ -82,7 +82,7 @@ public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
 
     private static readonly HashSet<string> AriaAttributes = new(StringComparer.OrdinalIgnoreCase)
     {
-        "aria-activedescendant", "aria-atomic", "aria-autocomplete", "aria-braillelabel", "aria-brailleroledescription", "aria-busy", "aria-checked",
+        "aria-actions", "aria-activedescendant", "aria-atomic", "aria-autocomplete", "aria-braillelabel", "aria-brailleroledescription", "aria-busy", "aria-checked",
         "aria-colcount", "aria-colindex", "aria-colindextext", "aria-colspan", "aria-controls", "aria-current", "aria-describedby", "aria-description",
         "aria-details", "aria-disabled", "aria-dropeffect", "aria-errormessage", "aria-expanded", "aria-flowto", "aria-grabbed", "aria-haspopup",
         "aria-hidden", "aria-invalid", "aria-keyshortcuts", "aria-label", "aria-labelledby", "aria-level", "aria-live", "aria-modal", "aria-multiline",
@@ -94,11 +94,11 @@ public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
     private static readonly HashSet<string> Roles = new(StringComparer.Ordinal)
     {
         "alert", "alertdialog", "application", "article", "banner", "blockquote", "button", "caption", "cell", "checkbox", "code", "columnheader",
-        "combobox", "complementary", "contentinfo", "definition", "deletion", "dialog", "directory", "document", "emphasis", "feed", "figure", "form",
+        "combobox", "comment", "complementary", "contentinfo", "definition", "deletion", "dialog", "directory", "document", "emphasis", "feed", "figure", "form",
         "generic", "grid", "gridcell", "group", "heading", "img", "image", "insertion", "link", "list", "listbox", "listitem", "log", "main", "mark",
         "marquee", "math", "menu", "menubar", "menuitem", "menuitemcheckbox", "menuitemradio", "meter", "navigation", "none", "note", "option",
-        "paragraph", "presentation", "progressbar", "radio", "radiogroup", "region", "row", "rowgroup", "rowheader", "scrollbar", "search", "searchbox",
-        "separator", "slider", "spinbutton", "status", "strong", "subscript", "superscript", "switch", "tab", "table", "tablist", "tabpanel", "term",
+        "paragraph", "presentation", "progressbar", "radio", "radiogroup", "region", "row", "rowgroup", "rowheader", "scrollbar", "search", "searchbox", "sectionfooter", "sectionheader",
+        "separator", "slider", "spinbutton", "status", "strong", "subscript", "suggestion", "superscript", "switch", "tab", "table", "tablist", "tabpanel", "term",
         "textbox", "time", "timer", "toolbar", "tooltip", "tree", "treegrid", "treeitem",
     };
 
@@ -111,7 +111,11 @@ public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(
         ClickHandlerSemantics, ImageAlt, PositiveTabIndex, UnknownAriaAttribute, UnknownRole, AriaHiddenFocusable, FormFieldLabel,
-        ControlName, EmptyHeading, HtmlLang, FrameTitle, LinkAsButton, InteractiveRoleFocus);
+        ControlName, EmptyHeading, HtmlLang, FrameTitle, LinkAsButton, InteractiveRoleFocus,
+        Autofocus, AccessKey, DistractingElement, MediaCaptions, ScopeAttribute, AutocompleteValid, ActiveDescendantFocus,
+        RoleRequiredAttributes, AriaAttributeValue, RedundantRole, NonInteractiveTabIndex, MouseEventsWithoutFocus, NestedInteractive,
+        AmbiguousLinkText, LangValid, ViewportZoom, MetaRefresh, PageTitleMissing, FocusOnNavigateMissing, PasteOrAutofillBlocked,
+        DraggingAlternative, AriaStateBoundToBool, RedundantImageAlt, PresentationRoleConflict);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -141,16 +145,28 @@ public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        foreach (var (descriptor, element, span, args) in Analyze(text.ToString()))
+        var settings = AnalyzerSettings.From(options);
+        foreach (var (descriptor, element, span, args) in Analyze(text.ToString(), settings))
         {
             context.ReportDiagnostic(Diagnostic.Create(descriptor, Location.Create(path, span, text.Lines.GetLinePositionSpan(span)), args));
         }
     }
 
     /// <summary>Runs the rules on Razor markup. Exposed for tests.</summary>
-    internal static IEnumerable<(DiagnosticDescriptor Descriptor, RazorElement Element, TextSpan Span, object[] Args)> Analyze(string markup)
+    internal static IEnumerable<(DiagnosticDescriptor Descriptor, RazorElement? Element, TextSpan Span, object[] Args)> Analyze(string markup, AnalyzerSettings? settings = null)
     {
+        settings ??= AnalyzerSettings.Default;
         var elements = RazorMarkupScanner.Scan(markup);
+        foreach (var element in elements)
+        {
+            if (element.IsComponent && settings.ComponentMap.TryGetValue(element.Name, out var native))
+            {
+                element.MapTo(native);
+            }
+        }
+
+        var file = new FileFacts(markup, elements);
+
         // Labels that wrap a checkbox, radio button or button: activating the control with the keyboard dispatches a click
         // that bubbles to the label, so a click handler on the label is reachable.
         var labelsWithControls = new HashSet<RazorElement>(
@@ -160,7 +176,7 @@ public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
 
         foreach (var element in elements)
         {
-            foreach (var result in Check(element, labelsWithControls))
+            foreach (var result in Check(element, labelsWithControls, settings).Concat(CheckMore(element, file, settings)))
             {
                 if (!element.IsIgnored(result.Descriptor.Id))
                 {
@@ -168,9 +184,17 @@ public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
                 }
             }
         }
+
+        foreach (var result in CheckFile(file))
+        {
+            if (!file.IsIgnored(result.Descriptor.Id))
+            {
+                yield return result;
+            }
+        }
     }
 
-    private static IEnumerable<(DiagnosticDescriptor Descriptor, RazorElement Element, TextSpan Span, object[] Args)> Check(RazorElement e, HashSet<RazorElement> labelsWithControls)
+    private static IEnumerable<(DiagnosticDescriptor Descriptor, RazorElement? Element, TextSpan Span, object[] Args)> Check(RazorElement e, HashSet<RazorElement> labelsWithControls, AnalyzerSettings settings)
     {
         var tag = NameSpan(e);
         var splatted = e.Has("@attributes");
@@ -201,7 +225,7 @@ public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
 
         if (e.IsComponent)
         {
-            if (BlazorInputs.Contains(e.Name) && !splatted && !IsLabelled(e) && !IsHidden(e))
+            if (BlazorInputs.Contains(e.Name) && !splatted && !IsLabelled(e, settings) && !IsHidden(e))
             {
                 yield return (FormFieldLabel, e, tag, [e.Name]);
             }
@@ -256,9 +280,21 @@ public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
             yield return (LinkAsButton, e, tag, [href]);
         }
 
-        if (e.LowerName == "img" && !splatted && !hidden && !e.Has("alt") && role is not ("presentation" or "none") && !HasNameAttribute(e))
+        if (e.LowerName == "img" && !splatted && !hidden && !e.Has("alt") && role is not ("presentation" or "none") && !HasNameAttribute(e, settings))
         {
-            yield return (ImageAlt, e, tag, []);
+            yield return (ImageAlt, e, tag, ["<img> has no alt attribute"]);
+        }
+        else if (e.LowerName == "input" && string.Equals(e.Static("type")?.Trim(), "image", StringComparison.OrdinalIgnoreCase) && !splatted && !hidden && !e.Has("alt") && !HasNameAttribute(e, settings))
+        {
+            yield return (ImageAlt, e, tag, ["<input type=\"image\"> has no alt attribute"]);
+        }
+        else if (e.LowerName == "area" && e.Has("href") && !splatted && !hidden && !e.Has("alt") && !HasNameAttribute(e, settings))
+        {
+            yield return (ImageAlt, e, tag, ["<area> has no alt attribute"]);
+        }
+        else if (e.LowerName == "svg" && role == "img" && !splatted && !hidden && !HasNameAttribute(e, settings) && !e.Children.Any(c => c.LowerName == "title") && !e.HasDynamicContent && !e.HasChildComponent)
+        {
+            yield return (ImageAlt, e, tag, ["<svg role=\"img\"> has no <title>, aria-label or aria-labelledby"]);
         }
 
         if (IsFocusable(e) && (hidden || e.Ancestors().Any(a => string.Equals(a.Static("aria-hidden"), "true", StringComparison.OrdinalIgnoreCase)))
@@ -267,29 +303,29 @@ public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
             yield return (AriaHiddenFocusable, e, tag, [e.Name]);
         }
 
-        if (IsLabelable(e) && !splatted && !hidden && !IsLabelled(e))
+        if (IsLabelable(e) && !splatted && !hidden && !IsLabelled(e, settings))
         {
             yield return (FormFieldLabel, e, tag, [e.Name]);
         }
 
         var isButton = (e.LowerName == "button" && role is null) || role == "button";
         var isLink = (e.LowerName == "a" && e.Has("href") && role is null) || role == "link";
-        if ((isButton || isLink) && !splatted && !hidden && !HasContentOrName(e))
+        if ((isButton || isLink) && !splatted && !hidden && !HasContentOrName(e, settings))
         {
             yield return (ControlName, e, tag, [e.Name]);
         }
 
-        if (e.LowerName is "h1" or "h2" or "h3" or "h4" or "h5" or "h6" && !splatted && !hidden && !HasContentOrName(e))
+        if (e.LowerName is "h1" or "h2" or "h3" or "h4" or "h5" or "h6" && !splatted && !hidden && !HasContentOrName(e, settings))
         {
             yield return (EmptyHeading, e, tag, [e.Name]);
         }
 
-        if (e.LowerName == "html" && !e.Has("lang") && !splatted)
+        if (e.LowerName == "html" && !splatted && (!e.Has("lang") || (e.Static("lang") is { } emptyLang && emptyLang.Trim().Length == 0)))
         {
             yield return (HtmlLang, e, tag, []);
         }
 
-        if (e.LowerName == "iframe" && !splatted && !hidden && !e.Has("title") && !HasNameAttribute(e))
+        if (e.LowerName == "iframe" && !splatted && !hidden && !e.Has("title") && !HasNameAttribute(e, settings))
         {
             yield return (FrameTitle, e, tag, []);
         }
@@ -297,17 +333,18 @@ public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
 
     private static TextSpan NameSpan(RazorElement e) => new(e.Start + 1, Math.Max(1, e.Name.Length));
 
-    private static bool HasContentOrName(RazorElement e) =>
-        e.HasText || e.HasDynamicContent || e.HasChildComponent || e.HasNamedImage || HasNameAttribute(e);
+    private static bool HasContentOrName(RazorElement e, AnalyzerSettings settings) =>
+        e.HasText || e.HasDynamicContent || e.HasChildComponent || e.HasNamedImage || HasNameAttribute(e, settings);
 
-    private static bool HasNameAttribute(RazorElement e) =>
-        e.Attribute("aria-label") is { } label && (label.IsDynamic || !string.IsNullOrWhiteSpace(label.Value))
+    private static bool HasNameAttribute(RazorElement e, AnalyzerSettings? settings = null) =>
+        (e.Attribute("aria-label") is { } label && (label.IsDynamic || !string.IsNullOrWhiteSpace(label.Value)))
         || e.Has("aria-labelledby")
-        || e.Attribute("title") is { } title && (title.IsDynamic || !string.IsNullOrWhiteSpace(title.Value));
+        || (e.Attribute("title") is { } title && (title.IsDynamic || !string.IsNullOrWhiteSpace(title.Value)))
+        || (e.IsMapped && settings is not null && e.Attributes.Any(a => settings.LabelAttributes.Contains(a.Name) && (a.IsDynamic || !string.IsNullOrWhiteSpace(a.Value))));
 
-    private static bool IsLabelled(RazorElement e)
+    private static bool IsLabelled(RazorElement e, AnalyzerSettings settings)
     {
-        if (HasNameAttribute(e) || e.Has("placeholder"))
+        if (HasNameAttribute(e, settings) || e.Has("placeholder"))
         {
             return true;
         }
@@ -425,13 +462,13 @@ public sealed class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
         return previous[b.Length];
     }
 
-    private static DiagnosticDescriptor Rule(string id, string title, string message, string wcag) => new(
+    private static DiagnosticDescriptor Rule(string id, string title, string message, string wcag, DiagnosticSeverity severity = DiagnosticSeverity.Warning) => new(
         id,
         title,
         message,
         Category,
-        DiagnosticSeverity.Warning,
+        severity,
         isEnabledByDefault: true,
-        description: $"WCAG {wcag}. Found in Razor markup at compile time; values computed at run time are not checked.",
+        description: (wcag.Length == 0 ? "Best practice." : $"WCAG {wcag}.") + " Found in Razor markup at compile time; values computed at run time are not checked.",
         helpLinkUri: Docs + id.ToLowerInvariant());
 }

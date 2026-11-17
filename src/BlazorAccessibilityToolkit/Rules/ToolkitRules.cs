@@ -216,6 +216,76 @@ public static class ToolkitRules
         Environments = [Browser],
     };
 
+    /// <summary>A field blocks pasting or password managers.</summary>
+    public static AccessibilityRule PasteBlocked { get; } = new()
+    {
+        Id = "blazor-paste-blocked",
+        Description = "Fields must not prevent pasting, and password fields must not turn password managers away. People who cannot memorize or transcribe passwords and codes rely on both (accessible authentication).",
+        Help = "Field blocks paste or password managers",
+        Remediation = "Remove @onpaste:preventDefault (or the script that cancels paste events), and use autocomplete=\"current-password\", \"new-password\" or \"one-time-code\" instead of autocomplete=\"off\".",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Serious,
+        Wcag = ["3.3.8"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html",
+        Environments = [Markup, Browser],
+    };
+
+    /// <summary>Drag-and-drop without a reported single-pointer alternative.</summary>
+    public static AccessibilityRule DraggingAlternative { get; } = new()
+    {
+        Id = "blazor-dragging-alternative",
+        Description = "Functionality that uses dragging must also be available with a single pointer without dragging (for example buttons to move an item up or down, or a menu), unless dragging is essential.",
+        Help = "Draggable content: verify that a single-pointer alternative exists",
+        Remediation = "Offer the same result without dragging: move up/down buttons, a 'Move to' menu, or click-to-select then click-to-place. Keyboard support alone does not satisfy WCAG 2.5.7.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Moderate,
+        Wcag = ["2.5.7"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/dragging-movements.html",
+        Environments = [Markup, Browser],
+    };
+
+    /// <summary>A form asks again for information the user already entered.</summary>
+    public static AccessibilityRule RedundantEntry { get; } = new()
+    {
+        Id = "blazor-redundant-entry",
+        Description = "Information the user already entered in the same process should be filled in automatically or be selectable, unless re-entering it is essential (for example a new password for security).",
+        Help = "Field asks the user to enter the same information again",
+        Remediation = "Remove the confirmation field, or fill it in automatically. To catch typos in an email address, show it back for review instead of asking for it twice.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Moderate,
+        Wcag = ["3.3.7"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/redundant-entry.html",
+        Environments = [Markup, Browser],
+    };
+
+    /// <summary>Animation keeps running while the user asks for reduced motion.</summary>
+    public static AccessibilityRule MotionNotReduced { get; } = new()
+    {
+        Id = "blazor-motion-not-reduced",
+        Description = "Moving, blinking or auto-playing content that lasts more than five seconds must be pausable, and animation triggered by interaction should stop when the user prefers reduced motion (prefers-reduced-motion: reduce).",
+        Help = "Animation keeps running with reduced motion requested",
+        Remediation = "Wrap animations in @media (prefers-reduced-motion: no-preference), or stop them under prefers-reduced-motion: reduce. Give auto-playing video and carousels a pause button.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Serious,
+        Wcag = ["2.2.2", "2.3.3"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Techniques/css/C39",
+        Environments = [Browser],
+    };
+
+    /// <summary>Content is only usable in one display orientation.</summary>
+    public static AccessibilityRule OrientationLocked { get; } = new()
+    {
+        Id = "blazor-orientation-locked",
+        Description = "Content must not restrict its view and operation to a single display orientation (portrait or landscape) unless the orientation is essential.",
+        Help = "Content is restricted to one orientation",
+        Remediation = "Remove orientation-specific rules that hide or rotate the page (for example a \"rotate your device\" overlay under @media (orientation: portrait)); use responsive layouts for both orientations.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Serious,
+        Wcag = ["1.3.4"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/orientation.html",
+        Environments = [Browser],
+    };
+
     /// <summary>The focused element is entirely hidden behind other content.</summary>
     public static AccessibilityRule FocusObscured { get; } = new()
     {
@@ -474,10 +544,10 @@ public static class ToolkitRules
     [
         ClickHandlerSemantics, ValidationMessageAssociation, InvalidWithoutErrorReference, DuplicateId, DuplicateIdReferenced,
         IdReferenceMissing, RadioGroupUngrouped, FieldsetMissingLegend, ExpandedStateMismatch, TabSelectionMismatch,
-        NavLinkCurrent, InputPurposeMissing, RequiredNotExposed, ErrorUiNotAccessible,
+        NavLinkCurrent, InputPurposeMissing, RequiredNotExposed, ErrorUiNotAccessible, PasteBlocked, DraggingAlternative, RedundantEntry,
         MarkupImageAlt, MarkupControlName, MarkupFormLabel, MarkupAriaHiddenFocusable, MarkupInvalidAriaAttribute, MarkupInvalidRole, MarkupPositiveTabIndex,
         FocusStuck, FocusTrap, FocusHiddenTarget, FocusIndicatorNotDetected, FocusRepeated, FocusObscured,
-        ReflowHorizontalScroll, TextSpacingClipped,
+        ReflowHorizontalScroll, TextSpacingClipped, MotionNotReduced, OrientationLocked,
         LiveRegionInsertedWithContent, LiveRegionHiddenUpdate, LiveRegionPolitenessConflict,
     ];
 

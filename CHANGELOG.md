@@ -4,6 +4,23 @@
 
 ### Added
 
+- **Razor analyzers** (new package `BlazorAccessibilityToolkit.Analyzers`): compile-time checks of `.razor` and `.cshtml` markup with the Razor file and line, `BA11Y001` to `BA11Y013`: clickable elements without keyboard support, images without `alt`, positive `tabindex`, unknown ARIA attributes (with typo suggestions) and roles, focusable content inside `aria-hidden`, unlabeled fields (including Blazor's `Input*` components), unnamed buttons and links, empty headings, `<html>` without `lang`, untitled frames, links used as buttons, and interactive roles that cannot receive focus. Configurable with `.editorconfig` (`blazor_a11y_analyzer.enabled`, severities) and ignorable per element or file with `@* blazor-a11y-ignore ... *@`. See [docs/analyzers.md](docs/analyzers.md).
+- **New diagnostics** (browser and browserless bUnit audits):
+  - `blazor-navlink-missing-aria-current`: an active navigation link without `aria-current`.
+  - `blazor-input-purpose-missing` (WCAG 1.3.5): fields named or typed like personal data without `autocomplete`, with the suggested token.
+  - `blazor-required-not-exposed`: a label marks the field as required, but the control is not `required` or `aria-required`.
+  - `blazor-error-ui-not-accessible` (browser): `#blazor-error-ui` is not a live region or its dismiss control is not keyboard accessible.
+- **Focus:**
+  - `blazor-focus-obscured` (WCAG 2.4.11): focus-order capture reports stops that are entirely covered by sticky headers, banners or overlays (`FocusOrderOptions.ReportObscuredFocus`, on by default). `FocusSnapshot.Obscuration`, `FocusSnapshot.ObscuredBy` and `FocusStop.Obscuration` record full and partial covering; focus outside the viewport is reported as `blazor-focus-hidden-target`.
+  - Focus indicators are now detected as a visible style change between the unfocused and focused element (outline, border, box-shadow, background, color, text decoration, transform, filter, opacity; including `::before`, `::after` and the parent for `:focus-within`), instead of only outlines and box-shadows.
+  - `KeyboardScenario.ExpectFocusIndicator()`, `ExpectFocusNotObscured()` and `ExpectTitle()`.
+- **Adaptation audits:** `page.AuditReflowAsync()` (`blazor-reflow-horizontal-scroll`, WCAG 1.4.10, with the two-dimensional content exception), `page.AuditTextSpacingAsync()` (`blazor-text-spacing-clipped`, WCAG 1.4.12), `page.AuditUnderAsync(DisplayConditions)` and `EmulateDisplayConditionsAsync` for dark mode, forced colors and increased contrast, and `AccessibilityBrowserOptions.DisplayConditions` for every context.
+- **ARIA pattern verifiers:** `VerifyRadioGroupAsync`, `VerifyToolbarAsync`, `VerifyListboxAsync`, `VerifyComboboxAsync`, `VerifySliderAsync`, `VerifyCheckboxAsync` (checkboxes and switches), `VerifyTooltipAsync` (including WCAG 1.4.13 dismissible, hoverable and persistent) and `VerifyAccordionAsync`.
+- `NavigationChecks.VerifyNavigationAsync`: after a client-side navigation, the title changes, the language is set, and focus moves to the new content or the change is announced.
+- **Standards:** `AccessibilityStandard.Wcag22A`, `Wcag22AAA`, `En301549` and `Section508` presets, and `WcagReference.En301549Clause`.
+- **Reporting:** `WcagCoverage` rolls findings and manual checks up to WCAG 2.2 criteria (Does not support, Supports (manually verified), Not applicable, Needs review, Not evaluated) with EN 301 549 clauses. Automated results alone never mark a criterion as supported. The HTML report shows the table; the new `markdown` format (`MarkdownReportFormatter`) shows it with totals, baseline changes and failing audits for pull requests.
+- **Manual review:** `ManualReviewTemplates.Wcag22AA` with one item per WCAG 2.2 A and AA criterion; the standard template now also covers accessible authentication, redundant entry, consistent help and text alternatives.
+- **CLI:** `report --step-summary` appends the Markdown report to the GitHub Actions job summary, `manual init --template standard|wcag22aa`, and `blazor-a11y rules` lists the toolkit's rules.
 - `AccessibilityAudit.ExpiredSuppressions` (JSON field `expiredSuppressions`) lists suppressions that had expired. Strict quality gates now fail on this list instead of on warning text that contains "expired".
 
 ### Fixed
@@ -25,6 +42,7 @@
 
 ### Demo
 
+- The committed baseline includes the new `blazor-input-purpose-missing` finding of the intentional `LegacySignupForm` defect. A test verifies that the Razor analyzers report the `ClickableCard` and `UnlabelledIconButton` defects and nothing in the accessible components.
 - The showcase has a light, a dark and a system theme. Every color is a `light-dark()` token in `app.css` and `components.css` (the components still render in the light theme by default, which is what the component tests audit), the theme switcher is a radio group in the header, and the choice is kept in a cookie so the server renders pages in that theme without a flash. The end-to-end tests audit every page in both themes and test the switcher with the keyboard.
 - The home page shows every feature at a glance, with links to live examples, the toolkit in numbers, and an example of a failing test's output.
 - A **Run all** panel on each page runs every live test on it and lists how each one ended. Defect cards say who the defect locks out and what a screen reader typically announces.

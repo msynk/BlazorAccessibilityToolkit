@@ -5,7 +5,9 @@
 - **Conformance.** Passing every automated check does not mean a page conforms to WCAG. Many criteria need human judgment: whether reading and focus order make sense, whether link and heading text is meaningful, contrast over images and gradients, reflow, motion, and error recovery. Track them with [manual review](manual-review.md).
 - **Screen reader output.** Live-region monitoring and ARIA snapshots record DOM and accessibility-tree evidence. They do not emulate a screen reader and cannot confirm what is spoken, in which order, or whether an announcement was interrupted.
 - **Logical focus order.** The toolkit records the observed order and flags traps, stuck focus and hidden targets. Whether the order is logical is judged against the expectation you write.
-- **Focus indicators.** Only outlines and box-shadows are detected. Indicators built from backgrounds, borders or pseudo-elements must be verified manually, and contrast of the indicator is not measured.
+- **Focus indicators.** During focus-order capture and keyboard scenarios that expect an indicator, the toolkit compares each element's focused style with its recorded unfocused style (element, pseudo-elements and parent). Indicators drawn by other elements, or by script after focus, are not seen, elements focused without a recorded style fall back to "outline or box-shadow present", and the contrast and area of the indicator are not measured.
+- **Obscured focus, reflow and text spacing.** These checks use the browser's own hit testing and layout at one moment in time. Content that animates into place, sticky elements with `pointer-events: none`, and clipping that depends on fonts loading later can produce different results. Findings are potential issues.
+- **Razor analyzers.** The compile-time rules read `.razor` markup, not the rendered output. Values computed at run time, attribute splatting and content rendered by child components are assumed to be correct. They complement the rendered-markup audits; they do not replace them.
 
 ## Rendering environments
 

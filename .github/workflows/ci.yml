@@ -62,6 +62,7 @@ jobs:
           --output a11y-report
           --source-root demo
           --sarif-fallback-uri demo/BlazorAccessibilityToolkit.Demo.EndToEndTests/PageTests.cs
+          --step-summary
 
       # Optional: show findings in GitHub code scanning (requires code scanning to be enabled for the repository).
       - name: Upload SARIF

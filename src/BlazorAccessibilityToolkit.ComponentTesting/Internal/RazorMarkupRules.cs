@@ -71,6 +71,7 @@ internal static partial class RazorMarkupRules
             Groups(scope, byId, results);
             NamesAndLabels(scope, elements, byId, results);
             Aria(scope, results);
+            Forms(scope, elements, byId, results);
         }
 
         var disabled = options.DisabledRules.ToHashSet(StringComparer.Ordinal);
@@ -88,7 +89,8 @@ internal static partial class RazorMarkupRules
                 ToolkitRules.DuplicateId, ToolkitRules.DuplicateIdReferenced, ToolkitRules.IdReferenceMissing, ToolkitRules.ValidationMessageAssociation,
                 ToolkitRules.InvalidWithoutErrorReference, ToolkitRules.RadioGroupUngrouped, ToolkitRules.FieldsetMissingLegend, ToolkitRules.MarkupImageAlt,
                 ToolkitRules.MarkupControlName, ToolkitRules.MarkupFormLabel, ToolkitRules.MarkupAriaHiddenFocusable, ToolkitRules.MarkupInvalidAriaAttribute,
-                ToolkitRules.MarkupInvalidRole, ToolkitRules.MarkupPositiveTabIndex,
+                ToolkitRules.MarkupInvalidRole, ToolkitRules.MarkupPositiveTabIndex, ToolkitRules.NavLinkCurrent, ToolkitRules.InputPurposeMissing,
+                ToolkitRules.RequiredNotExposed,
             ]);
         }
 
@@ -303,6 +305,128 @@ internal static partial class RazorMarkupRules
             }
         }
     }
+
+    private static readonly (Regex Pattern, string Purpose)[] PurposeByName =
+    [
+        (new Regex("^(e?mail|emailaddress|useremail)$", RegexOptions.CultureInvariant), "email"),
+        (new Regex("^(phone|phonenumber|telephone|telephonenumber|tel|mobile|mobilephone|mobilenumber|cellphone|cellphonenumber)$", RegexOptions.CultureInvariant), "tel"),
+        (new Regex("^(firstname|givenname|forename)$", RegexOptions.CultureInvariant), "given-name"),
+        (new Regex("^(lastname|familyname|surname)$", RegexOptions.CultureInvariant), "family-name"),
+        (new Regex("^(fullname|yourname)$", RegexOptions.CultureInvariant), "name"),
+        (new Regex("^(username|userid|login|loginname)$", RegexOptions.CultureInvariant), "username"),
+        (new Regex("^(password|currentpassword)$", RegexOptions.CultureInvariant), "current-password"),
+        (new Regex("^(newpassword|confirmpassword|passwordconfirmation|repeatpassword)$", RegexOptions.CultureInvariant), "new-password"),
+        (new Regex("^(zip|zipcode|postalcode|postcode)$", RegexOptions.CultureInvariant), "postal-code"),
+        (new Regex("^(street|streetaddress|address|address1|addressline1)$", RegexOptions.CultureInvariant), "address-line1"),
+        (new Regex("^(address2|addressline2)$", RegexOptions.CultureInvariant), "address-line2"),
+        (new Regex("^(birthdate|dateofbirth|dob|bday|birthday)$", RegexOptions.CultureInvariant), "bday"),
+    ];
+
+    private static readonly FrozenSet<string> NonTextInputTypes = FrozenSet.ToFrozenSet(["hidden", "submit", "button", "reset", "image", "checkbox", "radio", "file", "range", "color"], StringComparer.OrdinalIgnoreCase);
+
+    // Mirrors the browser diagnostics in toolkit.js: NavLink aria-current, input purpose and visually-only required fields.
+    private static void Forms(IEnumerable<IElement> scope, IReadOnlyList<IElement> all, Dictionary<string, IElement[]> byId, List<MarkupRuleResult> results)
+    {
+        foreach (var element in scope.Where(e => !IsHiddenFromAT(e)))
+        {
+            if (element.LocalName == "a" && element.HasAttribute("href") && element.ClassList.Contains("active")
+                && element.Ancestors<IElement>().Any(a => a.LocalName == "nav" || Is(a, "role", "navigation"))
+                && element.GetAttribute("aria-current") is null or "false")
+            {
+                results.Add(new MarkupRuleResult(ToolkitRules.NavLinkCurrent, element, Data: new Dictionary<string, string> { ["href"] = element.GetAttribute("href") ?? string.Empty }));
+            }
+
+            if (!element.HasAttribute("autocomplete") && PersonalDataPurpose(element) is { } purpose)
+            {
+                results.Add(new MarkupRuleResult(
+                    ToolkitRules.InputPurposeMissing,
+                    element,
+                    $"This field appears to collect \"{purpose}\" but has no autocomplete attribute. Add autocomplete=\"{purpose}\" (or the token that matches its purpose).",
+                    new Dictionary<string, string> { ["suggested"] = purpose }));
+            }
+
+            if (IsRequirable(element) && !element.HasAttribute("required") && !Is(element, "aria-required", "true")
+                && LabelTexts(element, all, byId).FirstOrDefault(IsRequiredMarker) is { } label)
+            {
+                results.Add(new MarkupRuleResult(ToolkitRules.RequiredNotExposed, element, Data: new Dictionary<string, string> { ["label"] = label }));
+            }
+        }
+    }
+
+    private static string? PersonalDataPurpose(IElement element)
+    {
+        if (element.LocalName is not ("input" or "textarea" or "select"))
+        {
+            return null;
+        }
+
+        var type = element.LocalName == "input" ? (element.GetAttribute("type") ?? "text").ToLowerInvariant() : element.LocalName;
+        if (NonTextInputTypes.Contains(type))
+        {
+            return null;
+        }
+
+        // Blazor forms name fields after the bound model path (for example "Model.Email").
+        foreach (var value in new[] { element.GetAttribute("name"), element.Id })
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                continue;
+            }
+
+            var last = value.Split(['.', '[', ']'], StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? string.Empty;
+            var token = new string(last.ToLowerInvariant().Where(char.IsAsciiLetterOrDigit).ToArray());
+            foreach (var (pattern, purpose) in PurposeByName)
+            {
+                if (pattern.IsMatch(token))
+                {
+                    return purpose;
+                }
+            }
+        }
+
+        return type switch
+        {
+            "email" => "email",
+            "tel" => "tel",
+            "password" => "current-password",
+            _ => null,
+        };
+    }
+
+    private static bool IsRequirable(IElement element) =>
+        element.LocalName is "select" or "textarea"
+        || (element.LocalName == "input" && (element.GetAttribute("type") ?? "text").ToLowerInvariant() is not ("hidden" or "submit" or "button" or "reset" or "image" or "range" or "color"));
+
+    private static IEnumerable<string> LabelTexts(IElement element, IReadOnlyList<IElement> all, Dictionary<string, IElement[]> byId)
+    {
+        foreach (var label in element.Ancestors<IElement>().Where(a => a.LocalName == "label"))
+        {
+            yield return Normalize(label.TextContent);
+        }
+
+        if (!string.IsNullOrEmpty(element.Id))
+        {
+            foreach (var label in all.Where(l => l.LocalName == "label" && l.GetAttribute("for") == element.Id))
+            {
+                yield return Normalize(label.TextContent);
+            }
+        }
+
+        foreach (var id in Tokens(element.GetAttribute("aria-labelledby")))
+        {
+            if (byId.TryGetValue(id, out var targets))
+            {
+                yield return Normalize(targets[0].TextContent);
+            }
+        }
+    }
+
+    // "Email *", "* Email", "Email (required)" or "Email - required".
+    private static bool IsRequiredMarker(string text) => RequiredMarker().IsMatch(text);
+
+    [GeneratedRegex(@"^\*|\*\s*:?$|\(\s*required\s*\)|[:\-–]\s*required$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    private static partial Regex RequiredMarker();
 
     private static bool IsKnownRole(string role) => Roles.Contains(role) || role.StartsWith("doc-", StringComparison.Ordinal) || role.StartsWith("graphics-", StringComparison.Ordinal);
 

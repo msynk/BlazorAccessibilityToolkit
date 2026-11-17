@@ -9,6 +9,7 @@ Pinned runtime dependencies are listed in `Directory.Packages.props`:
 | Deque.AxeCore.Playwright | 4.14.0 (axe-core 4.14) | which rules exist, impacts, messages, selectors |
 | Microsoft.Playwright | 1.64.1 | browser versions, ARIA snapshot format, keyboard behavior |
 | bunit | 2.13.3 | markup and render tree used by component audits |
+| Microsoft.CodeAnalysis.CSharp | 4.8.0 | the oldest compiler that loads the Razor analyzer (.NET 8 SDK and later); raise it only when an analyzer API needs it |
 
 Procedure for upgrading axe-core or Playwright:
 

@@ -8,6 +8,8 @@
     <PackageVersion Include="Deque.AxeCore.Playwright" Version="4.14.0" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.64.1" />
     <PackageVersion Include="bunit" Version="2.13.3" />
+    <!-- The Razor analyzer targets Roslyn 4.8 so that it loads in every .NET 8 and later SDK. -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
   </ItemGroup>
   <ItemGroup Label="Test and demo dependencies">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />

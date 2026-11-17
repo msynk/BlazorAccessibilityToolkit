@@ -20,7 +20,7 @@ public interface IReportFormatter
 /// <summary>Registry of built-in report formatters.</summary>
 public static class ReportFormatters
 {
-    /// <summary>Built-in formatters: console, json, junit, sarif, html.</summary>
+    /// <summary>Built-in formatters: console, json, junit, sarif, html, markdown.</summary>
     public static IReadOnlyList<IReportFormatter> All { get; } =
     [
         new ConsoleReportFormatter(),
@@ -28,6 +28,7 @@ public static class ReportFormatters
         new JUnitReportFormatter(),
         new SarifReportFormatter(),
         new HtmlReportFormatter(),
+        new MarkdownReportFormatter(),
     ];
 
     /// <summary>Finds a formatter by name (case-insensitive).</summary>

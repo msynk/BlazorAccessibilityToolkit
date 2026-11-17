@@ -63,5 +63,9 @@ internal static class DiagnosticsRunner
         ToolkitRules.InvalidWithoutErrorReference.Id,
         ToolkitRules.RadioGroupUngrouped.Id,
         ToolkitRules.FieldsetMissingLegend.Id,
+        ToolkitRules.NavLinkCurrent.Id,
+        ToolkitRules.InputPurposeMissing.Id,
+        ToolkitRules.RequiredNotExposed.Id,
+        ToolkitRules.ErrorUiNotAccessible.Id,
     };
 }

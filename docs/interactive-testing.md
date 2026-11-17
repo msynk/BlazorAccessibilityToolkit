@@ -9,6 +9,7 @@ await using var browser = await AccessibilityBrowser.LaunchAsync(new Accessibili
 {
     Browser = "chromium",       // default: BLAZOR_A11Y_BROWSER or chromium
     ViewportWidth = 1280,       // also: Locale, ReducedMotion (default on), Headless, Channel
+    DisplayConditions = DisplayConditions.Dark,   // optional: color scheme, forced colors, contrast for every context
 });
 await using var session = await browser.NewSessionAsync();   // a fresh, isolated browser context per test
 await session.Page.GotoAsync(url);
@@ -70,6 +71,7 @@ await KeyboardScenario.For(page, new KeyboardScenarioOptions { Name = "settings"
 - Expectations poll until the condition holds or the timeout expires, so Blazor Server round trips need no fixed delays.
 - When a step fails, the exception includes a transcript of every step and where focus was after it.
 - `ExpectFocused(role, name)` compares the name exactly after normalizing whitespace. Use the `Regex` overload for partial names.
+- `ExpectFocusIndicator()` expects the focused element to look different from its unfocused self (see [focus appearance](#focus-appearance-and-obscured-focus)). `ExpectFocusNotObscured()` expects it not to be hidden behind a sticky header, banner or overlay (WCAG 2.4.11; pass `allowPartial: false` for 2.4.12). `ExpectTitle("Orders")` waits for the document title, for example after a client-side navigation.
 - `FocusOn` sets up a starting point programmatically. It is not a keyboard interaction.
 
 ## Focus order
@@ -88,11 +90,37 @@ The capture presses Tab until focus leaves the page, wraps, cycles or gets stuck
 | `blazor-focus-stuck` | Tab did not move focus. In headless Firefox, which keeps focus on the last element, this is recognized as the end of the sequence. |
 | `blazor-focus-hidden-target` | Focus landed on an invisible or `aria-hidden` element. |
 | `blazor-focus-repeated` | One element was reached twice in a single cycle. |
-| `blazor-focus-indicator-not-detected` | Opt-in: no outline or box-shadow while focused. Verify manually, because other styles may indicate focus. |
+| `blazor-focus-obscured` | The focused element was entirely covered by other content (sticky header, cookie banner, non-modal overlay), WCAG 2.4.11. On by default (`ReportObscuredFocus`). `FocusStop.Obscuration` also records partial covering (2.4.12). |
+| `blazor-focus-indicator-not-detected` | Opt-in: the element looked the same focused and unfocused. Verify manually, because indicators drawn by other elements are not seen. |
 
 A positive `tabindex` is reported, not judged. Whether an order is *logical* needs the expectation you write in `ShouldMatch`.
 
 **WebKit** follows Safari's default settings and does not move focus to links with Tab. Write browser-aware expectations or run focus-order tests in Chromium and Firefox.
+
+### Focus appearance and obscured focus
+
+Before tabbing, the capture records the unfocused style of every focusable element: outline, border, box-shadow, background, color, text decoration, font weight, transform, filter and opacity, of the element, its `::before` and `::after`, and its parent (for `:focus-within` styles). A stop counts as indicated when anything visible changed on focus. Properties without a visible effect, such as an `outline-offset` while `outline-style` is `none`, do not count. Elements focused without a recorded baseline fall back to "has an outline or box-shadow".
+
+For each stop the toolkit also asks the browser which element is on top at nine points of the focused element (`elementFromPoint`). When none of them is the element or part of it, focus is *entirely obscured* (`blazor-focus-obscured`). When focus lands on an element outside the viewport (an off-screen skip link that stays off-screen), it is reported as `blazor-focus-hidden-target`. Smooth scrolling is given time to settle before a stop is judged.
+
+The contrast and size of an indicator (WCAG 2.4.13, AAA, and 1.4.11) are not measured. Track them in the [manual review](manual-review.md).
+
+## Adaptation: reflow, text spacing and display preferences
+
+```csharp
+var reflow = await page.AuditReflowAsync();                         // 320 x 256 CSS px, then the viewport is restored
+var spacing = await page.AuditTextSpacingAsync();                   // WCAG 1.4.12 spacing applied, then removed
+var dark = await page.AuditUnderAsync(DisplayConditions.Dark);      // full audit labelled "dark"
+var forced = await page.AuditUnderAsync(DisplayConditions.ForcedColorsActive);   // Windows high contrast (Chromium)
+await page.EmulateDisplayConditionsAsync(DisplayConditions.MoreContrast);         // for your own scenarios
+```
+
+| Rule | WCAG | What it reports |
+| --- | --- | --- |
+| `blazor-reflow-horizontal-scroll` | 1.4.10 | At 320 CSS pixels the page scrolls horizontally, and this element is where the overflow starts. Content inside tables, grids, toolbars, `pre`, `svg`, `canvas`, video, maps and `[data-a11y-allow-horizontal-scroll]` is exempt (a warning lists it); `ReflowOptions.IncludeTwoDimensionalContent` reports it too. `AuditAtWidth = true` also runs axe-core at that width. |
+| `blazor-text-spacing-clipped` | 1.4.12 | With line height 1.5, paragraph spacing 2, letter spacing 0.12 and word spacing 0.16 times the font size, the element's text overflows a container that hides overflow (or line clamping). Elements that clipped before the change are not reported. |
+
+These are potential issues: they show where content overflows, which usually means lost content, but whether content is really lost or exempt needs a person. Display conditions matter because contrast, `box-shadow` focus rings and background-image icons often fail only in dark mode or with forced colors. Forced colors emulation is supported by Chromium only.
 
 ## ARIA pattern verification
 
@@ -103,6 +131,19 @@ A positive `tabindex` is reported, not judged. Whether an order is *logical* nee
 (await AriaPatterns.VerifyMenuButtonAsync(page.GetByRole(AriaRole.Button, new() { Name = "Actions" }))).ShouldPass();
 ```
 
+More verifiers cover composite widgets and form controls:
+
+| Verifier | What it checks |
+| --- | --- |
+| `VerifyRadioGroupAsync(group)` | Named `radiogroup` (or `fieldset`), at most one checked radio, one tab stop, arrow keys move and check (wrapping for custom widgets), Tab leaves the group. Works with native radios (`InputRadioGroup`) and `role="radio"`. |
+| `VerifyToolbarAsync(toolbar)` | `role="toolbar"`, a name when the page has several toolbars, one tab stop, arrow keys (vertical toolbars: up and down), Home and End, Tab leaves the toolbar. |
+| `VerifyListboxAsync(listbox)` | Named listbox, one tab stop (focus on the listbox with `aria-activedescendant`, or roving focus on options), arrow keys, Home and End, selection follows focus or Space selects. |
+| `VerifyComboboxAsync(input)` | Named combobox with `aria-expanded` and `aria-controls`; ArrowDown opens the listbox, options become active through `aria-activedescendant` while DOM focus stays in the input, Enter accepts, Escape closes. |
+| `VerifySliderAsync(slider)` | Named slider (`role="slider"` or `input type="range"`) with current, minimum and maximum value; arrow keys change the value, Home and End set the limits. |
+| `VerifyCheckboxAsync(control)` | Checkbox or switch: named, exposes its checked state, in the tab sequence, Space toggles both ways. |
+| `VerifyTooltipAsync(trigger)` | Tooltip pattern and WCAG 1.4.13: appears on focus and hover, is referenced by `aria-describedby`, Escape dismisses it without moving focus, it stays while the pointer moves onto it and does not disappear on its own. |
+| `VerifyAccordionAsync(container)` | Every header is a button inside a heading and behaves as a disclosure. |
+
 Each verifier drives the widget with real keys and records every APG requirement as a pass or fail check, so one run shows all problems:
 
 ```text
@@ -111,6 +152,16 @@ The widget does not follow the Menu button pattern.
   [FAIL] ArrowUp on the first item wraps to the last
   [FAIL] Escape closes the menu
 ```
+
+## Page changes in Blazor apps
+
+Blazor's router and enhanced navigation replace page content without loading a new document, so browsers do not announce the new page. The app has to update the title (`<PageTitle>`) and move focus to the new content (`<FocusOnNavigate RouteData="routeData" Selector="h1" />`) or announce the change.
+
+```csharp
+(await NavigationChecks.VerifyNavigationAsync(page.GetByRole(AriaRole.Link, new() { Name = "Orders" }))).ShouldPass();
+```
+
+It presses Enter on the link and checks that the URL changes, the new page has a non-empty title that differs from the previous one (2.4.2) and a language (3.1.1), and that after a client-side navigation focus moved into the new content (`main` or the main heading) or a live region announced the change, instead of staying on the link or falling back to the document body (2.4.3, 4.1.3). A full document load passes the focus check, because browsers announce new documents.
 
 ## Live regions
 

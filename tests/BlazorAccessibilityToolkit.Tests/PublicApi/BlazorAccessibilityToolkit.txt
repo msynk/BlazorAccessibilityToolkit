@@ -122,11 +122,15 @@ enum BlazorAccessibilityToolkit.AccessibilityImpact
 static class BlazorAccessibilityToolkit.AccessibilityStandard
   const System.String BestPracticeTag
   const System.String ExperimentalTag
+  static System.Collections.Generic.IReadOnlyList<System.String> En301549 { get; }
+  static System.Collections.Generic.IReadOnlyList<System.String> Section508 { get; }
   static System.Collections.Generic.IReadOnlyList<System.String> Wcag20A { get; }
   static System.Collections.Generic.IReadOnlyList<System.String> Wcag20AA { get; }
   static System.Collections.Generic.IReadOnlyList<System.String> Wcag21A { get; }
   static System.Collections.Generic.IReadOnlyList<System.String> Wcag21AA { get; }
+  static System.Collections.Generic.IReadOnlyList<System.String> Wcag22A { get; }
   static System.Collections.Generic.IReadOnlyList<System.String> Wcag22AA { get; }
+  static System.Collections.Generic.IReadOnlyList<System.String> Wcag22AAA { get; }
 sealed class BlazorAccessibilityToolkit.AppliedSuppression
   System.Nullable<System.DateOnly> Expires { get; init; }
   System.String Owner { get; init; }
@@ -298,6 +302,7 @@ enum BlazorAccessibilityToolkit.ManualReview.ManualReviewStatus
   NotApplicable
 static class BlazorAccessibilityToolkit.ManualReview.ManualReviewTemplates
   static BlazorAccessibilityToolkit.ManualReview.ManualReviewChecklist Standard(System.String name, System.String scope = null)
+  static BlazorAccessibilityToolkit.ManualReview.ManualReviewChecklist Wcag22AA(System.String name, System.String scope = null)
 sealed class BlazorAccessibilityToolkit.ManualReview.ManualReviewValidationIssue
   System.String ItemId { get; init; }
   System.String Message { get; init; }
@@ -327,6 +332,12 @@ sealed class BlazorAccessibilityToolkit.Reporting.ConsoleReportFormatter
   System.String Name { get; }
   System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
   ctor()
+enum BlazorAccessibilityToolkit.Reporting.CriterionConformance
+  NotEvaluated
+  NeedsReview
+  Supports
+  NotApplicable
+  DoesNotSupport
 sealed class BlazorAccessibilityToolkit.Reporting.HtmlReportFormatter
   System.String DefaultFileName { get; }
   System.String Name { get; }
@@ -343,6 +354,14 @@ sealed class BlazorAccessibilityToolkit.Reporting.JUnitReportFormatter
   System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
   ctor()
 sealed class BlazorAccessibilityToolkit.Reporting.JsonReportFormatter
+  System.String DefaultFileName { get; }
+  System.String Name { get; }
+  System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
+  ctor()
+sealed class BlazorAccessibilityToolkit.Reporting.MarkdownReportFormatter
+  BlazorAccessibilityToolkit.WcagLevel CoverageLevel { get; init; }
+  System.Boolean IncludeCoverage { get; init; }
+  System.Int32 MaxFindingsPerAudit { get; init; }
   System.String DefaultFileName { get; }
   System.String Name { get; }
   System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)
@@ -409,6 +428,19 @@ sealed class BlazorAccessibilityToolkit.Reporting.ToolInfo
   System.String Version { get; init; }
   ctor()
   static BlazorAccessibilityToolkit.Reporting.ToolInfo Toolkit { get; }
+static class BlazorAccessibilityToolkit.Reporting.WcagCoverage
+  static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Reporting.WcagCriterionCoverage> Create(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, BlazorAccessibilityToolkit.WcagLevel level = AA)
+  static System.String Label(BlazorAccessibilityToolkit.Reporting.CriterionConformance conformance)
+sealed class BlazorAccessibilityToolkit.Reporting.WcagCriterionCoverage
+  BlazorAccessibilityToolkit.Reporting.CriterionConformance Conformance { get; init; }
+  BlazorAccessibilityToolkit.WcagReference Criterion { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> ManualChecks { get; init; }
+  System.Collections.Generic.IReadOnlyList<System.String> Rules { get; init; }
+  System.Int32 Inconclusive { get; init; }
+  System.Int32 PotentialIssues { get; init; }
+  System.Int32 Violations { get; init; }
+  System.String En301549Clause { get; }
+  ctor()
 sealed class BlazorAccessibilityToolkit.Rules.AccessibilityRule
   BlazorAccessibilityToolkit.AccessibilityFinding CreateFinding(BlazorAccessibilityToolkit.FindingTarget target, System.String remediation = null, System.Nullable<BlazorAccessibilityToolkit.FindingStatus> status = null, System.Nullable<BlazorAccessibilityToolkit.AccessibilityImpact> impact = null, System.Collections.Generic.IReadOnlyDictionary<System.String, System.String> data = null)
   BlazorAccessibilityToolkit.AccessibilityImpact Impact { get; init; }
@@ -429,15 +461,18 @@ static class BlazorAccessibilityToolkit.Rules.ToolkitRules
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ClickHandlerSemantics { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule DuplicateId { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule DuplicateIdReferenced { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule ErrorUiNotAccessible { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ExpandedStateMismatch { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FieldsetMissingLegend { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule Find(System.String id)
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusHiddenTarget { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusIndicatorNotDetected { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusObscured { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusRepeated { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusStuck { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusTrap { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule IdReferenceMissing { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule InputPurposeMissing { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule InvalidWithoutErrorReference { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule LiveRegionHiddenUpdate { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule LiveRegionInsertedWithContent { get; }
@@ -449,8 +484,12 @@ static class BlazorAccessibilityToolkit.Rules.ToolkitRules
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupInvalidAriaAttribute { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupInvalidRole { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule MarkupPositiveTabIndex { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule NavLinkCurrent { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule RadioGroupUngrouped { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule ReflowHorizontalScroll { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule RequiredNotExposed { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule TabSelectionMismatch { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule TextSpacingClipped { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ValidationMessageAssociation { get; }
   static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Rules.AccessibilityRule> All { get; }
 sealed class BlazorAccessibilityToolkit.Suppression
@@ -474,6 +513,7 @@ enum BlazorAccessibilityToolkit.WcagLevel
 sealed class BlazorAccessibilityToolkit.WcagReference
   BlazorAccessibilityToolkit.WcagLevel Level { get; init; }
   System.Boolean IsObsolete { get; init; }
+  System.String En301549Clause { get; }
   System.String Id { get; init; }
   System.String IntroducedIn { get; init; }
   System.String Title { get; init; }

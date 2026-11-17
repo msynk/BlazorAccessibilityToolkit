@@ -9,7 +9,7 @@ namespace BlazorAccessibilityToolkit.Playwright.Internal;
 /// <summary>Loads axe-core and the toolkit helpers into pages.</summary>
 internal static partial class ToolkitScript
 {
-    internal const string ScriptVersion = "8";
+    internal const string ScriptVersion = "9";
 
     private static readonly Lazy<string> Toolkit = new(() =>
     {

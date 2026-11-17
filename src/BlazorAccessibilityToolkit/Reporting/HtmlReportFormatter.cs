@@ -65,6 +65,40 @@ public sealed class HtmlReportFormatter : IReportFormatter
             writer.WriteLine("</tbody></table>");
         }
 
+        var coverage = WcagCoverage.Create(report);
+        writer.WriteLine("<h2>WCAG 2.2 coverage (A and AA)</h2>");
+        writer.WriteLine("<p>" + E(string.Join(" · ", coverage.GroupBy(r => r.Conformance).OrderByDescending(g => g.Key).Select(g => $"{WcagCoverage.Label(g.Key)}: {g.Count()}"))) + ". <span class=\"muted\">\"Supports\" requires a passed manual review; automated checks alone never establish it.</span></p>");
+        writer.WriteLine("<details><summary>Criteria</summary><table><thead><tr><th scope=\"col\">Criterion</th><th scope=\"col\">Level</th><th scope=\"col\">EN 301 549</th><th scope=\"col\">Result</th><th scope=\"col\">Evidence</th></tr></thead><tbody>");
+        foreach (var row in coverage)
+        {
+            var evidence = new List<string>();
+            if (row.Violations > 0)
+            {
+                evidence.Add($"{N(row.Violations)} violation(s)");
+            }
+
+            if (row.PotentialIssues > 0)
+            {
+                evidence.Add($"{N(row.PotentialIssues)} potential issue(s)");
+            }
+
+            if (row.Inconclusive > 0)
+            {
+                evidence.Add($"{N(row.Inconclusive)} inconclusive");
+            }
+
+            evidence.AddRange(row.ManualChecks);
+            var css = row.Conformance switch
+            {
+                CriterionConformance.DoesNotSupport => " class=\"critical\"",
+                CriterionConformance.Supports => " class=\"ok\"",
+                _ => string.Empty,
+            };
+            writer.WriteLine($"<tr><td><a href=\"{E(row.Criterion.Url)}\">{E(row.Criterion.Id)} {E(row.Criterion.Title)}</a></td><td>{E(row.Criterion.Level.ToString())}</td><td>{E(row.En301549Clause ?? "—")}</td><td{css}>{E(WcagCoverage.Label(row.Conformance))}</td><td>{E(string.Join("; ", evidence))}</td></tr>");
+        }
+
+        writer.WriteLine("</tbody></table></details>");
+
         writer.WriteLine("<h2>Audits</h2>");
         foreach (var audit in report.Audits)
         {

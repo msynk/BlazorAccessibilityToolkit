@@ -17,8 +17,33 @@ public static class AccessibilityStandard
     /// <summary>WCAG 2.1 Level A and AA.</summary>
     public static IReadOnlyList<string> Wcag21AA { get; } = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
+    /// <summary>
+    /// WCAG 2.2 Level A. WCAG 2.2 added no level A criterion that axe-core can test, so this selects the same rules as
+    /// <see cref="Wcag21A"/>.
+    /// </summary>
+    public static IReadOnlyList<string> Wcag22A { get; } = ["wcag2a", "wcag21a"];
+
     /// <summary>WCAG 2.2 Level A and AA (default).</summary>
     public static IReadOnlyList<string> Wcag22AA { get; } = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
+
+    /// <summary>
+    /// WCAG 2.2 Level A, AA and the few AAA criteria axe-core can test (for example enhanced contrast). AAA conformance
+    /// is rarely required for whole sites; use it for targeted checks.
+    /// </summary>
+    public static IReadOnlyList<string> Wcag22AAA { get; } = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "wcag2aaa"];
+
+    /// <summary>
+    /// Rules axe-core maps to EN 301 549 (the harmonized standard behind the European Accessibility Act). Clause 9 of
+    /// EN 301 549 incorporates WCAG 2.1 A and AA for web content; the WCAG mapping of each finding gives the clause
+    /// (see <see cref="WcagReference.En301549Clause"/>).
+    /// </summary>
+    public static IReadOnlyList<string> En301549 { get; } = ["EN-301-549"];
+
+    /// <summary>
+    /// Rules axe-core maps to the revised Section 508 standards (which incorporate WCAG 2.0 A and AA), plus the WCAG 2.0
+    /// A and AA rules themselves.
+    /// </summary>
+    public static IReadOnlyList<string> Section508 { get; } = ["section508", "wcag2a", "wcag2aa"];
 
     /// <summary>The axe-core tag that marks best-practice rules (not WCAG requirements).</summary>
     public const string BestPracticeTag = "best-practice";

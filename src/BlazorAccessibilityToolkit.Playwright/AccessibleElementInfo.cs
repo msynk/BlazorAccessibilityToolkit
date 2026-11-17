@@ -68,11 +68,36 @@ public enum FocusIndicator
     /// <summary>Not measured.</summary>
     Unknown,
 
-    /// <summary>An outline or box-shadow was present on the focused element.</summary>
+    /// <summary>
+    /// A focus indicator was detected: the element's style (or that of its pseudo-elements or parent) changed when it
+    /// received focus, or, when no unfocused style was recorded, an outline or box-shadow is present.
+    /// </summary>
     Detected,
 
-    /// <summary>Neither outline nor box-shadow was present. The indicator may still exist (for example a background change); verify manually.</summary>
+    /// <summary>
+    /// No indicator was detected: nothing in the element's style changed on focus, or, when no unfocused style was
+    /// recorded, it has neither outline nor box-shadow. Verify manually: indicators drawn by other elements are not seen.
+    /// </summary>
     NotDetected,
+}
+
+/// <summary>Whether the focused element is hidden behind other content (WCAG 2.4.11 and 2.4.12).</summary>
+public enum FocusObscuration
+{
+    /// <summary>Not measured (for example the element has no box or ignores pointer events).</summary>
+    Unknown,
+
+    /// <summary>The focused element is not covered by other content.</summary>
+    NotObscured,
+
+    /// <summary>Part of the focused element is covered by other content (fails WCAG 2.4.12, AAA; passes 2.4.11).</summary>
+    PartiallyObscured,
+
+    /// <summary>The focused element is entirely covered by other content (fails WCAG 2.4.11, AA).</summary>
+    EntirelyObscured,
+
+    /// <summary>The focused element is entirely outside the viewport, so it cannot be seen.</summary>
+    OutsideViewport,
 }
 
 /// <summary>The focused element at a point in time.</summary>
@@ -93,6 +118,12 @@ public sealed record FocusSnapshot
     /// <summary>True when the element matched <c>:focus-visible</c>.</summary>
     public bool FocusVisible { get; init; }
 
+    /// <summary>Whether the focused element is covered by other content.</summary>
+    public FocusObscuration Obscuration { get; init; }
+
+    /// <summary>Selector of the element covering the focused element, when <see cref="Obscuration"/> reports one.</summary>
+    public string? ObscuredBy { get; init; }
+
     /// <inheritdoc />
     public override string ToString() => Element?.ToString() ?? "(no focused element)";
 
@@ -110,5 +141,14 @@ public sealed record FocusSnapshot
                 _ => FocusIndicator.Unknown,
             },
             FocusVisible = dto.FocusVisible,
+            Obscuration = dto.Obscured switch
+            {
+                "none" => FocusObscuration.NotObscured,
+                "partial" => FocusObscuration.PartiallyObscured,
+                "entire" => FocusObscuration.EntirelyObscured,
+                "outside-viewport" => FocusObscuration.OutsideViewport,
+                _ => FocusObscuration.Unknown,
+            },
+            ObscuredBy = dto.ObscuredBy,
         };
 }

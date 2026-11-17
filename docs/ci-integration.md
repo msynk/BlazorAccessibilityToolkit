@@ -15,12 +15,13 @@ blazor-a11y report \
   --input a11y-results \                  # repeatable; directories are searched recursively
   --baseline a11y-baseline.json \
   --manual-review a11y/manual/checkout.json \
-  --format console --format json --format junit --format sarif --format html \   # default: all
+  --format console --format json --format junit --format sarif --format html --format markdown \   # default: all
   --output a11y-report \
   --fail-on serious \                     # none | minor (default) | moderate | serious | critical
   --fail-on-potential --fail-on-inconclusive --fail-on-manual-review \
   --strict \
-  --source-root src                       # map component types to .razor files for SARIF
+  --source-root src \                     # map component types to .razor files for SARIF
+  --step-summary                          # GitHub Actions: append the Markdown report to the job summary
 ```
 
 | Exit code | Meaning |
@@ -37,7 +38,9 @@ Other commands:
 ```bash
 blazor-a11y baseline --input a11y-results --baseline a11y-baseline.json   # refuses incomplete results unless --allow-failed
 blazor-a11y manual init --name "Checkout" --scope "/checkout" --output a11y/manual/checkout.json
+blazor-a11y manual init --name "Site" --template wcag22aa --output a11y/manual/wcag.json   # one item per WCAG 2.2 A/AA criterion
 blazor-a11y manual validate a11y/manual/*.json                            # exit 1 when entries are incompletely recorded
+blazor-a11y rules                                                         # the toolkit's own rules with status, impact and WCAG
 ```
 
 ## Baselines
@@ -70,7 +73,24 @@ A baseline is a committed list of known findings (fingerprint, rule, component, 
   - With `--source-root`, component findings get a file location when exactly one `.razor` file has the component's name. Paths are relative to the working directory when the source root is inside it, so run the CLI from the repository root.
   - With `--sarif-fallback-uri <file>`, findings without a component file (page audits) are anchored to that file, typically the end-to-end test that produced them.
   - GitHub code scanning only displays results that have a file location and a region. File locations therefore carry a file-level region (line 1), and every result has `properties.locationPrecision` set to `file` or `logical`. The line is an anchor, not the source line of the finding.
-- **html:** a self-contained report for local investigation.
+- **html:** a self-contained report for local investigation, including the WCAG coverage table.
+- **markdown:** GitHub-flavored Markdown for pull request comments and job summaries: totals, baseline changes, violations by rule, failing audits (collapsed) and the WCAG coverage table.
+
+## WCAG and EN 301 549 coverage
+
+The HTML and Markdown reports roll every finding and manual check up to the WCAG 2.2 A and AA success criteria (`WcagCoverage.Create(report, level)` in code):
+
+| Result | Meaning |
+| --- | --- |
+| Does not support | an unsuppressed violation maps to the criterion, or a manual check of it failed |
+| Supports (manually verified) | every manual check of the criterion passed (with tester and date) or is not applicable, and no violation maps to it |
+| Not applicable | every manual check was recorded as not applicable, with a justification |
+| Needs review | potential issues, inconclusive results or outstanding manual checks |
+| Not evaluated | nothing in the report covers the criterion |
+
+Automated results alone never produce "Supports": axe-core passing a rule does not show that a criterion is met. Each row also shows the EN 301 549 clause (V3.2.1, clause 9 incorporates WCAG 2.1 A and AA; criteria added in WCAG 2.2 show "—"). Combined with the `wcag22aa` manual template, the table is a starting point for an accessibility conformance report (VPAT/ACR) or an EAA accessibility statement; it is not a conformance claim.
+
+To select engine rules by standard, use `AccessibilityStandard.En301549` (axe-core's EN 301 549 tags), `Section508`, `Wcag22A`, `Wcag22AA` (default) or `Wcag22AAA`.
 
 The JSON schema is versioned. Readers accept `1.x`, and fields are only added within a major version. Top-level shape:
 
@@ -106,7 +126,7 @@ The repository's own workflow (`.github/workflows/ci.yml`) is a complete example
       - run: dotnet tool install --global BlazorAccessibilityToolkit.Cli --version 0.1.0-preview.1
       - run: >
           blazor-a11y report --input a11y-results --baseline a11y-baseline.json --output a11y-report
-          --source-root src --sarif-fallback-uri tests/MyApp.A11yTests/PageTests.cs
+          --source-root src --sarif-fallback-uri tests/MyApp.A11yTests/PageTests.cs --step-summary
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: a11y-report, path: a11y-report }

@@ -32,6 +32,12 @@ public sealed record AccessibilityBrowserOptions
     /// <summary>Emulate <c>prefers-reduced-motion: reduce</c>. Default <c>true</c> for deterministic rendering.</summary>
     public bool ReducedMotion { get; init; } = true;
 
+    /// <summary>
+    /// Display conditions every new context starts with (color scheme, forced colors, contrast). <c>null</c> keeps the
+    /// browser defaults. <see cref="ReducedMotion"/> applies unless the conditions set reduced motion themselves.
+    /// </summary>
+    public DisplayConditions? DisplayConditions { get; init; }
+
     /// <summary>Launch timeout.</summary>
     public TimeSpan LaunchTimeout { get; init; } = TimeSpan.FromSeconds(60);
 
@@ -155,12 +161,16 @@ public sealed class AccessibilityBrowser : IAsyncDisposable
         return Microsoft.Playwright.Program.Main(["install", .. (browsers.Length == 0 ? ["chromium"] : browsers)]);
     }
 
-    /// <summary>Default context options (viewport, locale, reduced motion).</summary>
+    /// <summary>Default context options (viewport, locale, reduced motion and display conditions).</summary>
     public BrowserNewContextOptions CreateContextOptions() => new()
     {
         ViewportSize = new ViewportSize { Width = _options.ViewportWidth, Height = _options.ViewportHeight },
         Locale = _options.Locale,
-        ReducedMotion = _options.ReducedMotion ? Microsoft.Playwright.ReducedMotion.Reduce : Microsoft.Playwright.ReducedMotion.NoPreference,
+        ReducedMotion = _options.DisplayConditions?.ReducedMotion
+            ?? (_options.ReducedMotion ? Microsoft.Playwright.ReducedMotion.Reduce : Microsoft.Playwright.ReducedMotion.NoPreference),
+        ColorScheme = _options.DisplayConditions?.ColorScheme,
+        ForcedColors = _options.DisplayConditions?.ForcedColors,
+        Contrast = _options.DisplayConditions?.Contrast,
     };
 
     /// <summary>Creates an isolated browser context with one page (relaunching the browser if it has exited).</summary>

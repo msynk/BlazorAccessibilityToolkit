@@ -28,7 +28,7 @@ Each finding contains:
 ```csharp
 new AccessibilityAuditOptions
 {
-    Tags = AccessibilityStandard.Wcag22AA,        // Wcag20A, Wcag20AA, Wcag21A, Wcag21AA, Wcag22AA (default)
+    Tags = AccessibilityStandard.Wcag22AA,        // Wcag20A/AA, Wcag21A/AA, Wcag22A, Wcag22AA (default), Wcag22AAA, En301549, Section508
     IncludeBestPractices = true,                  // tagged best-practice; flagged IsBestPractice
     IncludeExperimental = false,
     EnabledRules = ["target-size"],               // in addition to the tags
@@ -81,11 +81,17 @@ Engine `blazor-a11y`. Environments: *markup* means bUnit markup without a browse
 | `blazor-fieldset-missing-legend` | Potential | 1.3.1 | markup, browser | fieldset without a legend or name |
 | `blazor-expanded-state-mismatch` | Potential | 4.1.2 | browser | `aria-expanded` contradicts the visibility of the `aria-controls` target (triggers that are not rendered are skipped) |
 | `blazor-tab-selection-mismatch` | Potential | 4.1.2, 1.3.1 | browser | not exactly one selected tab, or panel visibility contradicts selection |
+| `blazor-navlink-missing-aria-current` | Potential | 1.3.1 | markup, browser | a link with the `active` class inside a `nav` without `aria-current` (.NET 10's `NavLink` sets it; hand-written and library links often do not) |
+| `blazor-input-purpose-missing` | Potential | 1.3.5 | markup, browser | fields named or typed like personal data (`Model.Email`, `PhoneNumber`, `FirstName`, `PostalCode`, `type="password"` ...) without `autocomplete`; the finding suggests the token |
+| `blazor-required-not-exposed` | Potential | 1.3.1, 3.3.2 | markup, browser | a label marks the field as required (`*`, `(required)`) but the control has neither `required` nor `aria-required="true"` (`[Required]` adds neither) |
+| `blazor-error-ui-not-accessible` | Potential | 2.1.1, 4.1.2, 4.1.3 | browser | `#blazor-error-ui` is not a live region, or its `.dismiss` control is a `span` that keyboard users cannot reach (the project template's markup) |
+| `blazor-reflow-horizontal-scroll` | Potential | 1.4.10 | browser | see [adaptation](interactive-testing.md#adaptation-reflow-text-spacing-and-display-preferences) |
+| `blazor-text-spacing-clipped` | Potential | 1.4.12 | browser | see [adaptation](interactive-testing.md#adaptation-reflow-text-spacing-and-display-preferences) |
 | `blazor-markup-image-alt`, `-control-name`, `-form-label`, `-aria-hidden-focusable`, `-invalid-aria-attribute`, `-invalid-role`, `-positive-tabindex` | mostly Violation | various | markup (fallback only) | conservative browserless equivalents of axe rules, only when no browser engine runs |
-| `blazor-focus-*` | Potential | 2.1.2, 2.4.3, 2.4.7 | browser | see [focus order](interactive-testing.md#focus-order) |
+| `blazor-focus-*` | Potential | 2.1.2, 2.4.3, 2.4.7, 2.4.11 | browser | see [focus order](interactive-testing.md#focus-order) |
 | `blazor-live-region-*` | Potential | 4.1.3 | browser | see [live regions](interactive-testing.md#live-regions) |
 
-The full metadata (descriptions and remediation) is in `ToolkitRules.All`.
+The full metadata (descriptions and remediation) is in `ToolkitRules.All`; `blazor-a11y rules` prints it. Compile-time checks of `.razor` files (`BA11Y001` to `BA11Y013`) are described in [Razor analyzers](analyzers.md).
 
 ## Fingerprints
 

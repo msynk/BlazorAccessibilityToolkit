@@ -89,6 +89,7 @@ public sealed class KeyboardScenario
     private readonly Func<string, AccessibilityAuditOptions?, Task<AccessibilityAudit>> _audit;
     private LiveRegionMonitor? _monitor;
     private bool _started;
+    private bool _trackFocusStyles;
 
     internal KeyboardScenario(IPage page, KeyboardScenarioOptions? options, Func<string, AccessibilityAuditOptions?, Task<AccessibilityAudit>>? audit)
     {
@@ -159,7 +160,17 @@ public sealed class KeyboardScenario
         var label = key == " " ? "Space" : key;
         for (var i = 0; i < times; i++)
         {
-            Enqueue($"press {label}", ScenarioStepKind.Action, () => Page.Keyboard.PressAsync(key));
+            Enqueue($"press {label}", ScenarioStepKind.Action, async () =>
+            {
+                if (_trackFocusStyles)
+                {
+                    // Unfocused styles of the elements focus may move to, for ExpectFocusIndicator.
+                    await ToolkitScript.EnsureAsync(Page).ConfigureAwait(false);
+                    await Page.EvaluateAsync("() => window.__blazorA11y.recordFocusBaselines(null)").ConfigureAwait(false);
+                }
+
+                await Page.Keyboard.PressAsync(key).ConfigureAwait(false);
+            });
         }
 
         return this;
@@ -276,6 +287,78 @@ public sealed class KeyboardScenario
                         throw new AccessibilityAssertionException($"Focus escaped {container} after {i + 1} x {key} and did not return within {Options.ExpectTimeout.TotalSeconds:0.#} s: now on {focus}.");
                     }
                 }
+            }
+        });
+    }
+
+    /// <summary>
+    /// Expects the focused element not to be entirely covered by other content, such as a sticky header or a cookie
+    /// banner (WCAG 2.4.11), and not to be outside the viewport. With <paramref name="allowPartial"/> set to
+    /// <c>false</c>, a partly covered element fails too (WCAG 2.4.12, AAA).
+    /// </summary>
+    public KeyboardScenario ExpectFocusNotObscured(bool allowPartial = true)
+    {
+        var description = allowPartial ? "expect focused element not to be hidden by other content" : "expect focused element not to be covered at all";
+        return Enqueue(description, ScenarioStepKind.Expectation, async () =>
+        {
+            FocusSnapshot focus = new();
+            var ok = await WaitUntilAsync(async () =>
+            {
+                focus = await Page.GetFocusAsync().ConfigureAwait(false);
+                return focus.Element is not null && focus.Obscuration switch
+                {
+                    FocusObscuration.EntirelyObscured or FocusObscuration.OutsideViewport => false,
+                    FocusObscuration.PartiallyObscured => allowPartial,
+                    _ => true,
+                };
+            }).ConfigureAwait(false);
+            if (!ok)
+            {
+                throw new AccessibilityAssertionException($"Failed to {description}: focus is on {focus}, obscuration {focus.Obscuration}{(focus.ObscuredBy is null ? string.Empty : $" (covered by {focus.ObscuredBy})")}.");
+            }
+        });
+    }
+
+    /// <summary>
+    /// Expects the focused element to show a focus indicator: a change of its style (or of its pseudo-elements or
+    /// parent) compared with its unfocused style, or an outline or box-shadow when the unfocused style is unknown.
+    /// Elements that already had focus when the scenario started are judged by outline and box-shadow only.
+    /// </summary>
+    public KeyboardScenario ExpectFocusIndicator()
+    {
+        const string description = "expect a visible focus indicator";
+        _trackFocusStyles = true;
+        return Enqueue(description, ScenarioStepKind.Expectation, async () =>
+        {
+            FocusSnapshot focus = new();
+            if (!await WaitUntilAsync(async () => (focus = await Page.GetFocusAsync().ConfigureAwait(false)).Indicator == FocusIndicator.Detected).ConfigureAwait(false))
+            {
+                throw new AccessibilityAssertionException($"Failed to {description}: no style change, outline or box-shadow was detected on {focus}.");
+            }
+        });
+    }
+
+    /// <summary>
+    /// Expects the document title to contain <paramref name="text"/> (or equal it, with <see cref="TextMatch.Exact"/>), for
+    /// example after a client-side navigation changed the page (WCAG 2.4.2; Blazor's <c>&lt;PageTitle&gt;</c>).
+    /// </summary>
+    public KeyboardScenario ExpectTitle(string text, TextMatch match = TextMatch.Contains)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var description = $"expect page title {(match == TextMatch.Exact ? "to be" : "to contain")} \"{text}\"";
+        return Enqueue(description, ScenarioStepKind.Expectation, async () =>
+        {
+            var title = string.Empty;
+            var ok = await WaitUntilAsync(async () =>
+            {
+                title = PlaywrightAccessibility.Normalize(await Page.TitleAsync().ConfigureAwait(false));
+                return match == TextMatch.Exact
+                    ? string.Equals(title, PlaywrightAccessibility.Normalize(text), StringComparison.Ordinal)
+                    : title.Contains(PlaywrightAccessibility.Normalize(text), StringComparison.OrdinalIgnoreCase);
+            }).ConfigureAwait(false);
+            if (!ok)
+            {
+                throw new AccessibilityAssertionException($"Failed to {description} within {Options.ExpectTimeout.TotalSeconds:0.#} s; the title is \"{title}\".");
             }
         });
     }

@@ -40,6 +40,13 @@ public sealed record WcagReference
     /// <summary>True for criteria removed from WCAG 2.2 (4.1.1 Parsing).</summary>
     public bool IsObsolete { get; init; }
 
+    /// <summary>
+    /// The EN 301 549 (V3.2.1) clause for web content that incorporates this criterion, for example <c>9.1.4.3</c>, or
+    /// <c>null</c> for criteria EN 301 549 does not require (AAA criteria and those added in WCAG 2.2).
+    /// </summary>
+    [JsonIgnore]
+    public string? En301549Clause => Level != WcagLevel.AAA && IntroducedIn != "2.2" ? "9." + Id : null;
+
     /// <inheritdoc />
     public override string ToString() => $"{Id} {Title} ({Level})";
 }

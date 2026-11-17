@@ -8,7 +8,7 @@ Automated rules cannot decide many success criteria: logical focus order, meanin
 blazor-a11y manual init --name "Checkout" --scope "/checkout" --output a11y/manual/checkout.json
 ```
 
-This creates the standard checklist (`ManualReviewTemplates.Standard`). Each item has an id, a title, guidance and WCAG criteria. The items cover:
+This creates the standard checklist (`ManualReviewTemplates.Standard`). Each item has an id, a title, guidance and WCAG criteria. For a full conformance review, `--template wcag22aa` (`ManualReviewTemplates.Wcag22AA`) creates one item per WCAG 2.2 level A and AA success criterion instead, which fills every row of the [coverage table](ci-integration.md#wcag-and-en-301-549-coverage). The standard items cover:
 
 - keyboard operation and character key shortcuts
 - focus order, including overlays and focus return
@@ -23,6 +23,9 @@ This creates the standard checklist (`ManualReviewTemplates.Standard`). Each ite
 - content on hover or focus
 - motion and timing
 - pointer alternatives and target size
+- accessible authentication and redundant entry (WCAG 2.2)
+- consistent help and consistent navigation
+- text alternatives and media alternatives
 - representative screen reader testing
 
 Record results by editing the JSON:

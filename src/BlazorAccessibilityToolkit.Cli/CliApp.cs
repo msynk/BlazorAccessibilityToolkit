@@ -2,6 +2,7 @@ using System.Globalization;
 using BlazorAccessibilityToolkit.Baselines;
 using BlazorAccessibilityToolkit.ManualReview;
 using BlazorAccessibilityToolkit.Reporting;
+using BlazorAccessibilityToolkit.Rules;
 
 namespace BlazorAccessibilityToolkit.Cli;
 
@@ -14,15 +15,16 @@ public static class CliApp
         Usage:
           blazor-a11y report   [options]   Aggregate results, compare with a baseline, write reports, apply the failure policy
           blazor-a11y baseline [options]   Write a baseline from the current results
-          blazor-a11y manual init --name <name> [--scope <scope>] --output <file>
+          blazor-a11y manual init --name <name> [--scope <scope>] [--template standard|wcag22aa] --output <file>
           blazor-a11y manual validate <file>...
+          blazor-a11y rules                List the toolkit's own rules
           blazor-a11y --version | --help
 
         report / baseline options:
           --input <path>          Result directory or file (repeatable). Default: $BLAZOR_A11Y_RESULTS_DIR or ./a11y-results
           --baseline <file>       Baseline to compare with (report) or to write (baseline)
           --manual-review <file>  Manual-review checklist to include (repeatable)
-          --format <name>         console, json, junit, sarif, html (repeatable). Default: all
+          --format <name>         console, json, junit, sarif, html, markdown (repeatable). Default: all
           --output <dir>          Report directory. Default: ./a11y-report
           --fail-on <level>       none, minor, moderate, serious, critical. Default: minor (any violation)
           --fail-on-potential     Also fail on toolkit heuristics (potential issues)
@@ -32,6 +34,7 @@ public static class CliApp
           --allow-empty           Do not fail when no results are found
           --source-root <dir>     Map component types to .razor files (by unique file name) for SARIF locations
           --sarif-fallback-uri <path>  Repository-relative file for SARIF results without a component file (page audits)
+          --step-summary          Append the Markdown report to $GITHUB_STEP_SUMMARY (GitHub Actions job summary)
           --allow-failed          (baseline) write a baseline even if some audits failed
 
         Exit codes: 0 success, 1 accessibility findings failed the policy, 2 audits failed/no results/unreadable input, 3 usage error.
@@ -64,6 +67,7 @@ public static class CliApp
                 "report" => Report(parsed, output, error),
                 "baseline" => Baseline(parsed, output, error),
                 "manual" => Manual(parsed, output, error),
+                "rules" => Rules(output),
                 _ => throw new UsageException($"Unknown command '{args[0]}'."),
             };
         }
@@ -91,7 +95,7 @@ public static class CliApp
         }
 
         var formatters = formats.Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(name => ReportFormatters.Find(name) ?? throw new UsageException($"Unknown format '{name}'. Use console, json, junit, sarif or html."))
+            .Select(name => ReportFormatters.Find(name) ?? throw new UsageException($"Unknown format '{name}'. Use console, json, junit, sarif, html or markdown."))
             .ToArray();
         var sourceResolver = CreateSourceResolver(args.One("source-root"));
 
@@ -127,6 +131,19 @@ public static class CliApp
             var path = Path.Combine(outputDirectory, formatter.DefaultFileName);
             formatter.WriteToFile(report, path);
             output.WriteLine($"Wrote {formatter.Name} report: {path}");
+        }
+
+        if (args.Flag("step-summary"))
+        {
+            if (Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY") is { Length: > 0 } summaryPath)
+            {
+                File.AppendAllText(summaryPath, new MarkdownReportFormatter().Format(report) + "\n", new System.Text.UTF8Encoding(false));
+                output.WriteLine("Wrote job summary.");
+            }
+            else
+            {
+                output.WriteLine("note: --step-summary ignored: GITHUB_STEP_SUMMARY is not set.");
+            }
         }
 
         var gate = QualityGate.Evaluate(report, gateOptions, loadErrors);
@@ -199,7 +216,13 @@ public static class CliApp
                     throw new UsageException($"'{path}' already exists; refusing to overwrite recorded results.");
                 }
 
-                ManualReviewEvaluator.Save(ManualReviewTemplates.Standard(name, args.One("scope")), path);
+                var template = (args.One("template") ?? "standard").ToLowerInvariant() switch
+                {
+                    "standard" => ManualReviewTemplates.Standard(name, args.One("scope")),
+                    "wcag22aa" or "wcag" => ManualReviewTemplates.Wcag22AA(name, args.One("scope")),
+                    var other => throw new UsageException($"Unknown template '{other}'. Use standard or wcag22aa."),
+                };
+                ManualReviewEvaluator.Save(template, path);
                 output.WriteLine($"Wrote manual-review checklist: {path}");
                 return QualityGateResult.Success;
             case "validate":
@@ -227,6 +250,19 @@ public static class CliApp
             default:
                 throw new UsageException($"Unknown manual subcommand '{sub}'.");
         }
+    }
+
+    private static int Rules(TextWriter output)
+    {
+        foreach (var rule in ToolkitRules.All)
+        {
+            var wcag = rule.Wcag.Count == 0 ? (rule.IsBestPractice ? "best practice" : "-") : string.Join(", ", rule.Wcag);
+            output.WriteLine($"{rule.Id}");
+            output.WriteLine($"    {rule.Status}, {rule.Impact.ToString().ToLowerInvariant()}, WCAG {wcag}, runs in: {string.Join(", ", rule.Environments)}");
+            output.WriteLine($"    {rule.Description}");
+        }
+
+        return QualityGateResult.Success;
     }
 
     private static QualityGateOptions GateOptions(Arguments args)
@@ -295,7 +331,7 @@ public static class CliApp
 
     private sealed class Arguments
     {
-        private static readonly HashSet<string> Flags = new(StringComparer.Ordinal) { "fail-on-potential", "fail-on-inconclusive", "fail-on-manual-review", "strict", "allow-empty", "allow-failed" };
+        private static readonly HashSet<string> Flags = new(StringComparer.Ordinal) { "fail-on-potential", "fail-on-inconclusive", "fail-on-manual-review", "strict", "allow-empty", "allow-failed", "step-summary" };
 
         private readonly Dictionary<string, List<string>> _values = new(StringComparer.Ordinal);
 
@@ -352,7 +388,7 @@ public static class CliApp
 
         private void Add(string name, string value)
         {
-            var known = new[] { "input", "baseline", "manual-review", "format", "output", "fail-on", "source-root", "sarif-fallback-uri", "name", "scope" };
+            var known = new[] { "input", "baseline", "manual-review", "format", "output", "fail-on", "source-root", "sarif-fallback-uri", "name", "scope", "template" };
             if (!Flags.Contains(name) && !known.Contains(name))
             {
                 throw new UsageException($"Unknown option --{name}.");

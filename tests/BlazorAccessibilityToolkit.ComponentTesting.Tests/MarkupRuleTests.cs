@@ -238,3 +238,24 @@ public sealed class MarkupRuleTests
             Task.FromResult(new MarkupEngineResult { Errors = [new ExecutionError { Source = "fake", Message = "browser crashed" }] });
     }
 }
+
+public sealed class BlazorConventionMarkupTests
+{
+    [Fact]
+    public async Task Browserless_rules_check_navlink_input_purpose_and_required_fields()
+    {
+        await using var fixture = await AccessibilityFixture.For<AccountForm>().BuildAsync();
+        var audit = await fixture.AuditAsync();
+
+        var navLink = audit.ShouldHaveFinding("blazor-navlink-missing-aria-current");
+        Assert.Contains("Billing", navLink.Target.Html, StringComparison.Ordinal);
+        Assert.Single(audit.Findings, f => f.RuleId == "blazor-navlink-missing-aria-current");
+
+        var purpose = Assert.Single(audit.Findings, f => f.RuleId == "blazor-input-purpose-missing");
+        Assert.Equal("given-name", purpose.Data["suggested"]);
+
+        var required = Assert.Single(audit.Findings, f => f.RuleId == "blazor-required-not-exposed");
+        Assert.Contains("id=\"given\"", required.Target.Html, StringComparison.Ordinal);
+        Assert.Equal(typeof(AccountForm).FullName, required.Component!.ComponentPath[0]);
+    }
+}

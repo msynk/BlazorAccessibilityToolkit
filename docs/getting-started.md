@@ -4,12 +4,13 @@
 
 | You want to check | Use | Needs a browser |
 | --- | --- | --- |
+| Common defects in `.razor` files while typing and building | `BlazorAccessibilityToolkit.Analyzers` ([Razor analyzers](analyzers.md)) | No (compile time) |
 | Structure, names, roles, ARIA and Blazor event handlers of a component | `AccessibilityFixture` (bUnit), browserless | No |
 | The same, plus axe-core rules and color contrast with your CSS | `AccessibilityFixture` + `PlaywrightMarkupAuditEngine` | Yes |
 | Keyboard behavior, focus, live regions and dynamic states of one component | `BlazorTestHost` (Interactive Server, in process) | Yes |
 | Complete pages, navigation, layout and WebAssembly | `page.AuditAccessibilityAsync()` against your running app | Yes |
 
-Most suites combine all four. Fast markup audits cover every component. Interactive tests cover widgets with keyboard behavior. End-to-end audits cover each page.
+Most suites combine all of them. Fast markup audits cover every component. Interactive tests cover widgets with keyboard behavior. End-to-end audits cover each page.
 
 ## 2. Install
 
@@ -39,6 +40,12 @@ Test project for component and browser tests (xUnit v3 shown):
 - NUnit or MSTest? Use the same project with your framework's packages (`NUnit` + `NUnit3TestAdapter` + `Microsoft.NET.Test.Sdk`, or the `MSTest` metapackage). Keep `<OutputType>Exe</OutputType>`; with VSTest, `Microsoft.NET.Test.Sdk` generates the entry point. [`tests/Compatibility`](../tests/Compatibility) has working NUnit and MSTest projects.
 - Only bUnit markup audits without a browser? Reference just `BlazorAccessibilityToolkit.ComponentTesting`. A plain `Microsoft.NET.Sdk` or `Microsoft.NET.Sdk.Razor` project is enough.
 - End-to-end tests of an app? Use `Microsoft.NET.Sdk` with `Microsoft.AspNetCore.Mvc.Testing`, and reference the app project. See `demo/BlazorAccessibilityToolkit.Demo.EndToEndTests`.
+
+Add the compile-time checks to the component library itself (not the test project):
+
+```xml
+<PackageReference Include="BlazorAccessibilityToolkit.Analyzers" Version="0.1.0-preview.1" PrivateAssets="all" />
+```
 
 Install the CI tool:
 

@@ -274,8 +274,91 @@ public static class ManualReviewTemplates
             Item("content-on-hover-focus", "Tooltips and popovers that appear on hover or focus are dismissible (Escape), hoverable and persistent.", "Hover and focus each trigger; press Escape; move the pointer onto the popup.", "1.4.13"),
             Item("motion-and-timing", "Nothing flashes more than three times per second, moving or auto-updating content can be paused, time limits can be extended, and animations respect reduced-motion preferences.", "Review carousels, spinners, toasts and session timeouts; enable 'reduce motion' in the OS.", "2.2.1", "2.2.2", "2.3.1"),
             Item("pointer-alternatives", "Path-based gestures and dragging have single-pointer alternatives, actions fire on pointer up, and targets are at least 24 by 24 CSS pixels or adequately spaced.", "Operate sliders, sortable lists and drag-and-drop with a single click/tap alternative; check target sizes.", "2.5.1", "2.5.2", "2.5.7", "2.5.8"),
+            Item("authentication-and-entry", "Logging in does not require a cognitive function test (remembering, transcribing or solving) without an alternative such as paste and password managers, and information already entered in a process is filled in or selectable rather than requested again.", "Paste into username, password and one-time-code fields; use a password manager; walk through multi-step forms and check for repeated questions.", "3.3.7", "3.3.8"),
+            Item("consistent-help", "Help mechanisms (contact details, chat, help links) appear in the same relative order on every page that offers them, and navigation and identification are consistent across pages.", "Compare the header, footer and help placement across the pages in scope.", "3.2.3", "3.2.4", "3.2.6"),
+            Item("text-alternatives-and-media", "Images, icons and charts have meaningful alternatives (or are marked decorative), and audio or video has captions, transcripts and audio description where needed.", "Review every image's alternative text in context; play media with captions on.", "1.1.1", "1.2.1", "1.2.2", "1.2.3", "1.2.5"),
             Item("screen-reader", "Representative screen reader testing confirms names, roles, states, reading order and announcements (for example NVDA + Firefox/Chrome, JAWS + Chrome, VoiceOver + Safari, TalkBack + Chrome).", "Record which assistive technology and browser versions were used in Environments.", "1.3.1", "4.1.2", "4.1.3"),
         ],
+    };
+
+    /// <summary>
+    /// Creates a checklist with one item per WCAG 2.2 level A and AA success criterion (the obsolete 4.1.1 excluded), for
+    /// a full conformance review or an accessibility conformance report. Automated results never complete an item; each
+    /// one needs a person's verdict.
+    /// </summary>
+    public static ManualReviewChecklist Wcag22AA(string name, string? scope = null) => new()
+    {
+        Name = name,
+        Scope = scope,
+        Items = WcagCatalog.All
+            .Where(c => c.Level <= WcagLevel.AA && !c.IsObsolete)
+            .Select(c => new ManualReviewItem
+            {
+                Id = "wcag-" + c.Id,
+                Title = $"{c.Id} {c.Title} (Level {c.Level})",
+                Guidance = Wcag22Guidance.GetValueOrDefault(c.Id, "Review the criterion against its Understanding document.") + " " + c.Url,
+                Wcag = [c.Id],
+            })
+            .ToArray(),
+    };
+
+    private static readonly Dictionary<string, string> Wcag22Guidance = new(StringComparer.Ordinal)
+    {
+        ["1.1.1"] = "Check that every image, icon and control has an alternative that serves the same purpose, and decorative images are hidden.",
+        ["1.2.1"] = "Check that prerecorded audio-only content has a transcript and video-only content has a transcript or audio track.",
+        ["1.2.2"] = "Check that prerecorded video with audio has accurate captions.",
+        ["1.2.3"] = "Check that prerecorded video has audio description or a full text alternative.",
+        ["1.2.4"] = "Check that live video with audio has captions.",
+        ["1.2.5"] = "Check that prerecorded video has audio description of important visual information.",
+        ["1.3.1"] = "Check that headings, lists, tables, form labels, groups and required states are marked up, not only styled.",
+        ["1.3.2"] = "Read the page with CSS disabled or with a screen reader and confirm the reading order preserves meaning.",
+        ["1.3.3"] = "Check that instructions do not rely only on shape, size, position, orientation or sound.",
+        ["1.3.4"] = "Rotate the device or viewport and confirm content works in portrait and landscape.",
+        ["1.3.5"] = "Check that fields collecting information about the user have the matching autocomplete token.",
+        ["1.4.1"] = "Check that color is not the only way information, links, errors or states are conveyed.",
+        ["1.4.2"] = "Check that audio that plays automatically for more than three seconds can be paused or muted.",
+        ["1.4.3"] = "Measure text contrast (4.5:1, or 3:1 for large text) in every state, including over images and gradients.",
+        ["1.4.4"] = "Zoom text to 200% and confirm nothing is lost or overlaps.",
+        ["1.4.5"] = "Check that text is not presented as an image unless essential (logos).",
+        ["1.4.10"] = "View the page at 320 CSS pixels wide (400% zoom) and confirm there is no horizontal scrolling or lost content.",
+        ["1.4.11"] = "Measure contrast (3:1) of control boundaries, focus indicators, icons and chart elements.",
+        ["1.4.12"] = "Apply the WCAG text-spacing values and confirm no text is clipped or overlaps.",
+        ["1.4.13"] = "Check that content shown on hover or focus can be dismissed with Escape, hovered and stays until dismissed.",
+        ["2.1.1"] = "Operate every function with the keyboard alone.",
+        ["2.1.2"] = "Confirm focus can always leave every component with standard keys.",
+        ["2.1.4"] = "Check that single-character shortcuts can be turned off, remapped or only work on focus.",
+        ["2.2.1"] = "Check that time limits can be turned off, adjusted or extended.",
+        ["2.2.2"] = "Check that moving, blinking, scrolling or auto-updating content can be paused, stopped or hidden.",
+        ["2.3.1"] = "Check that nothing flashes more than three times per second.",
+        ["2.4.1"] = "Check for a skip link or landmarks that let users bypass repeated blocks.",
+        ["2.4.2"] = "Check that every page (and every client-side route) has a descriptive, unique title.",
+        ["2.4.3"] = "Tab through the page and confirm focus order preserves meaning; check where focus goes after dialogs and route changes.",
+        ["2.4.4"] = "Check that the purpose of each link is clear from its text or context.",
+        ["2.4.5"] = "Check that pages can be found in more than one way (navigation, search, site map).",
+        ["2.4.6"] = "Check that headings and labels describe their topic or purpose.",
+        ["2.4.7"] = "Tab through the page and confirm a visible focus indicator on every element.",
+        ["2.4.11"] = "Tab through the page and confirm the focused element is never entirely hidden by sticky headers, footers or banners.",
+        ["2.5.1"] = "Check that multipoint and path-based gestures have single-pointer alternatives.",
+        ["2.5.2"] = "Check that actions fire on pointer up and can be cancelled by moving away.",
+        ["2.5.3"] = "Check that the accessible name of each control contains its visible label text.",
+        ["2.5.4"] = "Check that functions triggered by device motion have a UI alternative and can be disabled.",
+        ["2.5.7"] = "Check that every dragging operation has a single-pointer alternative.",
+        ["2.5.8"] = "Check that targets are at least 24 by 24 CSS pixels or have enough spacing.",
+        ["3.1.1"] = "Check that the page language is declared correctly.",
+        ["3.1.2"] = "Check that passages in another language are marked with lang.",
+        ["3.2.1"] = "Check that focusing a control does not change context.",
+        ["3.2.2"] = "Check that changing a setting does not change context unless the user was told beforehand.",
+        ["3.2.3"] = "Check that repeated navigation appears in the same relative order on every page.",
+        ["3.2.4"] = "Check that components with the same function are identified consistently.",
+        ["3.2.6"] = "Check that help mechanisms appear in the same relative order on every page that offers them.",
+        ["3.3.1"] = "Submit forms with errors and confirm each error is identified in text and associated with its field.",
+        ["3.3.2"] = "Check that fields have labels or instructions, including required and format hints.",
+        ["3.3.3"] = "Check that error messages suggest how to fix the input when known.",
+        ["3.3.4"] = "Check that legal, financial or data-changing submissions can be reversed, checked or confirmed.",
+        ["3.3.7"] = "Walk through multi-step processes and confirm information already given is not requested again.",
+        ["3.3.8"] = "Log in with a password manager and paste; confirm no cognitive function test without an alternative.",
+        ["4.1.2"] = "Check names, roles, states and values of custom controls with a screen reader or the accessibility tree.",
+        ["4.1.3"] = "Trigger status messages (saved, results count, errors) and confirm they are announced without moving focus.",
     };
 
     private static ManualReviewItem Item(string id, string title, string guidance, params string[] wcag) => new()

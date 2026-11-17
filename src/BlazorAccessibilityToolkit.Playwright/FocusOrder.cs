@@ -19,8 +19,17 @@ public sealed record FocusOrderOptions
     /// <summary>Use Shift+Tab instead of Tab.</summary>
     public bool Reverse { get; init; }
 
-    /// <summary>Report <see cref="ToolkitRules.FocusIndicatorNotDetected"/> for stops without outline or box-shadow. Default <c>false</c>.</summary>
+    /// <summary>
+    /// Report <see cref="ToolkitRules.FocusIndicatorNotDetected"/> for stops whose style does not change when they
+    /// receive focus. Default <c>false</c>.
+    /// </summary>
     public bool ReportMissingFocusIndicator { get; init; }
+
+    /// <summary>
+    /// Report <see cref="ToolkitRules.FocusObscured"/> for stops that are entirely covered by other content (sticky
+    /// headers, banners, non-modal overlays). Default <c>true</c>.
+    /// </summary>
+    public bool ReportObscuredFocus { get; init; } = true;
 
     /// <summary>How long to wait for focus to move after a key press before concluding it is stuck. Default 1 s.</summary>
     public TimeSpan SettleTimeout { get; init; } = TimeSpan.FromSeconds(1);
@@ -65,6 +74,9 @@ public sealed record FocusStop
 
     /// <summary>Selector of the containing modal dialog, if any.</summary>
     public string? ModalContainer { get; init; }
+
+    /// <summary>Whether the element was covered by other content when it had focus.</summary>
+    public FocusObscuration Obscuration { get; init; }
 
     /// <inheritdoc />
     public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"{Index + 1}. {Element}");
@@ -193,6 +205,9 @@ public static class FocusOrder
             await page.EvaluateAsync("r => window.__blazorA11y.blurActive(r)", options.Reverse).ConfigureAwait(false);
         }
 
+        // The unfocused style of every candidate, so a focus indicator is detected as a style change on focus.
+        await page.EvaluateAsync("() => window.__blazorA11y.recordFocusBaselines(null)").ConfigureAwait(false);
+
         // WebKit (like Safari's default settings) does not move focus to links with Tab.
         var excludeLinks = string.Equals(page.Context.Browser?.BrowserType.Name, "webkit", StringComparison.Ordinal);
         var candidates = ToolkitScript.Deserialize<TabbableDto[]>(await page.EvaluateAsync<JsonElement>("x => window.__blazorA11y.tabbables(null, x)", excludeLinks).ConfigureAwait(false)) ?? [];
@@ -232,7 +247,18 @@ public static class FocusOrder
                 break;
             }
 
-            var stop = new FocusStop { Index = stops.Count, Element = element, Indicator = snapshot.Indicator, ModalContainer = snapshot.ModalContainer };
+            if (snapshot.Obscuration == FocusObscuration.EntirelyObscured)
+            {
+                // Smooth scrolling may still be bringing the element into view; measure again once it has settled.
+                await page.WaitForTimeoutAsync(250).ConfigureAwait(false);
+                var settled = await page.GetFocusAsync().ConfigureAwait(false);
+                if (settled.Element?.ElementKey == element.ElementKey)
+                {
+                    snapshot = settled;
+                }
+            }
+
+            var stop = new FocusStop { Index = stops.Count, Element = element, Indicator = snapshot.Indicator, ModalContainer = snapshot.ModalContainer, Obscuration = snapshot.Obscuration };
 
             if (positions.TryGetValue(element.ElementKey, out var firstIndex))
             {
@@ -282,14 +308,26 @@ public static class FocusOrder
             stops.Add(stop);
             previousKey = element.ElementKey;
 
-            if (!element.Visible || element.HiddenFromAssistiveTechnologies)
+            if (!element.Visible || element.HiddenFromAssistiveTechnologies || snapshot.Obscuration == FocusObscuration.OutsideViewport)
             {
                 findings.Add(ToolkitRules.FocusHiddenTarget.CreateFinding(
                     Target(element),
                     remediation: element.HiddenFromAssistiveTechnologies
                         ? "The focused element is hidden from assistive technologies (aria-hidden, inert or hidden). Remove it from the tab order or expose it."
+                        : snapshot.Obscuration == FocusObscuration.OutsideViewport
+                            ? "The focused element is outside the viewport, so keyboard users cannot see where focus is. Move it into view when it receives focus (for example a skip link that becomes visible on :focus)."
+                            : null,
+                    data: new Dictionary<string, string> { ["visible"] = element.Visible.ToString(), ["hiddenForAT"] = element.HiddenFromAssistiveTechnologies.ToString(), ["obscuration"] = snapshot.Obscuration.ToString() }));
+            }
+
+            if (options.ReportObscuredFocus && snapshot.Obscuration == FocusObscuration.EntirelyObscured)
+            {
+                findings.Add(ToolkitRules.FocusObscured.CreateFinding(
+                    Target(element),
+                    remediation: snapshot.ObscuredBy is { } cover
+                        ? $"The focused element is covered by {cover}. {ToolkitRules.FocusObscured.Remediation}"
                         : null,
-                    data: new Dictionary<string, string> { ["visible"] = element.Visible.ToString(), ["hiddenForAT"] = element.HiddenFromAssistiveTechnologies.ToString() }));
+                    data: new Dictionary<string, string> { ["coveredBy"] = snapshot.ObscuredBy ?? string.Empty }));
             }
 
             if (options.ReportMissingFocusIndicator && snapshot.Indicator == FocusIndicator.NotDetected)

@@ -1,0 +1,28 @@
+@* Blazor conventions the toolkit checks: NavLink sets aria-current, but a hand-written "active" link does not;
+   InputText passes autocomplete through; [Required] adds neither required nor aria-required. *@
+@using Microsoft.AspNetCore.Components.Routing
+<nav aria-label="Account">
+    <NavLink href="" Match="NavLinkMatch.All">Profile</NavLink>
+    <NavLink href="security">Security</NavLink>
+    <a href="billing" class="active">Billing</a>
+</nav>
+<EditForm Model="model" FormName="account">
+    <label for="given">First name *</label>
+    <InputText id="given" @bind-Value="model.FirstName" />
+    <label for="mail">Email *</label>
+    <InputText id="mail" type="email" autocomplete="email" required @bind-Value="model.Email" />
+    <label for="nick">Nickname</label>
+    <InputText id="nick" @bind-Value="model.Nickname" />
+</EditForm>
+@code {
+    private readonly AccountModel model = new();
+
+    public sealed class AccountModel
+    {
+        [Required] public string? FirstName { get; set; }
+
+        [Required] public string? Email { get; set; }
+
+        public string? Nickname { get; set; }
+    }
+}

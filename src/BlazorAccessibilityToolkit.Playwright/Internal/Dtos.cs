@@ -11,6 +11,44 @@ internal sealed class FocusInfoDto
     public string? Indicator { get; set; }
 
     public bool FocusVisible { get; set; }
+
+    public string? IndicatorMethod { get; set; }
+
+    public string? Obscured { get; set; }
+
+    public string? ObscuredBy { get; set; }
+}
+
+internal sealed class ReflowDto
+{
+    public int ViewportWidth { get; set; }
+
+    public int ScrollWidth { get; set; }
+
+    public List<LayoutOffenderDto> Offenders { get; set; } = [];
+}
+
+internal sealed class LayoutOffenderDto
+{
+    public string? Selector { get; set; }
+
+    public string? Html { get; set; }
+
+    public string? Role { get; set; }
+
+    public string? Name { get; set; }
+
+    public int? Ordinal { get; set; }
+
+    public bool Exempt { get; set; }
+
+    public int Width { get; set; }
+
+    public int Right { get; set; }
+
+    public string? Axis { get; set; }
+
+    public string? Text { get; set; }
 }
 
 internal sealed class DiagnosticDto

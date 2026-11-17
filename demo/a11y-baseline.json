@@ -50,6 +50,18 @@
       "count": 2
     },
     {
+      "fingerprint": "5bd70f7e31b401bbd6be398c3a441308",
+      "ruleId": "blazor-input-purpose-missing",
+      "engine": "blazor-a11y",
+      "status": "PotentialIssue",
+      "audit": "LegacySignupForm [after invalid submit]",
+      "component": "Microsoft.AspNetCore.Components.Forms.InputText",
+      "scenario": "LegacySignupForm",
+      "state": "after invalid submit",
+      "selector": "#legacy-email",
+      "count": 2
+    },
+    {
       "fingerprint": "60f19c389370f682936bd3858774438a",
       "ruleId": "blazor-markup-control-name",
       "engine": "blazor-a11y",

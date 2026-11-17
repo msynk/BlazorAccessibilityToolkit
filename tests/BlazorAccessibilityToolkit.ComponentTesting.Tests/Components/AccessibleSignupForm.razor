@@ -2,7 +2,7 @@
 <EditForm EditContext="editContext" OnValidSubmit="() => { }">
     <DataAnnotationsValidator />
     <label for="email">Email</label>
-    <InputText id="email" @bind-Value="model.Email" aria-describedby="@(HasError ? "email-error" : null)" />
+    <InputText id="email" autocomplete="email" @bind-Value="model.Email" aria-describedby="@(HasError ? "email-error" : null)" />
     @if (HasError)
     {
         <div id="email-error" class="validation-message">@string.Join(" ", editContext.GetValidationMessages(() => model.Email!))</div>

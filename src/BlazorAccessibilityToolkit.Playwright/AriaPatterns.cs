@@ -52,7 +52,7 @@ public sealed record PatternOptions
 /// <see cref="PatternCheck"/>, so one run shows all problems. They check the documented keyboard interaction and
 /// ARIA states; they do not replace testing with assistive technologies.
 /// </summary>
-public static class AriaPatterns
+public static partial class AriaPatterns
 {
     /// <summary>
     /// Modal dialog: the trigger opens it with Enter, focus moves inside, Tab and Shift+Tab stay inside, Escape closes

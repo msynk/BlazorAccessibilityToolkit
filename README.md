@@ -6,7 +6,9 @@ The toolkit does more than run a scanner in a browser. It knows about Razor and 
 
 - Findings name the **Razor component that rendered the element**, for example `Toolbar > IconButton`.
 - It detects **Blazor `@onclick` handlers** on elements that keyboard users cannot reach or activate. Browsers cannot see these handlers.
-- It flags **`ValidationMessage`** output that is not linked to its input.
+- It flags **`ValidationMessage`** output that is not linked to its input, fields marked required only by a `*`, and personal-data fields without `autocomplete`.
+- It checks **Razor files at compile time** (`BA11Y001`...), like `eslint-plugin-jsx-a11y` does for JSX.
+- It verifies **client-side page changes**: the title updates and focus moves to the new content (`<PageTitle>`, `<FocusOnNavigate>`).
 - It renders **isolated components interactively** in a real browser, with in-process parameters.
 
 > Automated checks find a subset of accessibility problems. They cannot prove WCAG conformance. The toolkit keeps inconclusive results and manual-review items separate, and never reports them as passed.
@@ -25,7 +27,8 @@ dotnet run --project demo/BlazorAccessibilityToolkit.Demo.WebApp   # http://loca
 | `BlazorAccessibilityToolkit` | Core model, assertions, baselines, suppressions, quality gates, manual review and reports (console, JSON, JUnit, SARIF, HTML). No dependencies. |
 | `BlazorAccessibilityToolkit.ComponentTesting` | bUnit component fixtures, Razor markup rules and component attribution. Works without a browser. |
 | `BlazorAccessibilityToolkit.Playwright` | axe-core audits, keyboard scenarios, focus order, live regions, ARIA snapshots, ARIA pattern checks, a browser engine for bUnit markup, and an in-process interactive component host. |
-| `BlazorAccessibilityToolkit.Cli` | The `blazor-a11y` dotnet tool: aggregates results, compares them with a baseline, applies the failure policy and writes reports with CI exit codes. |
+| `BlazorAccessibilityToolkit.Cli` | The `blazor-a11y` dotnet tool: aggregates results, compares them with a baseline, applies the failure policy and writes reports (including a Markdown job summary) with CI exit codes. |
+| `BlazorAccessibilityToolkit.Analyzers` | Compile-time checks of `.razor` markup: clickable `div`s, images without `alt`, unlabeled fields, unnamed buttons, invalid ARIA. Warnings with the Razor file and line. |
 
 Requirements: .NET 10, and Playwright browsers for browser features (installed explicitly, see [Getting started](docs/getting-started.md)).
 
@@ -80,7 +83,7 @@ blazor-a11y report --input a11y-results --baseline a11y-baseline.json --output a
 
 ## What it covers
 
-- **Automated audits.** axe-core 4.14 with WCAG 2.0/2.1/2.2 A and AA tags. Best-practice rules are kept separate. You can include and exclude rules, exclude selectors, and add documented suppressions with an owner and expiry date.
+- **Automated audits.** axe-core 4.14 with WCAG 2.0/2.1/2.2 A and AA tags, plus presets for AAA, EN 301 549 and Section 508. Best-practice rules are kept separate. You can include and exclude rules, exclude selectors, and add documented suppressions with an owner and expiry date.
 - **Razor-aware diagnostics:**
   - click handlers without keyboard support,
   - unassociated validation messages,
@@ -88,18 +91,25 @@ blazor-a11y report --input a11y-results --baseline a11y-baseline.json --output a
   - broken ID references,
   - duplicate IDs from reused components,
   - `aria-expanded` and tab selection that disagree with what is visible,
-  - ungrouped radio buttons and fieldsets without a legend.
+  - ungrouped radio buttons and fieldsets without a legend,
+  - active navigation links without `aria-current`, required fields marked only visually, personal-data fields without `autocomplete` (1.3.5),
+  - an inaccessible Blazor error notification (`#blazor-error-ui`).
+- **Compile-time Razor checks.** 13 analyzer rules with Razor file and line, configurable in `.editorconfig` and ignorable per element with a Razor comment.
 - **Keyboard and focus:**
   - Tab, Shift+Tab, Enter, Space, arrow keys, Home, End and Escape scenarios,
   - focus restoration and containment,
   - focus-order capture with trap, stuck and hidden-target detection,
-  - focus-indicator observations.
-- **ARIA patterns.** Checks against the WAI-ARIA Authoring Practices for modal dialogs, disclosures, tabs and menu buttons.
+  - focus hidden behind sticky headers or banners (WCAG 2.4.11),
+  - focus indicators detected as a visible style change, including borders, backgrounds and pseudo-elements.
+- **Adaptation.** Reflow at 320 CSS pixels (1.4.10), text spacing (1.4.12), and audits in dark mode, forced colors (Windows high contrast) and increased contrast.
+- **Page changes.** Client-side navigation updates the title and moves focus or announces the new page.
+- **ARIA patterns.** Checks against the WAI-ARIA Authoring Practices for modal dialogs, disclosures, tabs, menu buttons, radio groups, toolbars, listboxes, comboboxes, sliders, checkboxes and switches, tooltips (with WCAG 1.4.13) and accordions.
 - **Live regions.** DOM evidence of `status`, `alert` and `aria-live` updates, including repeated messages, plus analysis of patterns that commonly prevent announcements.
 - **Accessibility-tree snapshots.** Playwright ARIA snapshots with partial and regex templates, readable diffs and an explicit update workflow.
-- **Manual review.** Checklists for criteria that need human judgment. A "passed" status is only accepted with a tester and a date.
+- **Manual review.** Checklists for criteria that need human judgment, including a template with every WCAG 2.2 A and AA criterion. A "passed" status is only accepted with a tester and a date.
+- **Conformance evidence.** A per-criterion WCAG 2.2 coverage table with EN 301 549 clauses that combines automated findings and manual review, as a starting point for a VPAT/ACR or an EAA accessibility statement. Automation alone never marks a criterion as supported.
 - **CI:**
-  - versioned JSON, JUnit, SARIF (mapped to `.razor` files where unambiguous) and HTML reports,
+  - versioned JSON, JUnit, SARIF (mapped to `.razor` files where unambiguous), HTML and Markdown reports, and GitHub job summaries,
   - count-aware baselines that never hide new findings,
   - strict mode,
   - nonzero exit codes for failures and for audits that did not run.
@@ -110,13 +120,15 @@ blazor-a11y report --input a11y-results --baseline a11y-baseline.json --output a
 - [Component testing with bUnit](docs/component-testing.md)
 - [Browser and interactive testing](docs/interactive-testing.md): pages, the component host, keyboard, focus, live regions, patterns and snapshots
 - [Rules and findings](docs/rules.md)
+- [Razor analyzers](docs/analyzers.md): compile-time checks of `.razor` files
 - [CI integration](docs/ci-integration.md): results, the CLI, baselines, suppressions, GitHub Actions and Azure Pipelines
 - [Manual review](docs/manual-review.md)
 - [Extending the toolkit](docs/extending.md): custom rules, engines and fixtures
 - [Troubleshooting](docs/troubleshooting.md)
 - [Limitations and tested environments](docs/limitations.md)
 - [Upgrading](docs/upgrading.md)
-- [Architecture decision record](docs/adr/0001-architecture.md)
+- Architecture decision records: [architecture](docs/adr/0001-architecture.md), [coverage expansion](docs/adr/0002-coverage-expansion.md)
+- [Roadmap](docs/roadmap.md): remaining gaps from the cross-stack comparison
 
 ## Demo
 

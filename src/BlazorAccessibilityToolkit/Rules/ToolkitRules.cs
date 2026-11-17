@@ -160,6 +160,104 @@ public static class ToolkitRules
         Environments = [Browser],
     };
 
+    /// <summary>The current navigation link is styled as active but does not expose aria-current.</summary>
+    public static AccessibilityRule NavLinkCurrent { get; } = new()
+    {
+        Id = "blazor-navlink-missing-aria-current",
+        Description = "A navigation link that is visually marked as the current page (with the \"active\" class that Blazor's NavLink and most CSS frameworks use) should expose aria-current=\"page\".",
+        Help = "Current navigation link is only indicated visually",
+        Remediation = "Add aria-current=\"page\" to the active link. Blazor's NavLink in .NET 10 sets it automatically; links that toggle the class by hand, older NavLink versions and some component libraries do not.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Moderate,
+        Wcag = ["1.3.1"],
+        HelpUrl = "https://www.w3.org/TR/wai-aria-1.2/#aria-current",
+        Environments = [Markup, Browser],
+    };
+
+    /// <summary>Fields that collect common personal data without an autocomplete token.</summary>
+    public static AccessibilityRule InputPurposeMissing { get; } = new()
+    {
+        Id = "blazor-input-purpose-missing",
+        Description = "Fields that collect information about the user (name, email, phone, address, user name, password ...) should identify their purpose with the autocomplete attribute.",
+        Help = "Personal-data field has no autocomplete attribute",
+        Remediation = "Add the matching autocomplete token, for example autocomplete=\"email\", \"tel\", \"given-name\", \"postal-code\", \"username\" or \"current-password\". Blazor's InputText and InputDate pass the attribute through.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Moderate,
+        Wcag = ["1.3.5"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose.html",
+        Environments = [Markup, Browser],
+    };
+
+    /// <summary>Label marks a field as required, but the control does not expose it.</summary>
+    public static AccessibilityRule RequiredNotExposed { get; } = new()
+    {
+        Id = "blazor-required-not-exposed",
+        Description = "A field whose label marks it as required (for example with \"*\") should expose the requirement with the required attribute or aria-required=\"true\".",
+        Help = "Field is marked as required only visually",
+        Remediation = "Add the required attribute (or aria-required=\"true\") to the control. Blazor's [Required] data annotation does not add either; set it on InputText and friends yourself.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Moderate,
+        Wcag = ["1.3.1", "3.3.2"],
+        HelpUrl = "https://www.w3.org/WAI/tutorials/forms/instructions/#required",
+        Environments = [Markup, Browser],
+    };
+
+    /// <summary>The Blazor error notification (#blazor-error-ui) is not announced or cannot be dismissed with the keyboard.</summary>
+    public static AccessibilityRule ErrorUiNotAccessible { get; } = new()
+    {
+        Id = "blazor-error-ui-not-accessible",
+        Description = "The Blazor error notification (#blazor-error-ui) should be announced when it appears and its dismiss control should be operable with the keyboard.",
+        Help = "Blazor error notification is not accessible",
+        Remediation = "Make #blazor-error-ui a live region (role=\"alert\") and use a <button type=\"button\" aria-label=\"Dismiss\"> instead of the template's <span class=\"dismiss\">, keeping the class so blazor.web.js still wires it up.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Serious,
+        Wcag = ["2.1.1", "4.1.2", "4.1.3"],
+        HelpUrl = "https://learn.microsoft.com/aspnet/core/blazor/fundamentals/handle-errors#detailed-errors-during-development",
+        Environments = [Browser],
+    };
+
+    /// <summary>The focused element is entirely hidden behind other content.</summary>
+    public static AccessibilityRule FocusObscured { get; } = new()
+    {
+        Id = "blazor-focus-obscured",
+        Description = "A focused element must not be entirely hidden by author-created content such as sticky headers, footers, cookie banners or non-modal dialogs.",
+        Help = "Focused element is entirely covered by other content",
+        Remediation = "Add scroll-padding-top/bottom matching sticky headers and footers, or close and move overlays out of the way when focus moves underneath them.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Serious,
+        Wcag = ["2.4.11"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html",
+        Environments = [Browser],
+    };
+
+    /// <summary>Content needs horizontal scrolling at a width of 320 CSS pixels.</summary>
+    public static AccessibilityRule ReflowHorizontalScroll { get; } = new()
+    {
+        Id = "blazor-reflow-horizontal-scroll",
+        Description = "Content should reflow at a width of 320 CSS pixels (1280 pixels at 400% zoom) without scrolling in two dimensions, except for parts that need a two-dimensional layout (data tables, maps, diagrams, toolbars).",
+        Help = "Content is wider than the viewport at 320 CSS pixels",
+        Remediation = "Use responsive layouts (flex-wrap, grid with minmax, max-width: 100%), let long words wrap (overflow-wrap: anywhere) and put intentionally wide content such as tables in its own scroll container.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Serious,
+        Wcag = ["1.4.10"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html",
+        Environments = [Browser],
+    };
+
+    /// <summary>Text is clipped when the WCAG text-spacing values are applied.</summary>
+    public static AccessibilityRule TextSpacingClipped { get; } = new()
+    {
+        Id = "blazor-text-spacing-clipped",
+        Description = "No content may be lost when users increase line height to 1.5, paragraph spacing to 2, letter spacing to 0.12 and word spacing to 0.16 times the font size.",
+        Help = "Text is clipped when text spacing is increased",
+        Remediation = "Avoid fixed heights and widths on elements that contain text; use min-height, padding and wrapping instead of overflow: hidden with a fixed size.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Serious,
+        Wcag = ["1.4.12"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html",
+        Environments = [Browser],
+    };
+
     /// <summary>Image without a text alternative (markup fallback for axe-core image-alt).</summary>
     public static AccessibilityRule MarkupImageAlt { get; } = new()
     {
@@ -376,8 +474,10 @@ public static class ToolkitRules
     [
         ClickHandlerSemantics, ValidationMessageAssociation, InvalidWithoutErrorReference, DuplicateId, DuplicateIdReferenced,
         IdReferenceMissing, RadioGroupUngrouped, FieldsetMissingLegend, ExpandedStateMismatch, TabSelectionMismatch,
+        NavLinkCurrent, InputPurposeMissing, RequiredNotExposed, ErrorUiNotAccessible,
         MarkupImageAlt, MarkupControlName, MarkupFormLabel, MarkupAriaHiddenFocusable, MarkupInvalidAriaAttribute, MarkupInvalidRole, MarkupPositiveTabIndex,
-        FocusStuck, FocusTrap, FocusHiddenTarget, FocusIndicatorNotDetected, FocusRepeated,
+        FocusStuck, FocusTrap, FocusHiddenTarget, FocusIndicatorNotDetected, FocusRepeated, FocusObscured,
+        ReflowHorizontalScroll, TextSpacingClipped,
         LiveRegionInsertedWithContent, LiveRegionHiddenUpdate, LiveRegionPolitenessConflict,
     ];
 

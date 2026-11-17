@@ -3,7 +3,7 @@
 // (axe.commons), which must be loaded before these helpers are called.
 (() => {
   'use strict';
-  const VERSION = '8';
+  const VERSION = '9';
   if (window.__blazorA11y && window.__blazorA11y.version === VERSION) {
     return;
   }
@@ -225,13 +225,101 @@
     return null;
   }
 
+  // Style properties that commonly carry a focus indicator. Comparing them with the element's unfocused style
+  // (recorded by recordFocusBaselines) detects indicators made from borders, backgrounds, text decoration, pseudo
+  // elements or the parent (:focus-within), not only outlines and box-shadows.
+  const focusBaselines = new WeakMap();
+
+  // The visible appearance of a box, normalized so that properties without a visible effect (an outline-offset or
+  // outline-color while outline-style is none, a border color of a zero-width border) do not count as a change.
+  function appearance(cs, pseudo) {
+    if (pseudo && (cs.content === 'none' || cs.content === 'normal' || cs.display === 'none')) return 'none';
+    const outline = cs.outlineStyle === 'none' || parseFloat(cs.outlineWidth) === 0 ? 'none' : [cs.outlineStyle, cs.outlineWidth, cs.outlineColor, cs.outlineOffset].join(' ');
+    const border = ['Top', 'Right', 'Bottom', 'Left'].map((side) => {
+      const style = cs['border' + side + 'Style'];
+      const width = cs['border' + side + 'Width'];
+      return style === 'none' || style === 'hidden' || parseFloat(width) === 0 ? 'none' : [style, width, cs['border' + side + 'Color']].join(' ');
+    }).join(',');
+    const decoration = !cs.textDecorationLine || cs.textDecorationLine === 'none' ? 'none' : [cs.textDecorationLine, cs.textDecorationStyle, cs.textDecorationColor, cs.textDecorationThickness].join(' ');
+    const parts = [outline, border, decoration, cs.boxShadow, cs.backgroundColor, cs.backgroundImage, cs.color, cs.fontWeight, cs.transform, cs.filter, cs.opacity, cs.visibility];
+    if (pseudo) parts.push(cs.content, cs.width, cs.height);
+    return parts.join('|');
+  }
+
+  function styleSignature(el) {
+    const sig = { self: appearance(getComputedStyle(el), false) };
+    try { sig.before = appearance(getComputedStyle(el, '::before'), true); } catch (e) { sig.before = ''; }
+    try { sig.after = appearance(getComputedStyle(el, '::after'), true); } catch (e) { sig.after = ''; }
+    sig.parent = el.parentElement ? appearance(getComputedStyle(el.parentElement), false) : '';
+    return sig;
+  }
+
+  // Records the unfocused style of every focusable candidate (except the focused element) so that focusIndicator can
+  // tell whether focusing changes anything visible.
+  function recordFocusBaselines(rootSelector) {
+    const root = rootSelector ? document.querySelector(rootSelector) : document;
+    if (!root) return 0;
+    const active = activeElementDeep();
+    let n = 0;
+    for (const el of root.querySelectorAll(TABBABLE_CANDIDATES)) {
+      if (el === active || el.hasAttribute('data-a11y-focus-sentinel')) continue;
+      focusBaselines.set(el, styleSignature(el));
+      n++;
+    }
+    return n;
+  }
+
   function focusIndicator(el) {
     const cs = getComputedStyle(el);
     const outline = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0;
-    const shadow = cs.boxShadow && cs.boxShadow !== 'none';
+    const shadow = !!cs.boxShadow && cs.boxShadow !== 'none';
     let focusVisible = false;
     try { focusVisible = el.matches(':focus-visible'); } catch (e) { /* unsupported */ }
-    return { indicator: outline || shadow ? 'detected' : 'not-detected', focusVisible };
+    const base = focusBaselines.get(el);
+    if (!base) {
+      return { indicator: outline || shadow ? 'detected' : 'not-detected', focusVisible, method: 'outline' };
+    }
+    const now = styleSignature(el);
+    const changed = ['self', 'before', 'after', 'parent'].filter((k) => now[k] !== base[k]);
+    return { indicator: changed.length ? 'detected' : 'not-detected', focusVisible, method: 'style-change', changed };
+  }
+
+  // Whether the element is hidden behind other content (WCAG 2.4.11/2.4.12). Samples nine points of each visible box
+  // and asks the browser which element is on top there. Only author content that covers the element counts; points
+  // outside the viewport are ignored, and an element entirely outside it is reported as such.
+  function obscuration(el) {
+    try {
+      if (getComputedStyle(el).pointerEvents === 'none') return { state: 'unknown' };
+      const doc = el.ownerDocument;
+      const win = doc.defaultView;
+      const root = el.getRootNode();
+      const probe = root && typeof root.elementFromPoint === 'function' ? root : doc;
+      const rects = Array.from(el.getClientRects()).filter((r) => r.width > 0 && r.height > 0);
+      if (!rects.length) return { state: 'unknown' };
+      let samples = 0;
+      let hits = 0;
+      let cover = null;
+      for (const r of rects) {
+        const left = Math.max(r.left, 0);
+        const right = Math.min(r.right, win.innerWidth);
+        const top = Math.max(r.top, 0);
+        const bottom = Math.min(r.bottom, win.innerHeight);
+        if (right - left < 1 || bottom - top < 1) continue;
+        for (const fx of [0.1, 0.5, 0.9]) {
+          for (const fy of [0.1, 0.5, 0.9]) {
+            const hit = probe.elementFromPoint(left + (right - left) * fx, top + (bottom - top) * fy);
+            samples++;
+            if (!hit || hit === el || el.contains(hit) || hit.contains(el)) hits++;
+            else if (!cover) cover = hit;
+          }
+        }
+      }
+      if (samples === 0) return { state: 'outside-viewport' };
+      if (hits === samples) return { state: 'none' };
+      return { state: hits === 0 ? 'entire' : 'partial', coveredBy: cover ? selectorFor(cover) : null };
+    } catch (e) {
+      return { state: 'unknown' };
+    }
   }
 
   function focusInfo() {
@@ -241,12 +329,16 @@
       const info = describe(axe, el);
       const modal = modalContainer(el);
       const fi = focusIndicator(el);
+      const ob = obscuration(el);
       return {
         hasFocus: document.hasFocus(),
         element: info,
         modal: modal ? selectorFor(modal) : null,
         indicator: fi.indicator,
+        indicatorMethod: fi.method,
         focusVisible: fi.focusVisible,
+        obscured: ob.state,
+        obscuredBy: ob.coveredBy || null,
       };
     });
   }
@@ -474,8 +566,200 @@
         report('blazor-fieldset-missing-legend', el, {});
       }
 
+      // The current page link of a navigation (Blazor NavLink adds class="active") should expose aria-current.
+      for (const el of all) {
+        if (el.localName !== 'a' || !el.hasAttribute('href') || !el.classList.contains('active')) continue;
+        if (!el.closest('nav, [role="navigation"]') || !isRendered(el)) continue;
+        const current = el.getAttribute('aria-current');
+        if (current && current !== 'false') continue;
+        report('blazor-navlink-missing-aria-current', el, { href: el.getAttribute('href') || '' });
+      }
+
+      // Fields that collect personal data should identify their purpose (autocomplete).
+      for (const el of all) {
+        const purpose = personalDataPurpose(el);
+        if (!purpose || el.hasAttribute('autocomplete') || !isRendered(el)) continue;
+        report('blazor-input-purpose-missing', el, { suggested: purpose },
+          'This field appears to collect "' + purpose + '" but has no autocomplete attribute. Add autocomplete="' + purpose + '" (or the token that matches its purpose).');
+      }
+
+      // Required fields must not be marked as required only visually.
+      for (const el of all) {
+        if (!isFormControl(el) || el.required || el.getAttribute('aria-required') === 'true' || !isRendered(el)) continue;
+        const text = labelTexts(el).find(isRequiredMarker);
+        if (text) report('blazor-required-not-exposed', el, { label: truncate(text, 120) });
+      }
+
+      // The Blazor error notification must be announced and dismissible with the keyboard. It is hidden until an error
+      // occurs, so it is checked whether or not it is rendered.
+      const errorUi = document.getElementById('blazor-error-ui');
+      if (errorUi && inScope(errorUi, root, exclude)) {
+        const problems = [];
+        const role = errorUi.getAttribute('role');
+        const live = errorUi.getAttribute('aria-live');
+        if (role !== 'alert' && role !== 'status' && (!live || live === 'off')) problems.push('it is not a live region, so the error is not announced when it appears (add role="alert")');
+        for (const dismiss of errorUi.querySelectorAll('.dismiss')) {
+          const operable = dismiss.localName === 'button' || (dismiss.localName === 'a' && dismiss.hasAttribute('href'))
+            || (dismiss.getAttribute('role') === 'button' && dismiss.hasAttribute('tabindex') && dismiss.tabIndex >= 0);
+          if (!operable) {
+            problems.push('its <' + dismiss.localName + ' class="dismiss"> cannot be reached or activated with the keyboard (use <button type="button" class="dismiss" aria-label="Dismiss">)');
+            continue;
+          }
+          const name = (dismiss.getAttribute('aria-label') || '') + ' ' + (dismiss.getAttribute('aria-labelledby') ? 'x' : '') + ' ' + dismiss.textContent;
+          if (!/[\p{L}\p{N}]/u.test(name)) problems.push('its dismiss control has no text name (add aria-label="Dismiss")');
+        }
+        if (problems.length) {
+          report('blazor-error-ui-not-accessible', errorUi, { problems: String(problems.length) },
+            '#blazor-error-ui: ' + problems.join('; ') + '.');
+        }
+      }
+
       return results;
     });
+  }
+
+  // ---------------------------------------------------------------------------------------------------------------
+  // Form heuristics.
+  // ---------------------------------------------------------------------------------------------------------------
+  const PURPOSE_BY_TYPE = { email: 'email', tel: 'tel', password: 'current-password' };
+  const PURPOSE_BY_NAME = [
+    [/^(e?mail|emailaddress|useremail)$/, 'email'],
+    [/^(phone|phonenumber|telephone|telephonenumber|tel|mobile|mobilephone|mobilenumber|cellphone|cellphonenumber)$/, 'tel'],
+    [/^(firstname|givenname|forename)$/, 'given-name'],
+    [/^(lastname|familyname|surname)$/, 'family-name'],
+    [/^(fullname|yourname)$/, 'name'],
+    [/^(username|userid|login|loginname)$/, 'username'],
+    [/^(password|currentpassword)$/, 'current-password'],
+    [/^(newpassword|confirmpassword|passwordconfirmation|repeatpassword)$/, 'new-password'],
+    [/^(zip|zipcode|postalcode|postcode)$/, 'postal-code'],
+    [/^(street|streetaddress|address|address1|addressline1)$/, 'address-line1'],
+    [/^(address2|addressline2)$/, 'address-line2'],
+    [/^(birthdate|dateofbirth|dob|bday|birthday)$/, 'bday'],
+  ];
+  const NON_TEXT_TYPES = new Set(['hidden', 'submit', 'button', 'reset', 'image', 'checkbox', 'radio', 'file', 'range', 'color']);
+
+  function personalDataPurpose(el) {
+    if (el.localName !== 'input' && el.localName !== 'textarea' && el.localName !== 'select') return null;
+    const type = el.localName === 'input' ? (el.getAttribute('type') || 'text').toLowerCase() : el.localName;
+    if (NON_TEXT_TYPES.has(type)) return null;
+    // Blazor forms name fields after the bound model path (for example "Model.Email" or "Input.PhoneNumber").
+    const tokens = [el.getAttribute('name'), el.id].filter(Boolean)
+      .map((v) => (v.split(/[.[\]]/).filter(Boolean).pop() || '').toLowerCase().replace(/[^a-z0-9]/g, ''));
+    for (const token of tokens) {
+      for (const [pattern, purpose] of PURPOSE_BY_NAME) {
+        if (pattern.test(token)) return purpose;
+      }
+    }
+    return PURPOSE_BY_TYPE[type] || null;
+  }
+
+  // Native form controls that can be required.
+  function isFormControl(el) {
+    if (el.localName === 'select' || el.localName === 'textarea') return true;
+    if (el.localName !== 'input') return false;
+    return !/^(hidden|submit|button|reset|image|range|color)$/.test((el.getAttribute('type') || 'text').toLowerCase());
+  }
+
+  function labelTexts(el) {
+    const texts = [];
+    if (el.labels) for (const label of el.labels) texts.push(norm(label.textContent));
+    for (const id of (el.getAttribute('aria-labelledby') || '').split(/\s+/).filter(Boolean)) {
+      const ref = byId(el, id);
+      if (ref) texts.push(norm(ref.textContent));
+    }
+    return texts.filter(Boolean);
+  }
+
+  // "Email *", "* Email", "Email (required)" or "Email - required".
+  function isRequiredMarker(text) {
+    return /^\*|\*\s*:?$|\(\s*required\s*\)|[:\-–]\s*required$/i.test(text);
+  }
+
+  // ---------------------------------------------------------------------------------------------------------------
+  // Adaptation checks: reflow (WCAG 1.4.10) and text spacing (WCAG 1.4.12).
+  // ---------------------------------------------------------------------------------------------------------------
+  // Parts of a page that may need a two-dimensional layout (WCAG 1.4.10 exception).
+  const TWO_DIMENSIONAL = 'table, [role="table"], [role="grid"], [role="treegrid"], [role="toolbar"], [role="application"], pre, svg, canvas, video, iframe, img[usemap], map, [data-a11y-allow-horizontal-scroll]';
+
+  // The nearest ancestor that clips or scrolls the element on the given axis (so the element cannot widen the page).
+  function clippedByAncestor(el, axis) {
+    for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+      const cs = getComputedStyle(p);
+      if ((axis === 'x' ? cs.overflowX : cs.overflowY) !== 'visible') return p;
+    }
+    return null;
+  }
+
+  function reflowReport(opts) {
+    opts = opts || {};
+    const exclude = opts.exclude || [];
+    const doc = document.documentElement;
+    const viewport = doc.clientWidth;
+    const scrollWidth = Math.max(doc.scrollWidth, document.body ? document.body.scrollWidth : 0);
+    const rtl = getComputedStyle(doc).direction === 'rtl';
+    const overflowing = (el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return false;
+      return rtl ? r.left < -1 : r.right > viewport + 1;
+    };
+    const offenders = [];
+    if (scrollWidth <= viewport + 1 || !document.body) return { viewportWidth: viewport, scrollWidth, offenders };
+    return withAxe((axe) => {
+      for (const el of document.body.querySelectorAll('*')) {
+        if (offenders.length >= (opts.max || 20)) break;
+        if (!inScope(el, null, exclude) || !isVisible(el) || !overflowing(el)) continue;
+        // Report where the overflow starts: skip elements whose parent already overflows.
+        const parent = el.parentElement;
+        if (parent && parent !== document.body && isVisible(parent) && overflowing(parent)) continue;
+        if (clippedByAncestor(el, 'x')) continue;
+        const r = el.getBoundingClientRect();
+        const d = describe(axe, el);
+        offenders.push({ selector: d.selector, html: d.html, role: d.role, name: d.name, ordinal: d.ordinal, exempt: !!el.closest(TWO_DIMENSIONAL), width: Math.round(r.width), right: Math.round(r.right) });
+      }
+      return { viewportWidth: viewport, scrollWidth, offenders };
+    });
+  }
+
+  const TEXT_SPACING_CSS = '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }';
+
+  function clippingState(el) {
+    const cs = getComputedStyle(el);
+    const clips = (o) => o === 'hidden' || o === 'clip';
+    const x = clips(cs.overflowX) && el.scrollWidth > el.clientWidth + 1;
+    const y = clips(cs.overflowY) && el.scrollHeight > el.clientHeight + 1;
+    const clamped = !!cs.webkitLineClamp && cs.webkitLineClamp !== 'none' && el.scrollHeight > el.clientHeight + 1;
+    return { clipped: x || y || clamped, x, y: y || clamped };
+  }
+
+  // Measures which text containers clip their content, applies the WCAG text-spacing values, measures again and
+  // reports containers that clip only with the new spacing. The style is removed again before returning.
+  function textSpacingReport(opts) {
+    opts = opts || {};
+    const exclude = opts.exclude || [];
+    const candidates = Array.from(document.body ? document.body.querySelectorAll('*') : [])
+      .filter((el) => el.localName !== 'script' && el.localName !== 'style' && inScope(el, null, exclude) && isVisible(el) && norm(el.textContent));
+    const before = new Map(candidates.map((el) => [el, clippingState(el).clipped]));
+    const style = document.createElement('style');
+    style.setAttribute('data-a11y-text-spacing', '');
+    style.textContent = TEXT_SPACING_CSS;
+    (document.head || document.documentElement).append(style);
+    try {
+      return withAxe((axe) => {
+        const found = [];
+        // Innermost containers first, so that an ancestor clipping the same text is not reported again.
+        for (const el of candidates.slice().reverse()) {
+          if (found.length >= (opts.max || 20)) break;
+          if (before.get(el)) continue;
+          const state = clippingState(el);
+          if (!state.clipped || found.some((f) => el.contains(f.el))) continue;
+          const d = describe(axe, el);
+          found.push({ el, selector: d.selector, html: d.html, role: d.role, name: d.name, ordinal: d.ordinal, axis: state.x && state.y ? 'both' : state.x ? 'horizontal' : 'vertical', text: truncate(norm(el.textContent), 120) });
+        }
+        return found.reverse().map(({ el, ...rest }) => rest);
+      });
+    } finally {
+      style.remove();
+    }
   }
 
   // Role, name and ordinal for selectors reported by axe-core (single-document selectors only).
@@ -698,6 +982,9 @@
     tabbables,
     blurActive,
     runDiagnostics,
+    reflowReport,
+    textSpacingReport,
+    recordFocusBaselines,
     describeSelectors,
     inspectSelector,
     inspectElement,

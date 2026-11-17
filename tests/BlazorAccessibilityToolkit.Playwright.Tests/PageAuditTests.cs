@@ -239,4 +239,19 @@ public sealed class PageAuditTests(BrowserFixture browser)
         var result = await engine.AuditAsync(request);
         Assert.Contains(result.Findings, f => f.RuleId == "color-contrast" && f.Status == FindingStatus.Violation);
     }
+
+    [Theory]
+    [InlineData("RGAAv4", "RGAA-")]
+    [InlineData("TTv5", "TT")]
+    public async Task National_standard_presets_select_their_axe_rules(string tag, string prefix)
+    {
+        await using var session = await browser.PageAsync("<main><h1>x</h1><img src=\"a.png\"></main>");
+        var options = new AccessibilityAuditOptions { Tags = tag == "RGAAv4" ? AccessibilityStandard.Rgaa : AccessibilityStandard.TrustedTester };
+
+        var audit = await session.Page.AuditAccessibilityAsync(options);
+
+        Assert.Equal(AuditStatus.Completed, audit.Status);
+        var finding = Assert.Single(audit.Findings, f => f.RuleId == "image-alt");
+        Assert.Contains(finding.Tags, t => t.StartsWith(prefix, StringComparison.Ordinal) && t != tag);
+    }
 }

@@ -28,7 +28,7 @@ Each finding contains:
 ```csharp
 new AccessibilityAuditOptions
 {
-    Tags = AccessibilityStandard.Wcag22AA,        // Wcag20A/AA, Wcag21A/AA, Wcag22A, Wcag22AA (default), Wcag22AAA, En301549, Section508
+    Tags = AccessibilityStandard.Wcag22AA,        // Wcag20A/AA, Wcag21A/AA, Wcag22A, Wcag22AA (default), Wcag22AAA, En301549, Section508, Rgaa, TrustedTester
     IncludeBestPractices = true,                  // tagged best-practice; flagged IsBestPractice
     IncludeExperimental = false,
     EnabledRules = ["target-size"],               // in addition to the tags

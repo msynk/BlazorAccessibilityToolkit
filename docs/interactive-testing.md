@@ -110,6 +110,14 @@ var png = await order.SaveTabStopOverlayAsync(page, "artifacts/checkout-tab-stop
 
 This saves a full-page screenshot with every stop outlined and numbered, connected in focus order, as Accessibility Insights' tab-stop visualization shows. Stops with findings are drawn in red. Attach the image to test results or the manual review of focus order (2.4.3).
 
+To show it in the HTML report next to the findings, turn the capture into an audit with the image attached:
+
+```csharp
+var audit = await order.ToAuditWithTabStopsAsync("checkout", page, "artifacts/checkout-tab-stops.png");
+```
+
+Any audit can carry files: `audit.WithAttachment("trace", path, "application/zip")`. The HTML report embeds images up to `HtmlReportFormatter.MaxEmbeddedAttachmentBytes` (5 MB) and links other files.
+
 ### Focus appearance and obscured focus
 
 Before tabbing, the capture records the unfocused style of every focusable element: outline, border, box-shadow, background, color, text decoration, font weight, transform, filter and opacity, of the element, its `::before` and `::after`, and its parent (for `:focus-within` styles). A stop counts as indicated when anything visible changed on focus. Properties without a visible effect, such as an `outline-offset` while `outline-style` is `none`, do not count. Elements focused without a recorded baseline fall back to "has an outline or box-shadow".
@@ -162,6 +170,9 @@ More verifiers cover composite widgets and form controls:
 | `VerifyCheckboxAsync(control)` | Checkbox or switch: named, exposes its checked state, in the tab sequence, Space toggles both ways. |
 | `VerifyTooltipAsync(trigger)` | Tooltip pattern and WCAG 1.4.13: appears on focus and hover, is referenced by `aria-describedby`, Escape dismisses it without moving focus, it stays while the pointer moves onto it and does not disappear on its own. |
 | `VerifyAccordionAsync(container)` | Every header is a button inside a heading and behaves as a disclosure. |
+| `VerifySortableTableAsync(table, column?)` | Sortable column headers contain a button; at most one header has `aria-sort`; Enter sorts, sets the header's `aria-sort` to ascending or descending and clears the others; Enter again reverses it; focus stays on the button; the rows are in the announced order. QuickGrid's sortable columns pass. |
+| `VerifyPaginationAsync(next, content)` | The next-page control is a named button; Enter shows the next page; the change is conveyed by a live region or a focus move; focus is never lost, including on the last page. QuickGrid's `Paginator` fails the last two: it announces nothing, and its focused "next" button becomes `disabled` on the last page, which drops focus to the body. Add a `role="status"` element with the page number next to it, and keep focus on a control that stays enabled. |
+| `VerifyLoadingStateAsync(page, url, regionSelector, loaded)` | For `[StreamRendering]` placeholders and content loaded in `OnInitializedAsync` (4.1.3): while loading, the region is `aria-busy="true"` or a status message (live region or progress bar) says so; once `loaded` appears, `aria-busy` is cleared and a status message reports the result. It loads the page itself, to observe the loading phase from the start. A bare "Loading…" placeholder fails. |
 | `VerifyFormValidationAsync(form, submit?)` | Submitting a form that has errors with the keyboard marks each invalid field with `aria-invalid`, links each one to its error text (`aria-describedby` or `aria-errormessage`), moves focus to the first invalid field or to an error summary, and makes the errors perceivable (that focus move, or a live region that contains them). Fill the form with invalid values first. Browser constraint validation is accepted. Default `EditForm` markup fails: `ValidationMessage` is not linked to its field and focus stays on the submit button. |
 
 Each verifier drives the widget with real keys and records every APG requirement as a pass or fail check, so one run shows all problems:

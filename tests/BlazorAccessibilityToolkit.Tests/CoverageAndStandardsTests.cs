@@ -15,6 +15,8 @@ public sealed class CoverageAndStandardsTests
         Assert.All(AccessibilityStandard.Wcag22AA, t => Assert.Contains(t, AccessibilityStandard.Wcag22AAA));
         Assert.Equal(["EN-301-549"], AccessibilityStandard.En301549);
         Assert.Contains("section508", AccessibilityStandard.Section508);
+        Assert.Equal(["RGAAv4"], AccessibilityStandard.Rgaa);
+        Assert.Equal(["TTv5"], AccessibilityStandard.TrustedTester);
     }
 
     [Fact]

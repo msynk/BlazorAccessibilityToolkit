@@ -11,6 +11,7 @@ static class BlazorAccessibilityToolkit.AccessibilityAssertions
   static BlazorAccessibilityToolkit.AccessibilityFinding ShouldHaveFinding(BlazorAccessibilityToolkit.AccessibilityAudit audit, System.String ruleId, System.Nullable<BlazorAccessibilityToolkit.FindingStatus> status = null)
   static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityAudit> ShouldHaveNoViolations(System.Collections.Generic.IEnumerable<BlazorAccessibilityToolkit.AccessibilityAudit> audits, BlazorAccessibilityToolkit.AccessibilityExpectation expectation = null)
 sealed class BlazorAccessibilityToolkit.AccessibilityAudit
+  BlazorAccessibilityToolkit.AccessibilityAudit WithAttachment(System.String name, System.String path, System.String contentType = image/png, System.String description = null)
   BlazorAccessibilityToolkit.AccessibilityContext Context { get; init; }
   BlazorAccessibilityToolkit.AuditConfiguration Configuration { get; init; }
   BlazorAccessibilityToolkit.AuditStatus Status { get; init; }
@@ -20,6 +21,7 @@ sealed class BlazorAccessibilityToolkit.AccessibilityAudit
   System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> PotentialIssues { get; }
   System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> Suppressed { get; }
   System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityFinding> Violations { get; }
+  System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AuditAttachment> Attachments { get; init; }
   System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.EngineInfo> Engines { get; init; }
   System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.ExecutionError> Errors { get; init; }
   System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Suppression> ExpiredSuppressions { get; init; }
@@ -130,7 +132,9 @@ static class BlazorAccessibilityToolkit.AccessibilityStandard
   const System.String BestPracticeTag
   const System.String ExperimentalTag
   static System.Collections.Generic.IReadOnlyList<System.String> En301549 { get; }
+  static System.Collections.Generic.IReadOnlyList<System.String> Rgaa { get; }
   static System.Collections.Generic.IReadOnlyList<System.String> Section508 { get; }
+  static System.Collections.Generic.IReadOnlyList<System.String> TrustedTester { get; }
   static System.Collections.Generic.IReadOnlyList<System.String> Wcag20A { get; }
   static System.Collections.Generic.IReadOnlyList<System.String> Wcag20AA { get; }
   static System.Collections.Generic.IReadOnlyList<System.String> Wcag21A { get; }
@@ -142,6 +146,12 @@ sealed class BlazorAccessibilityToolkit.AppliedSuppression
   System.Nullable<System.DateOnly> Expires { get; init; }
   System.String Owner { get; init; }
   System.String Reason { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.AuditAttachment
+  System.String ContentType { get; init; }
+  System.String Description { get; init; }
+  System.String Name { get; init; }
+  System.String Path { get; init; }
   ctor()
 sealed class BlazorAccessibilityToolkit.AuditConfiguration
   System.Collections.Generic.IReadOnlyList<System.String> DisabledRules { get; init; }
@@ -362,6 +372,7 @@ enum BlazorAccessibilityToolkit.Reporting.CriterionConformance
   NotApplicable
   DoesNotSupport
 sealed class BlazorAccessibilityToolkit.Reporting.HtmlReportFormatter
+  System.Int64 MaxEmbeddedAttachmentBytes { get; init; }
   System.String DefaultFileName { get; }
   System.String Name { get; }
   System.Void Write(BlazorAccessibilityToolkit.Reporting.AccessibilityReport report, System.IO.TextWriter writer)

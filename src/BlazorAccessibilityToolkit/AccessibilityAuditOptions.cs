@@ -45,6 +45,18 @@ public static class AccessibilityStandard
     /// </summary>
     public static IReadOnlyList<string> Section508 { get; } = ["section508", "wcag2a", "wcag2aa"];
 
+    /// <summary>
+    /// Rules axe-core maps to RGAA 4 (Référentiel général d'amélioration de l'accessibilité), the French accessibility
+    /// standard; each finding carries the RGAA criteria as <c>RGAA-x.y.z</c> tags.
+    /// </summary>
+    public static IReadOnlyList<string> Rgaa { get; } = ["RGAAv4"];
+
+    /// <summary>
+    /// Rules axe-core maps to the Trusted Tester v5 process of the US Department of Homeland Security, the test method
+    /// for Section 508 conformance; each finding carries the Trusted Tester test ids as tags.
+    /// </summary>
+    public static IReadOnlyList<string> TrustedTester { get; } = ["TTv5"];
+
     /// <summary>The axe-core tag that marks best-practice rules (not WCAG requirements).</summary>
     public const string BestPracticeTag = "best-practice";
 

@@ -110,6 +110,22 @@ public sealed record AuditConfiguration
     public IReadOnlyList<string> ExcludedSelectors { get; init; } = [];
 }
 
+/// <summary>A file that documents an audit (a screenshot, a trace, a recording).</summary>
+public sealed record AuditAttachment
+{
+    /// <summary>Short name, for example <c>tab stops</c>.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>Absolute path of the file.</summary>
+    public required string Path { get; init; }
+
+    /// <summary>Media type, for example <c>image/png</c>.</summary>
+    public string ContentType { get; init; } = "application/octet-stream";
+
+    /// <summary>Text alternative for images, or a description of the file.</summary>
+    public string? Description { get; init; }
+}
+
 /// <summary>One audit execution: findings plus the information needed to trust (or distrust) them.</summary>
 public sealed record AccessibilityAudit
 {
@@ -156,6 +172,17 @@ public sealed record AccessibilityAudit
     /// Configured suppressions that had expired and therefore no longer applied. Strict quality gates fail on them.
     /// </summary>
     public IReadOnlyList<Suppression> ExpiredSuppressions { get; init; } = [];
+
+    /// <summary>Files that document the audit, such as a tab-stop overlay screenshot. Reports link or embed them.</summary>
+    public IReadOnlyList<AuditAttachment> Attachments { get; init; } = [];
+
+    /// <summary>Returns a copy with <paramref name="path"/> attached (absolute path, so that reports find it later).</summary>
+    public AccessibilityAudit WithAttachment(string name, string path, string contentType = "image/png", string? description = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        return this with { Attachments = [.. Attachments, new AuditAttachment { Name = name, Path = System.IO.Path.GetFullPath(path), ContentType = contentType, Description = description }] };
+    }
 
     /// <summary>Unsuppressed confirmed violations.</summary>
     [JsonIgnore]

@@ -57,6 +57,11 @@ public sealed class VisualFocusOrderTests(BrowserFixture browser)
             Assert.True(bytes.Length > 1000);
             Assert.Equal([0x89, 0x50, 0x4E, 0x47], bytes[..4]);
             Assert.Equal(0, await session.Page.Locator("[data-ba11y-tab-stops]").CountAsync());
+
+            var audit = await result.ToAuditWithTabStopsAsync("buttons", session.Page, Path.Combine(Path.GetDirectoryName(path)!, "audit.png"));
+            var attachment = Assert.Single(audit.Attachments);
+            Assert.Equal("Tab stops of buttons: 3 stops in focus order.", attachment.Description);
+            Assert.True(File.Exists(attachment.Path));
         }
         finally
         {

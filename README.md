@@ -85,7 +85,7 @@ blazor-a11y report --input a11y-results --baseline a11y-baseline.json --output a
 
 ## What it covers
 
-- **Automated audits.** axe-core 4.14 with WCAG 2.0/2.1/2.2 A and AA tags, plus presets for AAA, EN 301 549 and Section 508. Best-practice rules are kept separate. You can include and exclude rules, exclude selectors, and add documented suppressions with an owner and expiry date.
+- **Automated audits.** axe-core 4.14 with WCAG 2.0/2.1/2.2 A and AA tags, plus presets for AAA, EN 301 549, Section 508, Trusted Tester v5 and RGAA 4 (France). Best-practice rules are kept separate. You can include and exclude rules, exclude selectors, and add documented suppressions with an owner and expiry date.
 - **Razor-aware diagnostics:**
   - click handlers without keyboard support,
   - unassociated validation messages,

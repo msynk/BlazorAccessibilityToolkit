@@ -129,6 +129,11 @@ public sealed class HtmlReportFormatter : IReportFormatter
                 writer.WriteLine($"<p class=\"muted\">Warning: {E(warning)}</p>");
             }
 
+            foreach (var attachment in audit.Attachments)
+            {
+                WriteAttachment(writer, attachment);
+            }
+
             if (audit.Findings.Count > 0)
             {
                 writer.WriteLine("<table><thead><tr><th scope=\"col\">Impact</th><th scope=\"col\">Status</th><th scope=\"col\">Rule</th><th scope=\"col\">Element</th><th scope=\"col\">Details</th></tr></thead><tbody>");
@@ -178,6 +183,30 @@ public sealed class HtmlReportFormatter : IReportFormatter
         }
 
         writer.WriteLine("</main></body></html>");
+    }
+
+    /// <summary>Largest image embedded as a data URI; larger files are linked. Default 5 MB.</summary>
+    public long MaxEmbeddedAttachmentBytes { get; init; } = 5 * 1024 * 1024;
+
+    private void WriteAttachment(TextWriter writer, AuditAttachment attachment)
+    {
+        var description = attachment.Description ?? attachment.Name;
+        var file = new FileInfo(attachment.Path);
+        if (!file.Exists)
+        {
+            writer.WriteLine($"<p class=\"muted\">Attachment {E(attachment.Name)}: {E(attachment.Path)} (file not found)</p>");
+            return;
+        }
+
+        var link = new Uri(file.FullName).AbsoluteUri;
+        if (attachment.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) && file.Length <= MaxEmbeddedAttachmentBytes)
+        {
+            var data = Convert.ToBase64String(File.ReadAllBytes(file.FullName));
+            writer.WriteLine($"<figure><img src=\"data:{E(attachment.ContentType)};base64,{data}\" alt=\"{E(description)}\" style=\"max-width:100%;border:1px solid #ccc\"><figcaption>{E(attachment.Name)}</figcaption></figure>");
+            return;
+        }
+
+        writer.WriteLine($"<p>Attachment: <a href=\"{E(link)}\">{E(attachment.Name)}</a>{(attachment.Description is null ? string.Empty : $" — {E(attachment.Description)}")}</p>");
     }
 
     private static void Row(TextWriter writer, string header, string value) =>

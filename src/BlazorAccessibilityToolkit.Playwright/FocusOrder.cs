@@ -490,13 +490,28 @@ public static class FocusOrder
     }
 
     /// <summary>Wraps focus-order findings into an audit for reporting.</summary>
-    public static AccessibilityAudit ToAudit(this FocusOrderResult result, string name, AccessibilityContext? context = null)
+    public static AccessibilityAudit ToAudit(this FocusOrderResult result, string name, AccessibilityContext? context = null) =>
+        PlaywrightAccessibility.Persist(BuildAudit(result, name, context));
+
+    /// <summary>
+    /// Wraps focus-order findings into an audit, with the tab-stop overlay screenshot of <paramref name="page"/> saved
+    /// to <paramref name="overlayPath"/> and attached, so that the HTML report shows it next to the findings.
+    /// </summary>
+    public static async Task<AccessibilityAudit> ToAuditWithTabStopsAsync(this FocusOrderResult result, string name, IPage page, string overlayPath, AccessibilityContext? context = null)
+    {
+        var audit = BuildAudit(result, name, context);
+        var path = await result.SaveTabStopOverlayAsync(page, overlayPath).ConfigureAwait(false);
+        var description = string.Create(CultureInfo.InvariantCulture, $"Tab stops of {name}: {result.Stops.Count} stops in focus order{(result.Findings.Count > 0 ? $", {result.Findings.Count} with findings (red)" : string.Empty)}.");
+        return PlaywrightAccessibility.Persist(audit.WithAttachment("tab stops", path, "image/png", description));
+    }
+
+    private static AccessibilityAudit BuildAudit(FocusOrderResult result, string name, AccessibilityContext? context)
     {
         ArgumentNullException.ThrowIfNull(result);
         var builder = new AccessibilityAuditBuilder(name, context ?? new AccessibilityContext { Kind = AuditTargetKind.Page, State = "focus order" });
         builder.AddEngine(ToolkitRules.EngineName, ToolkitScript.ToolkitVersion);
         builder.AddFindings(result.Findings);
-        return PlaywrightAccessibility.Persist(builder.Build());
+        return builder.Build();
     }
 
     private static FindingTarget Target(AccessibleElementInfo element) => new()

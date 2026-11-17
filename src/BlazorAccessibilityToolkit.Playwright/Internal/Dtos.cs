@@ -17,6 +17,10 @@ internal sealed class FocusInfoDto
     public string? Obscured { get; set; }
 
     public string? ObscuredBy { get; set; }
+
+    public FocusBounds? Bounds { get; set; }
+
+    public bool Rtl { get; set; }
 }
 
 internal sealed class ReflowDto

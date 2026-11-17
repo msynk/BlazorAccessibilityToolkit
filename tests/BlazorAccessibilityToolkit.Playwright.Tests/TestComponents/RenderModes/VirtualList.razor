@@ -1,0 +1,22 @@
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@* A virtualized list; Positioned adds aria-setsize and aria-posinset so that screen readers know the real size. *@
+<main>
+    <h1>Messages</h1>
+    <ul aria-label="Messages" style="height: 200px; overflow-y: auto; margin: 0; padding: 0;">
+        <Virtualize Items="items" ItemSize="20" Context="item">
+            @if (Positioned)
+            {
+                <li style="height: 20px" aria-setsize="@items.Count" aria-posinset="@(item + 1)">Message @(item + 1)</li>
+            }
+            else
+            {
+                <li style="height: 20px">Message @(item + 1)</li>
+            }
+        </Virtualize>
+    </ul>
+</main>
+@code {
+    private readonly List<int> items = Enumerable.Range(0, 1000).ToList();
+
+    [Parameter] public bool Positioned { get; set; }
+}

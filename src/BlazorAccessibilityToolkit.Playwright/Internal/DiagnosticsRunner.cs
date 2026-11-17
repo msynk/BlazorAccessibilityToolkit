@@ -74,5 +74,7 @@ internal static class DiagnosticsRunner
         ToolkitRules.AmbiguousLinkName.Id,
         ToolkitRules.RoleInName.Id,
         ToolkitRules.ReconnectUiNotAccessible.Id,
+        ToolkitRules.VirtualizedSetSize.Id,
+        ToolkitRules.DuplicateClickableBounds.Id,
     };
 }

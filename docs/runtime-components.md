@@ -17,7 +17,8 @@ builder.Services.AddAccessibilityComponents();   // ILiveAnnouncer
 | [`LiveAnnouncer`](#liveannouncer-and-iliveannouncer) and `ILiveAnnouncer` | Status messages that screen readers announce, including repeated ones | interactive |
 | [`SkipLink`](#skiplink) | A skip link that works with Blazor's `<base href="/">` and moves focus | static and interactive |
 | [`FocusTrap`](#focustrap) | Focus kept inside dialogs and drawers, then restored | interactive |
-| [`RouteAnnouncer`](#routeannouncer) | Client-side navigation announced to screen readers | interactive |
+| [`RovingFocusGroup`](#rovingfocusgroup) | One tab stop and arrow-key navigation for toolbars, tabs, radio groups, listboxes and menus | interactive |
+| [`RouteAnnouncer`](#routeannouncer) | Client-side navigation announced to screen readers | static (enhanced navigation) and interactive |
 | [`VisuallyHidden`](#visuallyhidden) | Text for screen readers only | any |
 
 ## LiveAnnouncer and ILiveAnnouncer
@@ -92,6 +93,32 @@ await monitor.ExpectUpdateAsync("Changes saved", politeness: "polite");
 - Traps nest: only the innermost active trap handles keys.
 - Escape handling and the dialog semantics (`role`, `aria-modal`, a name) are yours to add. Verify the result with `AriaPatterns.VerifyModalDialogAsync`.
 
+## RovingFocusGroup
+
+```razor
+<RovingFocusGroup aria-label="Formatting">                       @* role="toolbar", ArrowLeft/ArrowRight *@
+    <button type="button" aria-pressed="@Pressed(bold)" @onclick="ToggleBold">Bold</button>
+    <button type="button">Italic</button>
+</RovingFocusGroup>
+
+<RovingFocusGroup Role="radiogroup" Orientation="RovingOrientation.Both" SelectionFollowsFocus="true" aria-label="Size">
+    @foreach (var size in sizes)
+    {
+        <div role="radio" aria-checked="@(size == selected ? "true" : "false")" @onclick="() => selected = size">@size</div>
+    }
+</RovingFocusGroup>
+```
+
+It implements the roving tabindex of the WAI-ARIA Authoring Practices, like Angular CDK's `FocusKeyManager`:
+
+- The group is a single tab stop. That stop belongs to the selected, checked, pressed or current item, otherwise to the first item, and it follows focus.
+- Arrow keys move focus (`Horizontal`, `Vertical` or `Both`) and wrap unless `Wrap="false"`. Home and End go to the first and last item. Arrow keys do not scroll the page.
+- `SelectionFollowsFocus` clicks the item that receives focus, for tabs with automatic activation and radio groups.
+- Items that Blazor adds, removes or re-renders are picked up. Hidden, `inert`, disabled and `aria-disabled` items are skipped.
+- `ItemSelector` chooses the items. By default these are elements with an item role (radio, tab, option, menuitem, treeitem), or buttons and links.
+
+Check the result with `AriaPatterns.VerifyToolbarAsync`, `VerifyRadioGroupAsync`, `VerifyTabsAsync` or `VerifyListboxAsync`.
+
 ## RouteAnnouncer
 
 ```razor
@@ -101,6 +128,9 @@ await monitor.ExpectUpdateAsync("Changes saved", politeness: "polite");
 ```
 
 After each client-side navigation it announces the page title (from `<PageTitle>`), or the first `h1`, or the path, through a polite live region. This is what the route announcers of Next.js and SvelteKit do.
+
+- **Interactive:** it announces navigation by the interactive router.
+- **Static server rendering:** it announces enhanced navigation. The component renders a small module that listens to Blazor's `enhancedload` event, because a static component cannot run .NET code after the page loads. Keep the component in the shared layout, so the region survives navigation.
 
 Use it **or** `<FocusOnNavigate>`, not both. `FocusOnNavigate` moves focus to the new page's heading, and screen readers read the heading. `RouteAnnouncer` suits apps where focus should stay where it is, for example a persistent search field. Verify either with `NavigationChecks.VerifyNavigationAsync`.
 

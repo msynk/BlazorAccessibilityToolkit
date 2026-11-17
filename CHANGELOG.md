@@ -46,7 +46,11 @@ The first group of entries closes the gaps found by the second cross-stack surve
 - **Runtime components** (new package `BlazorAccessibilityToolkit.Components`, see [docs/runtime-components.md](docs/runtime-components.md)):
   - `ILiveAnnouncer` with a `<LiveAnnouncer />` host. Its regions exist before the first message, repeated messages are announced again, messages are cleared after a while, and `AnnounceAsync` reports when no host is rendered.
   - `<SkipLink>`: it renders the current path with the fragment, so it works with `<base href="/">` before and after the page becomes interactive, and it moves focus to the target.
-  - `<FocusTrap>` with an initial focus, nesting and focus restoration, `<RouteAnnouncer>` for client-side navigation, and `<VisuallyHidden>`.
+  - `<FocusTrap>` with an initial focus, nesting and focus restoration, and `<VisuallyHidden>`.
+  - `<RouteAnnouncer>` for client-side navigation: router navigation when interactive, enhanced navigation (`enhancedload`) when statically rendered.
+  - `<RovingFocusGroup>`: one tab stop, arrow keys, Home and End, and optional selection that follows focus, for toolbars, tabs, radio groups, listboxes and menus.
+- **Visual focus order:** `FocusOrderOptions.ReportVisualOrderMismatch` reports `blazor-focus-order-visual-mismatch` (2.4.3, 1.3.2) for a stop that leaves the visual reading order, without flagging column layouts. `FocusStop.Bounds` and `FocusSnapshot.Bounds` record where each stop is.
+- **Render-mode checks:** `blazor-virtualized-set-size` reports `<Virtualize>` items that do not expose `aria-posinset` and `aria-setsize`, so screen readers count only the rendered items. `blazor-duplicate-clickable-bounds` (best practice) reports nested interactive elements with the same box.
 - **Consistent help (3.2.6):** `page.AuditConsistentHelpAsync(baseAddress, paths)` (`blazor-help-inconsistent`) compares the order and landmark of help links, `mailto:` and `tel:` links across pages.
 - **Heuristics from mobile platforms and Blazor's runtime:**
   - `blazor-ambiguous-link-name` (2.4.4): links with the same name but different destinations.

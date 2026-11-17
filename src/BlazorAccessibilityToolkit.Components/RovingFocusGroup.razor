@@ -1,0 +1,106 @@
+@namespace BlazorAccessibilityToolkit.Components
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@* Keyboard navigation for composite widgets (WAI-ARIA Authoring Practices "roving tabindex"): the group is one tab stop,
+   arrow keys move focus between its items, Home and End go to the first and last item. The item that is selected,
+   checked, pressed or current gets the tab stop. Requires an interactive render mode. *@
+<div @ref="container" role="@Role" aria-orientation="@AriaOrientation" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    private ElementReference container;
+    private AccessibilityModule? module;
+    private IJSObjectReference? handle;
+    private string? appliedOptions;
+
+    /// <summary>The items (buttons, tabs, radios, options ...).</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The container role, for example <c>toolbar</c>, <c>tablist</c>, <c>radiogroup</c>, <c>listbox</c> or <c>menu</c>. Default <c>toolbar</c>.</summary>
+    [Parameter] public string Role { get; set; } = "toolbar";
+
+    /// <summary>
+    /// CSS selector of the items. Default: elements with an item role (radio, tab, option, menuitem, treeitem) or,
+    /// when there are none, buttons and links.
+    /// </summary>
+    [Parameter] public string? ItemSelector { get; set; }
+
+    /// <summary>Which arrow keys move focus. Default <see cref="RovingOrientation.Horizontal"/>.</summary>
+    [Parameter] public RovingOrientation Orientation { get; set; } = RovingOrientation.Horizontal;
+
+    /// <summary>Whether focus wraps from the last item to the first and back. Default <c>true</c>.</summary>
+    [Parameter] public bool Wrap { get; set; } = true;
+
+    /// <summary>Activate (click) the item that receives focus, as tabs with automatic activation and radio groups do. Default <c>false</c>.</summary>
+    [Parameter] public bool SelectionFollowsFocus { get; set; }
+
+    /// <summary>Other attributes for the container (aria-label, aria-labelledby, class ...).</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string? AriaOrientation => Orientation switch
+    {
+        RovingOrientation.Vertical => "vertical",
+        RovingOrientation.Horizontal when Role is "toolbar" or "tablist" or "listbox" or "menu" or "tree" or "radiogroup" => "horizontal",
+        _ => null,
+    };
+
+    private string Selector => ItemSelector ?? "[role=radio], [role=tab], [role=option], [role=menuitem], [role=menuitemcheckbox], [role=menuitemradio], [role=treeitem], button, a[href]";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var options = $"{Selector}|{Orientation}|{Wrap}|{SelectionFollowsFocus}";
+        if (options == appliedOptions)
+        {
+            return;
+        }
+
+        appliedOptions = options;
+        module ??= new AccessibilityModule(JS);
+        try
+        {
+            await DisposeHandleAsync();
+            handle = await module.InvokeAsync<IJSObjectReference>("rovingFocus", container, new
+            {
+                itemSelector = Selector,
+                orientation = Orientation.ToString().ToLowerInvariant(),
+                wrap = Wrap,
+                selectionFollowsFocus = SelectionFollowsFocus,
+            });
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone.
+        }
+    }
+
+    private async Task DisposeHandleAsync()
+    {
+        if (handle is null)
+        {
+            return;
+        }
+
+        var current = handle;
+        handle = null;
+        await current.InvokeVoidAsync("dispose");
+        await current.DisposeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await DisposeHandleAsync();
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or JSException or TaskCanceledException)
+        {
+            // The circuit or page is gone.
+        }
+
+        if (module is not null)
+        {
+            await module.DisposeAsync();
+        }
+    }
+}

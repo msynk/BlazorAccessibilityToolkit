@@ -122,6 +122,40 @@ public sealed class RuntimeComponentTests(BrowserFixture browser, ComponentsHost
     }
 
     [Fact]
+    public async Task Roving_focus_groups_follow_the_toolbar_and_radio_group_patterns()
+    {
+        await using var component = await fixture.Host.RenderAsync<RovingProbe>(browser.Browser);
+
+        (await AriaPatterns.VerifyToolbarAsync(component.Page.GetByRole(AriaRole.Toolbar, new() { Name = "Formatting" }))).ShouldPass();
+        (await AriaPatterns.VerifyRadioGroupAsync(component.Page.GetByRole(AriaRole.Radiogroup, new() { Name = "Size" }))).ShouldPass();
+
+        // The checked radio button holds the group's tab stop.
+        await component.Keyboard()
+            .FocusOn(component.Page.GetByRole(AriaRole.Button, new() { Name = "Underline" }))
+            .PressTab()
+            .ExpectFocused("radio", new System.Text.RegularExpressions.Regex("^(Small|Medium|Large)$"))
+            .RunAsync();
+        (await component.AuditAsync()).ShouldHaveNoViolations();
+    }
+
+    [Fact]
+    public async Task Route_announcer_announces_enhanced_navigation_between_static_pages()
+    {
+        await using var session = await browser.Browser.NewSessionAsync();
+        await using var second = await fixture.Host.RenderAsync<StaticRoutePage>(session.Page, p => p.Add(c => c.Heading, "Second page"), HostedRenderMode.Static);
+        await using var first = await fixture.Host.RenderAsync<StaticRoutePage>(session.Page, p => p
+            .Add(c => c.Heading, "First page")
+            .Add(c => c.Next, second.Url.AbsoluteUri), HostedRenderMode.Static);
+        var monitor = await first.MonitorLiveRegionsAsync();
+
+        await session.Page.GetByRole(AriaRole.Link, new() { Name = "Next page" }).ClickAsync();
+        await session.Page.GetByRole(AriaRole.Heading, new() { Name = "Second page" }).WaitForAsync();
+
+        Assert.Equal("polite", (await monitor.ExpectUpdateAsync("Now on ")).Politeness);
+        Assert.Equal(second.Url.AbsoluteUri, session.Page.Url);
+    }
+
+    [Fact]
     public async Task Announcer_without_a_rendered_host_reports_that_nothing_was_announced()
     {
         var service = new LiveAnnouncerService();

@@ -31,6 +31,13 @@ public sealed record FocusOrderOptions
     /// </summary>
     public bool ReportObscuredFocus { get; init; } = true;
 
+    /// <summary>
+    /// Report <see cref="ToolkitRules.FocusOrderVisualMismatch"/> for a stop that leaves the visual reading order and
+    /// comes back: focus goes from A to C and then to B, where B is between A and C on screen. Layouts with columns,
+    /// where focus moves up to the next column, are not reported. Default <c>false</c>.
+    /// </summary>
+    public bool ReportVisualOrderMismatch { get; init; }
+
     /// <summary>How long to wait for focus to move after a key press before concluding it is stuck. Default 1 s.</summary>
     public TimeSpan SettleTimeout { get; init; } = TimeSpan.FromSeconds(1);
 }
@@ -77,6 +84,9 @@ public sealed record FocusStop
 
     /// <summary>Whether the element was covered by other content when it had focus.</summary>
     public FocusObscuration Obscuration { get; init; }
+
+    /// <summary>The element's box in page coordinates when it had focus.</summary>
+    public FocusBounds? Bounds { get; init; }
 
     /// <inheritdoc />
     public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"{Index + 1}. {Element}");
@@ -215,6 +225,7 @@ public static class FocusOrder
         var endKey = tabOrder.Length == 0 ? (int?)null : options.Reverse ? tabOrder[0].Key : tabOrder[^1].Key;
         var stops = new List<FocusStop>();
         var findings = new List<AccessibilityFinding>();
+        var rightToLeft = false;
         var positions = new Dictionary<int, int>();
         var termination = FocusOrderTermination.MaxStopsReached;
         IReadOnlyList<FocusStop> cycle = [];
@@ -258,7 +269,8 @@ public static class FocusOrder
                 }
             }
 
-            var stop = new FocusStop { Index = stops.Count, Element = element, Indicator = snapshot.Indicator, ModalContainer = snapshot.ModalContainer, Obscuration = snapshot.Obscuration };
+            var stop = new FocusStop { Index = stops.Count, Element = element, Indicator = snapshot.Indicator, ModalContainer = snapshot.ModalContainer, Obscuration = snapshot.Obscuration, Bounds = snapshot.Bounds };
+            rightToLeft |= snapshot.RightToLeft;
 
             if (positions.TryGetValue(element.ElementKey, out var firstIndex))
             {
@@ -349,6 +361,11 @@ public static class FocusOrder
             }
         }
 
+        if (options.ReportVisualOrderMismatch)
+        {
+            findings.AddRange(VisualOrderMismatches(options.Reverse ? stops.AsEnumerable().Reverse().ToList() : stops, rightToLeft));
+        }
+
         var reached = stops.Select(s => s.Element.ElementKey).ToHashSet();
         var unreached = termination is FocusOrderTermination.ReachedEnd or FocusOrderTermination.Wrapped && options.StartAfter is null
             ? candidates.Where(c => !reached.Contains(c.Key)).Select(c => c.Selector ?? "?").ToArray()
@@ -363,6 +380,46 @@ public static class FocusOrder
             UnreachedCandidates = unreached,
             Findings = findings,
         };
+    }
+
+    // A stop that is out of place: its neighbors are in visual reading order, but it is not between them.
+    private static IEnumerable<AccessibilityFinding> VisualOrderMismatches(IReadOnlyList<FocusStop> stops, bool rightToLeft)
+    {
+        for (var i = 1; i + 1 < stops.Count; i++)
+        {
+            if (stops[i - 1].Bounds is not { } previous || stops[i].Bounds is not { } current || stops[i + 1].Bounds is not { } next
+                || stops[i - 1].ModalContainer != stops[i].ModalContainer || stops[i].ModalContainer != stops[i + 1].ModalContainer)
+            {
+                continue;
+            }
+
+            if (VisuallyBefore(previous, next, rightToLeft)
+                && ((VisuallyBefore(current, previous, rightToLeft) && VisuallyBefore(current, next, rightToLeft))
+                    || (VisuallyBefore(previous, current, rightToLeft) && VisuallyBefore(next, current, rightToLeft))))
+            {
+                yield return ToolkitRules.FocusOrderVisualMismatch.CreateFinding(
+                    Target(stops[i].Element),
+                    remediation: $"Focus goes from {stops[i - 1].Element} to {stops[i].Element} and then to {stops[i + 1].Element}, but on screen {stops[i].Element} is not between them. {ToolkitRules.FocusOrderVisualMismatch.Remediation}",
+                    data: new Dictionary<string, string> { ["index"] = (i + 1).ToString(CultureInfo.InvariantCulture) });
+            }
+        }
+    }
+
+    // Reading order: a row above comes first; within a row (vertical overlap), the start side comes first.
+    private static bool VisuallyBefore(FocusBounds a, FocusBounds b, bool rightToLeft)
+    {
+        var tolerance = Math.Min(a.Height, b.Height) / 2;
+        if (a.Y + a.Height <= b.Y + tolerance)
+        {
+            return true;
+        }
+
+        if (b.Y + b.Height <= a.Y + tolerance)
+        {
+            return false;
+        }
+
+        return rightToLeft ? a.X + a.Width > b.X + b.Width + 1 : a.X + 1 < b.X;
     }
 
     /// <summary>Wraps focus-order findings into an audit for reporting.</summary>

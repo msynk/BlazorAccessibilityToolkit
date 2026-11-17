@@ -6,13 +6,25 @@
 @inject IJSRuntime JS
 @* Announces the new page after client-side navigation, like the route announcers of Next.js and SvelteKit. Blazor's
    router changes the page without loading a document, so screen readers say nothing unless focus moves (FocusOnNavigate)
-   or the change is announced. Use it when focus deliberately stays where it is. Requires an interactive render mode. *@
-<div style="@VisuallyHidden.Style" aria-live="polite" aria-atomic="true" data-ba11y-route-announcer>@message</div>
+   or the change is announced. Use it when focus deliberately stays where it is.
+   Interactive: .NET announces router navigation. Static: a module announces enhanced navigation ("enhancedload"). *@
+<div style="@VisuallyHidden.Style" aria-live="polite" aria-atomic="true" data-ba11y-route-announcer data-ba11y-format="@MessageFormat" data-ba11y-interactive="@(interactive ? "true" : null)">@message</div>
+@ScriptTag
 
 @code {
     private AccessibilityModule? module;
     private string message = string.Empty;
     private bool pending;
+    private bool interactive;
+
+    // Razor does not allow <script> in components, but static rendering must load the enhanced-navigation module.
+    private static readonly RenderFragment ScriptTag = builder =>
+    {
+        builder.OpenElement(0, "script");
+        builder.AddAttribute(1, "type", "module");
+        builder.AddAttribute(2, "src", "_content/BlazorAccessibilityToolkit.Components/route-announcer.js");
+        builder.CloseElement();
+    };
 
     /// <summary>The announcement; <c>{0}</c> is the page title (or the first heading, or the path). Default "Navigated to {0}".</summary>
     [Parameter] public string MessageFormat { get; set; } = "Navigated to {0}";
@@ -27,6 +39,14 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender)
+        {
+            // From now on, .NET announces; the static-rendering module leaves this region alone.
+            interactive = true;
+            StateHasChanged();
+            return;
+        }
+
         if (!pending)
         {
             return;

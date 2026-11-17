@@ -128,3 +128,98 @@ export async function currentPageName() {
     const text = heading ? (heading.textContent || '').replace(/\s+/g, ' ').trim() : '';
     return text || location.pathname;
 }
+
+// Roving tabindex for composite widgets (toolbar, tablist, radiogroup, listbox, menu, tree): one tab stop, arrow keys
+// move focus between items, Home and End go to the ends. Returns a handle whose dispose() removes the behavior.
+export function rovingFocus(container, options) {
+    options = Object.assign({ itemSelector: '', orientation: 'horizontal', wrap: true, selectionFollowsFocus: false }, options || {});
+    const items = () => Array.from(container.querySelectorAll(options.itemSelector))
+        .filter(el => !el.closest('[hidden], [inert]') && el.getAttribute('aria-disabled') !== 'true' && !el.disabled && el.getClientRects().length > 0);
+    const isCurrent = el => ['aria-selected', 'aria-checked', 'aria-pressed'].some(a => el.getAttribute(a) === 'true') || (el.getAttribute('aria-current') || 'false') !== 'false';
+    let active = null;
+
+    const apply = () => {
+        const list = items();
+        if (list.length === 0) {
+            return;
+        }
+
+        if (!active || !list.includes(active)) {
+            active = list.find(isCurrent) || list[0];
+        }
+
+        for (const el of list) {
+            el.tabIndex = el === active ? 0 : -1;
+        }
+    };
+
+    const move = (target) => {
+        active = target;
+        apply();
+        target.focus();
+        if (options.selectionFollowsFocus && !isCurrent(target)) {
+            target.click();
+        }
+    };
+
+    const keys = {
+        horizontal: { next: ['ArrowRight'], previous: ['ArrowLeft'] },
+        vertical: { next: ['ArrowDown'], previous: ['ArrowUp'] },
+        both: { next: ['ArrowRight', 'ArrowDown'], previous: ['ArrowLeft', 'ArrowUp'] },
+    }[options.orientation] || { next: ['ArrowRight'], previous: ['ArrowLeft'] };
+
+    const onKeyDown = event => {
+        if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
+            return;
+        }
+
+        const list = items();
+        const index = list.indexOf(document.activeElement);
+        if (index < 0) {
+            return;
+        }
+
+        let target = null;
+        if (keys.next.includes(event.key)) {
+            target = index + 1 < list.length ? list[index + 1] : (options.wrap ? list[0] : null);
+        } else if (keys.previous.includes(event.key)) {
+            target = index > 0 ? list[index - 1] : (options.wrap ? list[list.length - 1] : null);
+        } else if (event.key === 'Home') {
+            target = list[0];
+        } else if (event.key === 'End') {
+            target = list[list.length - 1];
+        } else {
+            return;
+        }
+
+        // The key belongs to the widget: do not scroll the page.
+        event.preventDefault();
+        if (target && target !== document.activeElement) {
+            move(target);
+        }
+    };
+
+    const onFocusIn = event => {
+        const list = items();
+        const item = list.find(el => el === event.target || el.contains(event.target));
+        if (item && item !== active) {
+            active = item;
+            apply();
+        }
+    };
+
+    // Blazor re-renders can add, remove or replace items: keep exactly one tab stop.
+    const observer = new MutationObserver(() => apply());
+    observer.observe(container, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-selected', 'aria-checked', 'aria-pressed', 'aria-current', 'aria-disabled', 'disabled', 'hidden'] });
+    container.addEventListener('keydown', onKeyDown);
+    container.addEventListener('focusin', onFocusIn);
+    apply();
+
+    return {
+        dispose() {
+            observer.disconnect();
+            container.removeEventListener('keydown', onKeyDown);
+            container.removeEventListener('focusin', onFocusIn);
+        },
+    };
+}

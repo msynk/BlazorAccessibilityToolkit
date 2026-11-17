@@ -1,0 +1,14 @@
+@using BlazorAccessibilityToolkit.Components
+<RouteAnnouncer MessageFormat="Now on {0}" />
+<main>
+    <h1>@Heading</h1>
+    @if (Next is not null)
+    {
+        <a href="@Next">Next page</a>
+    }
+</main>
+@code {
+    [Parameter] public string Heading { get; set; } = "Page";
+
+    [Parameter] public string? Next { get; set; }
+}

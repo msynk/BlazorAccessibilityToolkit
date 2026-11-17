@@ -258,6 +258,48 @@ public static class ToolkitRules
         Environments = [Markup, Browser],
     };
 
+    /// <summary>Keyboard focus leaves the visual reading order.</summary>
+    public static AccessibilityRule FocusOrderVisualMismatch { get; } = new()
+    {
+        Id = "blazor-focus-order-visual-mismatch",
+        Description = "Keyboard focus should follow the visual reading order. A stop that jumps ahead and then comes back confuses keyboard users and people who use a screen magnifier.",
+        Help = "Focus order does not follow the visual order",
+        Remediation = "Make the DOM order match the visual order: avoid positive tabindex, and CSS order, flex-direction: row-reverse or absolute positioning that moves controls away from their place in the markup.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Moderate,
+        Wcag = ["2.4.3", "1.3.2"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html",
+        Environments = [Browser],
+    };
+
+    /// <summary>A virtualized list renders a subset of its items without telling assistive technologies the real size.</summary>
+    public static AccessibilityRule VirtualizedSetSize { get; } = new()
+    {
+        Id = "blazor-virtualized-set-size",
+        Description = "A list rendered with <Virtualize> only contains the visible items. Each item should expose its position and the total with aria-posinset and aria-setsize, otherwise screen readers announce \"list, 21 items\" for a list of 1000.",
+        Help = "Virtualized items do not expose their position and the set size",
+        Remediation = "Add aria-setsize=\"@total\" and aria-posinset=\"@(index + 1)\" to each item in the Virtualize ItemContent (and the matching role, such as listitem or row, if the item is not a native list item or table row).",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Moderate,
+        Wcag = ["1.3.1"],
+        HelpUrl = "https://www.w3.org/TR/wai-aria-1.2/#aria-setsize",
+        Environments = [Browser],
+    };
+
+    /// <summary>Two interactive elements occupy the same area.</summary>
+    public static AccessibilityRule DuplicateClickableBounds { get; } = new()
+    {
+        Id = "blazor-duplicate-clickable-bounds",
+        Description = "An interactive element nested in another one with the same size and position is two targets in one place: screen readers announce both, and pointer users cannot tell which one they activate.",
+        Help = "Two interactive elements share the same area",
+        Remediation = "Keep one interactive element: remove the click handler or tabindex from the wrapper, or make the inner element non-interactive.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Minor,
+        IsBestPractice = true,
+        HelpUrl = "https://developer.android.com/guide/topics/ui/accessibility/testing#duplicate-clickable-bounds",
+        Environments = [Browser],
+    };
+
     /// <summary>Help mechanisms appear in a different place or order across pages.</summary>
     public static AccessibilityRule HelpInconsistent { get; } = new()
     {
@@ -628,9 +670,9 @@ public static class ToolkitRules
     [
         ClickHandlerSemantics, ValidationMessageAssociation, InvalidWithoutErrorReference, DuplicateId, DuplicateIdReferenced,
         IdReferenceMissing, RadioGroupUngrouped, FieldsetMissingLegend, ExpandedStateMismatch, TabSelectionMismatch,
-        NavLinkCurrent, InputPurposeMissing, RequiredNotExposed, ErrorUiNotAccessible, PasteBlocked, DraggingAlternative, RedundantEntry, FragmentLinkLeavesPage, AmbiguousLinkName, RoleInName, ReconnectUiNotAccessible, HelpInconsistent,
+        NavLinkCurrent, InputPurposeMissing, RequiredNotExposed, ErrorUiNotAccessible, PasteBlocked, DraggingAlternative, RedundantEntry, FragmentLinkLeavesPage, AmbiguousLinkName, RoleInName, ReconnectUiNotAccessible, HelpInconsistent, VirtualizedSetSize, DuplicateClickableBounds,
         MarkupImageAlt, MarkupControlName, MarkupFormLabel, MarkupAriaHiddenFocusable, MarkupInvalidAriaAttribute, MarkupInvalidRole, MarkupPositiveTabIndex,
-        FocusStuck, FocusTrap, FocusHiddenTarget, FocusIndicatorNotDetected, FocusRepeated, FocusObscured,
+        FocusStuck, FocusTrap, FocusHiddenTarget, FocusIndicatorNotDetected, FocusRepeated, FocusObscured, FocusOrderVisualMismatch,
         ReflowHorizontalScroll, TextSpacingClipped, MotionNotReduced, OrientationLocked, TargetSizeEnhanced,
         LiveRegionInsertedWithContent, LiveRegionHiddenUpdate, LiveRegionPolitenessConflict,
     ];

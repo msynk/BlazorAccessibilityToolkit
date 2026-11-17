@@ -330,7 +330,10 @@
       const modal = modalContainer(el);
       const fi = focusIndicator(el);
       const ob = obscuration(el);
+      const r = el.getBoundingClientRect();
       return {
+        bounds: { x: r.left + window.scrollX, y: r.top + window.scrollY, width: r.width, height: r.height },
+        rtl: getComputedStyle(document.documentElement).direction === 'rtl',
         hasFocus: document.hasFocus(),
         element: info,
         modal: modal ? selectorFor(modal) : null,
@@ -617,6 +620,40 @@
         const name = norm(describe(axe, links[0].el).name);
         report('blazor-ambiguous-link-name', links[0].el, { name, links: String(links.length), destinations: String(destinations.size) },
           links.length + ' links are named "' + name + '" but lead to ' + destinations.size + ' different destinations. Make each name say where it goes, for example with visually hidden text.');
+      }
+
+      // <Virtualize> renders only the visible items between two aria-hidden spacers ("height: Npx; flex-shrink: 0").
+      // When a spacer stands for omitted items, each item should expose aria-posinset and aria-setsize.
+      const isSpacer = (el) => el.localName === 'div' && el.getAttribute('aria-hidden') === 'true' && el.children.length === 0
+        && /height:\s*[\d.]+px;\s*flex-shrink:\s*0/.test(el.getAttribute('style') || '');
+      const virtualContainers = new Set();
+      for (const el of all) {
+        if (isSpacer(el) && el.parentElement && parseFloat((/height:\s*([\d.]+)px/.exec(el.getAttribute('style')) || [])[1] || '0') > 0) virtualContainers.add(el.parentElement);
+      }
+      for (const container of virtualContainers) {
+        if (!inScope(container, root, exclude)) continue;
+        const items = Array.from(container.children).filter((c) => !isSpacer(c) && !/^(script|template|style)$/.test(c.localName));
+        if (items.length === 0) continue;
+        const positioned = (item) => item.hasAttribute('aria-setsize') && item.hasAttribute('aria-posinset')
+          || !!item.querySelector('[aria-setsize][aria-posinset]');
+        const missing = items.filter((item) => !positioned(item)).length;
+        if (missing > 0) {
+          report('blazor-virtualized-set-size', container, { rendered: String(items.length), withoutPosition: String(missing) },
+            'This virtualized list renders ' + items.length + ' items, ' + missing + ' of them without aria-posinset and aria-setsize, so screen readers announce only the rendered items. Add aria-setsize="@total" and aria-posinset="@(index + 1)" to each item.');
+        }
+      }
+
+      // Two interactive elements with the same box: one target announced twice (Android ATF DuplicateClickableBounds).
+      const interactiveSelector = 'a[href], button, input:not([type=hidden]), select, textarea, summary, [role=button], [role=link], [role=checkbox], [role=menuitem], [role=option], [role=tab], [tabindex]:not([tabindex="-1"])';
+      for (const el of all) {
+        if (!el.matches(interactiveSelector) || !isVisible(el)) continue;
+        const outer = el.parentElement && el.parentElement.closest(interactiveSelector);
+        if (!outer || !isVisible(outer)) continue;
+        const a = el.getBoundingClientRect(), b = outer.getBoundingClientRect();
+        if (Math.abs(a.left - b.left) <= 1 && Math.abs(a.top - b.top) <= 1 && Math.abs(a.width - b.width) <= 1 && Math.abs(a.height - b.height) <= 1) {
+          report('blazor-duplicate-clickable-bounds', el, { outer: selectorFor(outer) },
+            'This element and the interactive element around it (' + startTag(outer) + ') have the same size and position. Keep only one of them interactive.');
+        }
       }
 
       // The .NET reconnect modal: a named dialog whose status changes are announced.

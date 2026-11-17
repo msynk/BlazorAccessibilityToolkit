@@ -89,3 +89,16 @@ public static class AccessibilityServiceCollectionExtensions
         return services;
     }
 }
+
+/// <summary>Which arrow keys move focus in a <see cref="RovingFocusGroup"/>.</summary>
+public enum RovingOrientation
+{
+    /// <summary>ArrowLeft and ArrowRight (toolbars, tabs).</summary>
+    Horizontal,
+
+    /// <summary>ArrowUp and ArrowDown (menus, listboxes, vertical tabs).</summary>
+    Vertical,
+
+    /// <summary>All four arrow keys (radio groups).</summary>
+    Both,
+}

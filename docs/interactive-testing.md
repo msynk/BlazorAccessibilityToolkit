@@ -97,6 +97,10 @@ A positive `tabindex` is reported, not judged. Whether an order is *logical* nee
 
 **WebKit** follows Safari's default settings and does not move focus to links with Tab. Write browser-aware expectations or run focus-order tests in Chromium and Firefox.
 
+### Visual order
+
+With `new FocusOrderOptions { ReportVisualOrderMismatch = true }`, the capture reports `blazor-focus-order-visual-mismatch` (2.4.3, 1.3.2) for a stop that leaves the visual reading order and comes back. For example, focus goes from A to C and then to B, while B is between A and C on screen, as CSS `order`, `row-reverse` or a positive `tabindex` cause. Moving up to the next column of a layout is not reported, and right-to-left documents are read from the right. Every `FocusStop` records its `Bounds` in page coordinates.
+
 ### Focus appearance and obscured focus
 
 Before tabbing, the capture records the unfocused style of every focusable element: outline, border, box-shadow, background, color, text decoration, font weight, transform, filter and opacity, of the element, its `::before` and `::after`, and its parent (for `:focus-within` styles). A stop counts as indicated when anything visible changed on focus. Properties without a visible effect, such as an `outline-offset` while `outline-style` is `none`, do not count. Elements focused without a recorded baseline fall back to "has an outline or box-shadow".

@@ -493,6 +493,7 @@ static class BlazorAccessibilityToolkit.Rules.ToolkitRules
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule AmbiguousLinkName { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ClickHandlerSemantics { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule DraggingAlternative { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule DuplicateClickableBounds { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule DuplicateId { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule DuplicateIdReferenced { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ErrorUiNotAccessible { get; }
@@ -502,6 +503,7 @@ static class BlazorAccessibilityToolkit.Rules.ToolkitRules
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusHiddenTarget { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusIndicatorNotDetected { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusObscured { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusOrderVisualMismatch { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusRepeated { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusStuck { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusTrap { get; }
@@ -534,6 +536,7 @@ static class BlazorAccessibilityToolkit.Rules.ToolkitRules
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule TargetSizeEnhanced { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule TextSpacingClipped { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ValidationMessageAssociation { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule VirtualizedSetSize { get; }
   static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Rules.AccessibilityRule> All { get; }
 static class BlazorAccessibilityToolkit.ScreenReaderTranscript
   static System.Collections.Generic.IReadOnlySet<System.String> AtomicRoles { get; }

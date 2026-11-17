@@ -1,0 +1,22 @@
+@using BlazorAccessibilityToolkit.Components
+<style>button, [role=radio] { min-height: 32px; min-width: 32px; margin: 4px; }</style>
+<main>
+    <h1>Roving focus</h1>
+    <RovingFocusGroup aria-label="Formatting">
+        <button type="button" aria-pressed="@(bold ? "true" : "false")" @onclick="() => bold = !bold">Bold</button>
+        <button type="button">Italic</button>
+        <button type="button">Underline</button>
+    </RovingFocusGroup>
+    <RovingFocusGroup Role="radiogroup" Orientation="RovingOrientation.Both" SelectionFollowsFocus="true" aria-label="Size">
+        @foreach (var size in sizes)
+        {
+            <div role="radio" aria-checked="@(size == selected ? "true" : "false")" @onclick="() => selected = size">@size</div>
+        }
+    </RovingFocusGroup>
+    <button type="button">After</button>
+</main>
+@code {
+    private readonly string[] sizes = ["Small", "Medium", "Large"];
+    private string selected = "Medium";
+    private bool bold;
+}

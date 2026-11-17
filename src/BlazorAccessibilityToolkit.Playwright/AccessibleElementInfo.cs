@@ -124,6 +124,12 @@ public sealed record FocusSnapshot
     /// <summary>Selector of the element covering the focused element, when <see cref="Obscuration"/> reports one.</summary>
     public string? ObscuredBy { get; init; }
 
+    /// <summary>The element's box in page coordinates (CSS pixels), when known.</summary>
+    public FocusBounds? Bounds { get; init; }
+
+    /// <summary>True when the document's direction is right to left.</summary>
+    public bool RightToLeft { get; init; }
+
     /// <inheritdoc />
     public override string ToString() => Element?.ToString() ?? "(no focused element)";
 
@@ -150,5 +156,23 @@ public sealed record FocusSnapshot
                 _ => FocusObscuration.Unknown,
             },
             ObscuredBy = dto.ObscuredBy,
+            Bounds = dto.Bounds,
+            RightToLeft = dto.Rtl,
         };
+}
+
+/// <summary>A box in page coordinates (CSS pixels, including the scroll offset).</summary>
+public sealed record FocusBounds
+{
+    /// <summary>Left edge.</summary>
+    public double X { get; init; }
+
+    /// <summary>Top edge.</summary>
+    public double Y { get; init; }
+
+    /// <summary>Width.</summary>
+    public double Width { get; init; }
+
+    /// <summary>Height.</summary>
+    public double Height { get; init; }
 }

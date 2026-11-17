@@ -29,6 +29,20 @@ class BlazorAccessibilityToolkit.Components.RouteAnnouncer : Microsoft.AspNetCor
   System.String MessageFormat { get; set; }
   System.Threading.Tasks.ValueTask DisposeAsync()
   ctor()
+class BlazorAccessibilityToolkit.Components.RovingFocusGroup : Microsoft.AspNetCore.Components.ComponentBase
+  BlazorAccessibilityToolkit.Components.RovingOrientation Orientation { get; set; }
+  Microsoft.AspNetCore.Components.RenderFragment ChildContent { get; set; }
+  System.Boolean SelectionFollowsFocus { get; set; }
+  System.Boolean Wrap { get; set; }
+  System.Collections.Generic.IReadOnlyDictionary<System.String, System.Object> AdditionalAttributes { get; set; }
+  System.String ItemSelector { get; set; }
+  System.String Role { get; set; }
+  System.Threading.Tasks.ValueTask DisposeAsync()
+  ctor()
+enum BlazorAccessibilityToolkit.Components.RovingOrientation
+  Horizontal
+  Vertical
+  Both
 class BlazorAccessibilityToolkit.Components.SkipLink : Microsoft.AspNetCore.Components.ComponentBase
   Microsoft.AspNetCore.Components.RenderFragment ChildContent { get; set; }
   System.Collections.Generic.IReadOnlyDictionary<System.String, System.Object> AdditionalAttributes { get; set; }

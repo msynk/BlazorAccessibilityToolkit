@@ -4,21 +4,18 @@ We have compared the toolkit with accessibility tools in other stacks twice. [AD
 
 ## Planned
 
-1. **More runtime helpers.** `BlazorAccessibilityToolkit.Components` now has the live announcer, skip link, focus trap, route announcer and visually hidden text. Still missing:
-   - roving-tabindex and active-descendant keyboard helpers for composite widgets (Angular CDK's `ListKeyManager`),
-   - a route announcer for enhanced navigation in static SSR, which has no circuit to run the component.
-   - **What makes it hard:** the keyboard helpers need a small, render-mode independent API. The static SSR announcer needs a script that listens to `enhancedload`.
+1. **Active-descendant keyboard helper** for comboboxes and listboxes that keep DOM focus on the input (Angular CDK's `ActiveDescendantKeyManager`), and typeahead in `RovingFocusGroup`.
+   - **What makes it hard:** active-descendant widgets differ in where the input and the popup live, and need a small API that covers both.
 2. **Render-mode and lifecycle checks** that only apply to Blazor:
    - focus lost when prerendered content becomes interactive,
    - enhanced navigation that neither moves focus nor announces the page,
    - `[StreamRendering]` placeholders without `aria-busy`,
-   - `<Virtualize>` rows without `aria-setsize`/`aria-posinset`, and focus lost when rows are recycled,
+   - focus lost when `<Virtualize>` recycles the focused row (missing `aria-setsize`/`aria-posinset` is checked),
    - QuickGrid sort state and page changes that are not announced.
    - The .NET 10 reconnect modal is checked (`blazor-reconnect-ui-not-accessible`).
    - **What makes it hard:** each needs a scenario that drives the render mode, not a static check.
-3. **Nested clickables with identical bounds**, as Android ATF's `DuplicateClickableBoundsCheck` reports. Duplicate names, role words in names and a 44/48 pixel target profile are done.
-4. **Tab-stop visualization.** A numbered tab-stop overlay screenshot in the HTML report, and a check that visual order follows DOM order, as Accessibility Insights FastPass does.
-5. **Standards updates:**
+3. **Tab-stop visualization.** A numbered tab-stop overlay screenshot in the HTML report, as Accessibility Insights FastPass shows. The visual-order check is done, and `FocusStop.Bounds` already records the boxes.
+4. **Standards updates:**
    - EN 301 549 V4.1.1 clause mapping once V4 is cited in the Official Journal,
    - RGAA and BITV tag presets,
    - axe-core 4.14.1 once Deque.AxeCore.Playwright ships it.
@@ -45,6 +42,7 @@ These items were planned before and are now available:
 - route discovery,
 - conformance report export,
 - runtime helpers (live announcer, skip link, focus trap, route announcer, visually hidden),
-- consistent help (3.2.6), duplicate link names, role words in names, a 44 pixel target profile and the reconnect modal check.
+- consistent help (3.2.6), duplicate link names, role words in names, a 44 pixel target profile and the reconnect modal check,
+- roving focus groups, a route announcer for static rendering, `<Virtualize>` set sizes and duplicate clickable bounds.
 
 See [ADR 0003](adr/0003-second-survey.md).

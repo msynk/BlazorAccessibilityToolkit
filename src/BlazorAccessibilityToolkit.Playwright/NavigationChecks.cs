@@ -138,4 +138,67 @@ public static class NavigationChecks
 
         public bool FocusIsHeading { get; set; }
     }
+
+    /// <summary>
+    /// Verifies that focus a user places while a prerendered page is loading survives the moment the page becomes
+    /// interactive (WCAG 2.4.3, 3.2.1). Blazor's <c>&lt;FocusOnNavigate&gt;</c> runs on the router's first interactive
+    /// render and moves focus to its selector, so a keyboard user who already tabbed into the page is sent back to the
+    /// heading; re-rendered elements can also lose focus to the document body.
+    /// </summary>
+    /// <param name="page">The page to load <paramref name="url"/> in.</param>
+    /// <param name="url">The prerendered page.</param>
+    /// <param name="target">The element to focus as soon as it is rendered, for example a navigation link.</param>
+    /// <param name="isInteractive">Reports whether the page is interactive, for example by checking a marker your layout sets in <c>OnAfterRender</c>.</param>
+    /// <param name="timeout">How long to wait for interactivity. Default 10 s.</param>
+    public static async Task<PatternVerification> VerifyFocusSurvivesInteractivityAsync(IPage page, string url, Func<IPage, ILocator> target, Func<IPage, Task<bool>> isInteractive, TimeSpan? timeout = null)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        ArgumentException.ThrowIfNullOrWhiteSpace(url);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(isInteractive);
+        var checks = new List<PatternCheck>();
+        await page.GotoAsync(url, new PageGotoOptions { WaitUntil = WaitUntilState.Commit }).ConfigureAwait(false);
+        var element = target(page);
+        await element.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Attached }).ConfigureAwait(false);
+
+        if (await isInteractive(page).ConfigureAwait(false))
+        {
+            checks.Add(new("The target receives focus before the page is interactive", false, "the page was already interactive; slow the connection down (for example with page.RouteAsync and a delay for _framework/blazor.web.js) to verify the prerendered phase"));
+            return new PatternVerification { Pattern = "Focus during prerendering", Checks = checks };
+        }
+
+        await element.FocusAsync().ConfigureAwait(false);
+        await ToolkitScript.EnsureAsync(page).ConfigureAwait(false);
+        var focused = await page.GetFocusAsync().ConfigureAwait(false);
+        var before = focused.Element is { } was ? (was.Name + "|" + was.TagName) : null;
+        checks.Add(new("The target receives focus before the page is interactive", before is not null, before));
+        if (before is null)
+        {
+            return new PatternVerification { Pattern = "Focus during prerendering", Checks = checks };
+        }
+
+        var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(10));
+        var interactive = false;
+        while (DateTime.UtcNow < deadline && !(interactive = await isInteractive(page).ConfigureAwait(false)))
+        {
+            await Task.Delay(25).ConfigureAwait(false);
+        }
+
+        checks.Add(new("The page becomes interactive", interactive));
+        if (!interactive)
+        {
+            return new PatternVerification { Pattern = "Focus during prerendering", Checks = checks };
+        }
+
+        // Let first-render work (OnAfterRender, FocusOnNavigate) finish.
+        await page.WaitForTimeoutAsync(300).ConfigureAwait(false);
+        await ToolkitScript.EnsureAsync(page).ConfigureAwait(false);
+        var focus = await page.GetFocusAsync().ConfigureAwait(false);
+        var after = focus.Element is { } now ? (now.Name + "|" + now.TagName) : null;
+        var kept = after is not null && string.Equals(Normalize(after), Normalize(before), StringComparison.Ordinal);
+        checks.Add(new("Focus stays on the target when the page becomes interactive", kept, $"focus moved to {focus}"));
+        return new PatternVerification { Pattern = "Focus during prerendering", Checks = checks };
+    }
+
+    private static string Normalize(string value) => string.Join(' ', value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
 }

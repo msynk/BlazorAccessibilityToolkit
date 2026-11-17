@@ -17,6 +17,8 @@ builder.Services.AddAccessibilityComponents();   // ILiveAnnouncer
 | [`LiveAnnouncer`](#liveannouncer-and-iliveannouncer) and `ILiveAnnouncer` | Status messages that screen readers announce, including repeated ones | interactive |
 | [`SkipLink`](#skiplink) | A skip link that works with Blazor's `<base href="/">` and moves focus | static and interactive |
 | [`FocusTrap`](#focustrap) | Focus kept inside dialogs and drawers, then restored | interactive |
+| [`NavigationFocus`](#navigationfocus) | Focus moved to the new page after navigation, without taking it away from users while a prerendered page becomes interactive | interactive |
+| [`ActiveDescendantGroup`](#activedescendantgroup) | `aria-activedescendant` navigation for listboxes and comboboxes that keep focus on one element | interactive |
 | [`RovingFocusGroup`](#rovingfocusgroup) | One tab stop and arrow-key navigation for toolbars, tabs, radio groups, listboxes and menus | interactive |
 | [`RouteAnnouncer`](#routeannouncer) | Client-side navigation announced to screen readers | static (enhanced navigation) and interactive |
 | [`VisuallyHidden`](#visuallyhidden) | Text for screen readers only | any |
@@ -116,8 +118,44 @@ It implements the roving tabindex of the WAI-ARIA Authoring Practices, like Angu
 - `SelectionFollowsFocus` clicks the item that receives focus, for tabs with automatic activation and radio groups.
 - Items that Blazor adds, removes or re-renders are picked up. Hidden, `inert`, disabled and `aria-disabled` items are skipped.
 - `ItemSelector` chooses the items. By default these are elements with an item role (radio, tab, option, menuitem, treeitem), or buttons and links.
+- `Typeahead` moves focus to the item that starts with the letters typed within half a second. A repeated letter cycles through the items that start with it.
 
 Check the result with `AriaPatterns.VerifyToolbarAsync`, `VerifyRadioGroupAsync`, `VerifyTabsAsync` or `VerifyListboxAsync`.
+
+## ActiveDescendantGroup
+
+```razor
+<label for="fruit">Fruit</label>
+<input id="fruit" role="combobox" aria-autocomplete="list" aria-expanded="@(open ? "true" : "false")"
+       aria-controls="fruit-list" value="@value" @onkeydown="OpenOnArrowDown" />
+<ActiveDescendantGroup id="fruit-list" OwnerId="fruit" aria-label="Fruits" hidden="@(!open)">
+    @foreach (var fruit in fruits)
+    {
+        <div role="option" aria-selected="false" @onclick="() => Choose(fruit)">@fruit</div>
+    }
+</ActiveDescendantGroup>
+
+<ActiveDescendantGroup aria-label="Colors">                      @* a focusable listbox *@
+    <div role="option" aria-selected="false">Red</div> ...
+</ActiveDescendantGroup>
+```
+
+DOM focus stays on one element, the owner: the group itself, or the element with `OwnerId`, such as a combobox input. Arrow keys move the active item, which gets an id if it has none and is referenced with `aria-activedescendant`. The active item is marked with `data-active` (style it) and, with `SelectionFollowsFocus` (the default), `aria-selected="true"`. Enter clicks the active item. When the group has focus itself, Home, End and type-to-search work too. While the popup is collapsed (no visible items), keys go to your own handlers, for example to open it with ArrowDown. When the active item disappears, `aria-activedescendant` is removed. Verify with `AriaPatterns.VerifyComboboxAsync` and `VerifyListboxAsync`.
+
+## NavigationFocus
+
+```razor
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
+        <NavigationFocus RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>
+```
+
+A replacement for Blazor's `<FocusOnNavigate>` that fixes a problem with prerendering. A keyboard user can tab into a prerendered page before it becomes interactive. Then two things go wrong: Blazor replaces the prerendered DOM, so the focused element disappears and focus falls back to the body; and `FocusOnNavigate` runs on the router's first interactive render and moves focus to the heading. Either way, the user is sent back to the top of the page.
+
+`NavigationFocus` renders a small script that remembers what the user focuses while the page is prerendered. When the page becomes interactive, it restores focus to the same element in the new DOM. After every later navigation it moves focus to `Selector`, as `FocusOnNavigate` does, and on the first load it does so only when the user had not focused anything. `NavigationChecks.VerifyFocusSurvivesInteractivityAsync` tests this behavior, and the analyzer rule `BA11Y032` accepts either component.
 
 ## RouteAnnouncer
 

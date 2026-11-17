@@ -62,6 +62,21 @@ public sealed class LiveRegionTests(BrowserFixture browser)
     }
 
     [Fact]
+    public async Task Text_node_changes_in_one_mutation_batch_keep_their_own_values()
+    {
+        await using var session = await browser.PageAsync(Page);
+        await session.Page.EvaluateAsync("() => document.getElementById('status').append('Ready')");
+        var monitor = await LiveRegionMonitor.StartAsync(session.Page);
+
+        // Blazor updates text in place (one text node, changed twice in the same task), as when a save fails at once.
+        await session.Page.EvaluateAsync("() => { const t = document.getElementById('status').firstChild; t.data = 'Saving…'; t.data = 'Could not save'; }");
+
+        var changes = await monitor.GetChangesAsync();
+        Assert.Equal(["Saving…", "Could not save"], changes.Select(c => c.AddedText));
+        await monitor.ExpectUpdateAsync("Saving");
+    }
+
+    [Fact]
     public async Task Missing_update_fails_with_observed_updates_and_limitation()
     {
         await using var session = await browser.PageAsync(Page);

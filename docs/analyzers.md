@@ -47,7 +47,7 @@ Pages/Cart.razor(14,6): warning BA11Y001: <div> has a Blazor @onclick handler, b
 | <a id="ba11y029"></a>`BA11Y029` | Viewport meta tag with `user-scalable=no` or a `maximum-scale` below 2 | 1.4.4 |
 | <a id="ba11y030"></a>`BA11Y030` | `<meta http-equiv="refresh">` with a delay | 2.2.1, 3.2.5 |
 | <a id="ba11y031"></a>`BA11Y031` | Routable component (`@page` or `@attribute [Route]`) without `<PageTitle>` | 2.4.2 |
-| <a id="ba11y032"></a>`BA11Y032` | `<Router>` without `<FocusOnNavigate>`, so focus stays on the clicked link after client-side navigation | 2.4.3 |
+| <a id="ba11y032"></a>`BA11Y032` | `<Router>` without `<FocusOnNavigate>` (or the toolkit's [`<NavigationFocus>`](runtime-components.md#navigationfocus)), so focus stays on the clicked link after client-side navigation | 2.4.3 |
 | <a id="ba11y033"></a>`BA11Y033` | Paste blocked with `@onpaste:preventDefault` (static, not `="@condition"`) or `onpaste="return false"`, or a password field with `autocomplete="off"` | 3.3.8 |
 | <a id="ba11y034"></a>`BA11Y034` | `draggable="true"`, `@ondragstart`, `@ondrag` or `@ondrop` (info): check that a single-pointer alternative exists | 2.5.7 |
 | <a id="ba11y035"></a>`BA11Y035` | `aria-expanded`, `aria-pressed`, `aria-checked` or `aria-selected` bound to a bool. Blazor leaves out an attribute whose value is `false`, so the collapsed, unpressed or unchecked state is never exposed. See [ARIA states bound to bools](#aria-states-bound-to-bools) | 4.1.2 |

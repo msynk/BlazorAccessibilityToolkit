@@ -2,7 +2,9 @@
     <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
         <Found Context="routeData">
             <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
-            <FocusOnNavigate RouteData="routeData" Selector="h1" />
+            @* Unlike Blazor's FocusOnNavigate, NavigationFocus does not take focus away from a keyboard user who tabbed
+               into the page while it was prerendered. *@
+            <BlazorAccessibilityToolkit.Components.NavigationFocus RouteData="routeData" Selector="h1" />
         </Found>
     </Router>
 </CascadingValue>

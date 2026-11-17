@@ -164,6 +164,7 @@ public sealed class AdditionalRuleTests
             """;
         Assert.Equal(["BA11Y032"], Ids(routes));
         Assert.Empty(Ids(routes.Replace("<RouteView", "<FocusOnNavigate RouteData=\"routeData\" Selector=\"h1\" />\n<RouteView", StringComparison.Ordinal)));
+        Assert.Empty(Ids(routes.Replace("<RouteView", "<NavigationFocus RouteData=\"routeData\" />\n<RouteView", StringComparison.Ordinal)));
     }
 
     [Fact]

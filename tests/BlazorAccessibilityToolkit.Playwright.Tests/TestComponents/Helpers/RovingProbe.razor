@@ -7,7 +7,7 @@
         <button type="button">Italic</button>
         <button type="button">Underline</button>
     </RovingFocusGroup>
-    <RovingFocusGroup Role="radiogroup" Orientation="RovingOrientation.Both" SelectionFollowsFocus="true" aria-label="Size">
+    <RovingFocusGroup Role="radiogroup" Orientation="RovingOrientation.Both" SelectionFollowsFocus="true" Typeahead="true" aria-label="Size">
         @foreach (var size in sizes)
         {
             <div role="radio" aria-checked="@(size == selected ? "true" : "false")" @onclick="() => selected = size">@size</div>

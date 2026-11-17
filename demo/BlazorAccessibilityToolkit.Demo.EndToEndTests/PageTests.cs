@@ -321,4 +321,41 @@ public sealed class PageTests(AppFixture app)
         Assert.Equal(routes.Count, result.Audits.Count);
         result.ShouldHaveNoViolations();
     }
+
+    /// <summary>
+    /// A keyboard user can tab into the prerendered page before it becomes interactive. Blazor's FocusOnNavigate would
+    /// then move focus to the heading; the layout's NavigationFocus leaves it where the user put it.
+    /// </summary>
+    [Fact]
+    public async Task Focus_placed_during_prerendering_survives_interactivity()
+    {
+        await using var session = await app.Browser.NewSessionAsync();
+
+        // Hold back blazor.web.js briefly, so that there is time to focus the prerendered link.
+        await session.Page.RouteAsync("**/_framework/blazor.web.js*", async route =>
+        {
+            await Task.Delay(500);
+            await route.ContinueAsync();
+        });
+
+        var result = await NavigationChecks.VerifyFocusSurvivesInteractivityAsync(
+            session.Page,
+            app.Url("/keyboard"),
+            page => page.GetByRole(AriaRole.Link, new() { Name = "Focus order" }).First,
+            async page => await page.Locator("main[data-interactive=true]").CountAsync() > 0);
+
+        result.ShouldPass();
+    }
+
+    /// <summary>After a client-side navigation, NavigationFocus moves focus to the new page's heading.</summary>
+    [Fact]
+    public async Task Client_side_navigation_moves_focus_to_the_new_heading()
+    {
+        await using var session = await app.OpenAsync("/keyboard");
+
+        var result = await NavigationChecks.VerifyNavigationAsync(session.Page.GetByRole(AriaRole.Navigation).GetByRole(AriaRole.Link, new() { Name = "Focus order", Exact = true }).First);
+
+        result.ShouldPass();
+        Assert.Equal("h1", (await session.Page.GetFocusAsync()).Element?.TagName);
+    }
 }

@@ -35,6 +35,9 @@
     /// <summary>Activate (click) the item that receives focus, as tabs with automatic activation and radio groups do. Default <c>false</c>.</summary>
     [Parameter] public bool SelectionFollowsFocus { get; set; }
 
+    /// <summary>Typing the first letters of an item moves focus to it, as in menus and listboxes. Default <c>false</c>.</summary>
+    [Parameter] public bool Typeahead { get; set; }
+
     /// <summary>Other attributes for the container (aria-label, aria-labelledby, class ...).</summary>
     [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
@@ -49,7 +52,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var options = $"{Selector}|{Orientation}|{Wrap}|{SelectionFollowsFocus}";
+        var options = $"{Selector}|{Orientation}|{Wrap}|{SelectionFollowsFocus}|{Typeahead}";
         if (options == appliedOptions)
         {
             return;
@@ -66,6 +69,7 @@
                 orientation = Orientation.ToString().ToLowerInvariant(),
                 wrap = Wrap,
                 selectionFollowsFocus = SelectionFollowsFocus,
+                typeahead = Typeahead,
             });
         }
         catch (JSDisconnectedException)

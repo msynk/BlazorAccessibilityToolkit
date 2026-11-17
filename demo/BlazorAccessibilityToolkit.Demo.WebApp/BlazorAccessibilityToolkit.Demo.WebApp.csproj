@@ -6,6 +6,7 @@
   -->
   <ItemGroup>
     <ProjectReference Include="..\BlazorAccessibilityToolkit.Demo.Components\BlazorAccessibilityToolkit.Demo.Components.csproj" />
+    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Components\BlazorAccessibilityToolkit.Components.csproj" />
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.ComponentTesting\BlazorAccessibilityToolkit.ComponentTesting.csproj" />
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Playwright\BlazorAccessibilityToolkit.Playwright.csproj" />
   </ItemGroup>

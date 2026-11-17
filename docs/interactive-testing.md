@@ -101,6 +101,15 @@ A positive `tabindex` is reported, not judged. Whether an order is *logical* nee
 
 With `new FocusOrderOptions { ReportVisualOrderMismatch = true }`, the capture reports `blazor-focus-order-visual-mismatch` (2.4.3, 1.3.2) for a stop that leaves the visual reading order and comes back. For example, focus goes from A to C and then to B, while B is between A and C on screen, as CSS `order`, `row-reverse` or a positive `tabindex` cause. Moving up to the next column of a layout is not reported, and right-to-left documents are read from the right. Every `FocusStop` records its `Bounds` in page coordinates.
 
+### Tab-stop overlay
+
+```csharp
+var order = await page.CaptureFocusOrderAsync(new FocusOrderOptions { ReportVisualOrderMismatch = true });
+var png = await order.SaveTabStopOverlayAsync(page, "artifacts/checkout-tab-stops.png");
+```
+
+This saves a full-page screenshot with every stop outlined and numbered, connected in focus order, as Accessibility Insights' tab-stop visualization shows. Stops with findings are drawn in red. Attach the image to test results or the manual review of focus order (2.4.3).
+
 ### Focus appearance and obscured focus
 
 Before tabbing, the capture records the unfocused style of every focusable element: outline, border, box-shadow, background, color, text decoration, font weight, transform, filter and opacity, of the element, its `::before` and `::after`, and its parent (for `:focus-within` styles). A stop counts as indicated when anything visible changed on focus. Properties without a visible effect, such as an `outline-offset` while `outline-style` is `none`, do not count. Elements focused without a recorded baseline fall back to "has an outline or box-shadow".
@@ -214,6 +223,22 @@ await page.Locator("form").ShouldMatchTranscriptAsync("""
 ```
 
 Unlike [ARIA snapshots](#accessibility-tree-snapshots), transcripts keep "false" states (`not pressed`, `collapsed`, `not checked`), `aria-current`, required fields and descriptions. They are a regression record of semantics, not what a particular screen reader says; test with real assistive technologies for conformance.
+
+## Focus while a prerendered page becomes interactive
+
+```csharp
+// Hold back blazor.web.js briefly, so that there is time to tab into the prerendered page.
+await page.RouteAsync("**/_framework/blazor.web.js*", async route => { await Task.Delay(500); await route.ContinueAsync(); });
+
+var result = await NavigationChecks.VerifyFocusSurvivesInteractivityAsync(
+    page,
+    baseUrl + "orders",
+    p => p.GetByRole(AriaRole.Link, new() { Name = "Account" }),
+    async p => await p.Locator("[data-interactive=true]").CountAsync() > 0);   // your layout's interactivity marker
+result.ShouldPass();
+```
+
+It focuses the target while the page is prerendered, waits until the page is interactive, and checks that focus is still on that element (or on its replacement with the same role and name). With Blazor's `<FocusOnNavigate>`, focus moves to the heading, because Blazor replaces the prerendered DOM and the router's first interactive render moves focus. The [`NavigationFocus`](runtime-components.md#navigationfocus) component fixes this.
 
 ## Live regions
 

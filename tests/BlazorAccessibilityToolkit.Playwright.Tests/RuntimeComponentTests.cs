@@ -134,6 +134,9 @@ public sealed class RuntimeComponentTests(BrowserFixture browser, ComponentsHost
             .FocusOn(component.Page.GetByRole(AriaRole.Button, new() { Name = "Underline" }))
             .PressTab()
             .ExpectFocused("radio", new System.Text.RegularExpressions.Regex("^(Small|Medium|Large)$"))
+            .Type("l")
+            .ExpectFocused("radio", "Large")
+            .ExpectState(component.Page.GetByRole(AriaRole.Radio, new() { Name = "Large" }), "checked", "true")
             .RunAsync();
         (await component.AuditAsync()).ShouldHaveNoViolations();
     }
@@ -154,6 +157,34 @@ public sealed class RuntimeComponentTests(BrowserFixture browser, ComponentsHost
         Assert.Equal("polite", (await monitor.ExpectUpdateAsync("Now on ")).Politeness);
         Assert.Equal(second.Url.AbsoluteUri, session.Page.Url);
     }
+
+    [Fact]
+    public async Task Active_descendant_groups_follow_the_combobox_and_listbox_patterns()
+    {
+        await using var component = await fixture.Host.RenderAsync<ComboProbe>(browser.Browser);
+
+        var combobox = await AriaPatterns.VerifyComboboxAsync(component.Page.GetByRole(AriaRole.Combobox, new() { Name = "Fruit" }));
+        Assert.True(combobox.Passed, combobox.Describe());
+        var listbox = await AriaPatterns.VerifyListboxAsync(component.Page.GetByRole(AriaRole.Listbox, new() { Name = "Colors" }));
+        Assert.True(listbox.Passed, listbox.Describe());
+
+        // Typing selects by the first letters; a repeated letter cycles (Blue, Black).
+        var colors = component.Page.GetByRole(AriaRole.Listbox, new() { Name = "Colors" });
+        await colors.FocusAsync();
+        await component.Page.Keyboard.PressAsync("g");
+        Assert.Equal("Green", await ActiveTextAsync(colors));
+
+        // Keys typed within half a second form one prefix ("gb" matches nothing); wait to start a new one.
+        await component.Page.WaitForTimeoutAsync(600);
+        await component.Page.Keyboard.PressAsync("b");
+        Assert.Equal("Blue", await ActiveTextAsync(colors));
+        await component.Page.Keyboard.PressAsync("b");
+        Assert.Equal("Black", await ActiveTextAsync(colors));
+        (await component.AuditAsync()).ShouldHaveNoViolations();
+    }
+
+    private static Task<string> ActiveTextAsync(ILocator owner) =>
+        owner.EvaluateAsync<string>("o => document.getElementById(o.getAttribute('aria-activedescendant')).textContent.trim()");
 
     [Fact]
     public async Task Announcer_without_a_rendered_host_reports_that_nothing_was_announced()

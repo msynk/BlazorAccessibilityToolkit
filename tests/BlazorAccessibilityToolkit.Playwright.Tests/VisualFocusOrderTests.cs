@@ -42,4 +42,25 @@ public sealed class VisualFocusOrderTests(BrowserFixture browser)
         await using var other = await browser.PageAsync(html.Replace("<button>One</button> <button>Two</button>", "<button>Two</button>", StringComparison.Ordinal));
         Assert.DoesNotContain((await other.Page.CaptureFocusOrderAsync()).Findings, f => f.RuleId == "blazor-focus-order-visual-mismatch");
     }
+
+    [Fact]
+    public async Task Tab_stop_overlay_is_saved_as_a_screenshot_and_removed()
+    {
+        await using var session = await browser.PageAsync("<main><h1>x</h1><button>One</button> <button>Two</button> <button>Three</button></main>");
+        var result = await session.Page.CaptureFocusOrderAsync();
+        var path = Path.Combine(Path.GetTempPath(), "a11y-overlay-" + Guid.NewGuid().ToString("N"), "tab-stops.png");
+        try
+        {
+            var saved = await result.SaveTabStopOverlayAsync(session.Page, path);
+
+            var bytes = await File.ReadAllBytesAsync(saved);
+            Assert.True(bytes.Length > 1000);
+            Assert.Equal([0x89, 0x50, 0x4E, 0x47], bytes[..4]);
+            Assert.Equal(0, await session.Page.Locator("[data-ba11y-tab-stops]").CountAsync());
+        }
+        finally
+        {
+            Directory.Delete(Path.GetDirectoryName(path)!, recursive: true);
+        }
+    }
 }

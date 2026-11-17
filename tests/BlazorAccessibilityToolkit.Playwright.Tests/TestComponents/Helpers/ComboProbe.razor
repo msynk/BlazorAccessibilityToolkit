@@ -1,0 +1,45 @@
+@using BlazorAccessibilityToolkit.Components
+@using Microsoft.AspNetCore.Components.Web
+<style>[role=option] { padding: 6px; min-height: 24px; } [role=option][data-active] { outline: 2px solid #0b57d0; }</style>
+<main>
+    <h1>Active descendant</h1>
+    <label for="fruit">Fruit</label>
+    <input id="fruit" role="combobox" aria-autocomplete="list" aria-expanded="@(open ? "true" : "false")" aria-controls="fruit-list" value="@value" @onkeydown="KeyAsync" />
+    <ActiveDescendantGroup id="fruit-list" OwnerId="fruit" aria-label="Fruits" hidden="@(!open)">
+        @foreach (var fruit in fruits)
+        {
+            <div role="option" aria-selected="false" @onclick="() => Choose(fruit)">@fruit</div>
+        }
+    </ActiveDescendantGroup>
+    <p>Colors</p>
+    <ActiveDescendantGroup aria-label="Colors">
+        @foreach (var color in colors)
+        {
+            <div role="option" aria-selected="false">@color</div>
+        }
+    </ActiveDescendantGroup>
+</main>
+@code {
+    private readonly string[] fruits = ["Apple", "Banana", "Cherry"];
+    private readonly string[] colors = ["Red", "Green", "Blue", "Black"];
+    private bool open;
+    private string value = string.Empty;
+
+    private void KeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "ArrowDown")
+        {
+            open = true;
+        }
+        else if (e.Key == "Escape")
+        {
+            open = false;
+        }
+    }
+
+    private void Choose(string fruit)
+    {
+        value = fruit;
+        open = false;
+    }
+}

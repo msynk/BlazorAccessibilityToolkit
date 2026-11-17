@@ -139,6 +139,7 @@ enum BlazorAccessibilityToolkit.Playwright.FocusObscuration
 static class BlazorAccessibilityToolkit.Playwright.FocusOrder
   static BlazorAccessibilityToolkit.AccessibilityAudit ToAudit(BlazorAccessibilityToolkit.Playwright.FocusOrderResult result, System.String name, BlazorAccessibilityToolkit.AccessibilityContext context = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.FocusOrderResult> CaptureFocusOrderAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.FocusOrderOptions options = null)
+  static System.Threading.Tasks.Task<System.String> SaveTabStopOverlayAsync(BlazorAccessibilityToolkit.Playwright.FocusOrderResult result, Microsoft.Playwright.IPage page, System.String path)
 sealed class BlazorAccessibilityToolkit.Playwright.FocusOrderOptions
   Microsoft.Playwright.ILocator StartAfter { get; init; }
   System.Boolean ReportMissingFocusIndicator { get; init; }
@@ -340,6 +341,7 @@ sealed class BlazorAccessibilityToolkit.Playwright.MotionOptions
   System.TimeSpan SettleTime { get; init; }
   ctor()
 static class BlazorAccessibilityToolkit.Playwright.NavigationChecks
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyFocusSurvivesInteractivityAsync(Microsoft.Playwright.IPage page, System.String url, System.Func<Microsoft.Playwright.IPage, Microsoft.Playwright.ILocator> target, System.Func<Microsoft.Playwright.IPage, System.Threading.Tasks.Task<System.Boolean>> isInteractive, System.Nullable<System.TimeSpan> timeout = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.PatternVerification> VerifyNavigationAsync(Microsoft.Playwright.ILocator link, BlazorAccessibilityToolkit.Playwright.PatternOptions options = null)
 sealed class BlazorAccessibilityToolkit.Playwright.OrientationOptions
   BlazorAccessibilityToolkit.AccessibilityAuditOptions AuditOptions { get; init; }

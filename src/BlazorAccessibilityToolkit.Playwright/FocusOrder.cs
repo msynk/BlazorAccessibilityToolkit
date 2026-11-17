@@ -422,6 +422,73 @@ public static class FocusOrder
         return rightToLeft ? a.X + a.Width > b.X + b.Width + 1 : a.X + 1 < b.X;
     }
 
+    private const string OverlayScript = """
+        stops => {
+          const ns = 'http://www.w3.org/2000/svg';
+          const doc = document.documentElement;
+          const width = Math.max(doc.scrollWidth, document.body ? document.body.scrollWidth : 0);
+          const height = Math.max(doc.scrollHeight, document.body ? document.body.scrollHeight : 0);
+          const svg = document.createElementNS(ns, 'svg');
+          svg.setAttribute('data-ba11y-tab-stops', '');
+          svg.setAttribute('aria-hidden', 'true');
+          svg.setAttribute('width', width);
+          svg.setAttribute('height', height);
+          svg.style.cssText = 'position:absolute;left:0;top:0;pointer-events:none;z-index:2147483647;overflow:visible';
+          const add = (name, attrs, parent) => { const el = document.createElementNS(ns, name); for (const k in attrs) el.setAttribute(k, attrs[k]); (parent || svg).appendChild(el); return el; };
+          const centers = stops.map(s => [s.x + s.width / 2, s.y + s.height / 2]);
+          if (centers.length > 1) add('polyline', { points: centers.map(c => c.join(',')).join(' '), fill: 'none', stroke: '#5f6368', 'stroke-width': 2, 'stroke-dasharray': '6 4' });
+          stops.forEach((s, i) => {
+            add('rect', { x: s.x - 2, y: s.y - 2, width: s.width + 4, height: s.height + 4, fill: 'none', stroke: s.problem ? '#c5221f' : '#0b57d0', 'stroke-width': 3, rx: 3 });
+            const cx = Math.max(12, s.x), cy = Math.max(12, s.y);
+            add('circle', { cx, cy, r: 12, fill: s.problem ? '#c5221f' : '#0b57d0', stroke: '#fff', 'stroke-width': 2 });
+            const t = add('text', { x: cx, y: cy + 4, 'text-anchor': 'middle', 'font-family': 'Arial, sans-serif', 'font-size': 12, 'font-weight': 'bold', fill: '#fff' });
+            t.textContent = String(i + 1);
+          });
+          (document.body || doc).appendChild(svg);
+        }
+        """;
+
+    /// <summary>
+    /// Saves a full-page screenshot of <paramref name="page"/> with the captured tab stops drawn on top: a numbered
+    /// marker and an outline per stop, connected in focus order, as Accessibility Insights' tab-stop visualization shows.
+    /// Stops with findings (hidden, obscured, out of visual order, without an indicator) are drawn in red. The overlay
+    /// is removed afterwards. Use the image for reviews of the focus order and attach it to reports.
+    /// </summary>
+    /// <returns>The path of the PNG file.</returns>
+    public static async Task<string> SaveTabStopOverlayAsync(this FocusOrderResult result, IPage page, string path)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(page);
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        var flagged = result.Findings.Select(f => f.Target.Selector).Where(s => s is not null).ToHashSet(StringComparer.Ordinal);
+        var stops = result.Stops.Where(s => s.Bounds is not null).Select(s => new
+        {
+            x = s.Bounds!.X,
+            y = s.Bounds.Y,
+            width = s.Bounds.Width,
+            height = s.Bounds.Height,
+            problem = s.Element.Selector is { } selector && flagged.Contains(selector),
+        }).ToArray();
+
+        var directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (directory is not null)
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        await page.EvaluateAsync(OverlayScript, stops).ConfigureAwait(false);
+        try
+        {
+            await page.ScreenshotAsync(new PageScreenshotOptions { Path = path, FullPage = true, Animations = ScreenshotAnimations.Disabled }).ConfigureAwait(false);
+        }
+        finally
+        {
+            await page.EvaluateAsync("() => document.querySelectorAll('[data-ba11y-tab-stops]').forEach(e => e.remove())").ConfigureAwait(false);
+        }
+
+        return Path.GetFullPath(path);
+    }
+
     /// <summary>Wraps focus-order findings into an audit for reporting.</summary>
     public static AccessibilityAudit ToAudit(this FocusOrderResult result, string name, AccessibilityContext? context = null)
     {

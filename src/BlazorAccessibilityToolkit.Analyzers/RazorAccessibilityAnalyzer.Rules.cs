@@ -394,7 +394,7 @@ public sealed partial class RazorAccessibilityAnalyzer
         }
 
         if (file.Elements.FirstOrDefault(e => e.Name is "Router" or "Microsoft.AspNetCore.Components.Routing.Router") is { } router
-            && !file.Elements.Any(e => e.Name is "FocusOnNavigate" or "Microsoft.AspNetCore.Components.Routing.FocusOnNavigate"))
+            && !file.Elements.Any(e => e.Name is "FocusOnNavigate" or "Microsoft.AspNetCore.Components.Routing.FocusOnNavigate" or "NavigationFocus" or "BlazorAccessibilityToolkit.Components.NavigationFocus"))
         {
             yield return (FocusOnNavigateMissing, router, NameSpan(router), []);
         }

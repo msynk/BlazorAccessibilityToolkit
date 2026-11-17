@@ -48,7 +48,11 @@ The first group of entries closes the gaps found by the second cross-stack surve
   - `<SkipLink>`: it renders the current path with the fragment, so it works with `<base href="/">` before and after the page becomes interactive, and it moves focus to the target.
   - `<FocusTrap>` with an initial focus, nesting and focus restoration, and `<VisuallyHidden>`.
   - `<RouteAnnouncer>` for client-side navigation: router navigation when interactive, enhanced navigation (`enhancedload`) when statically rendered.
-  - `<RovingFocusGroup>`: one tab stop, arrow keys, Home and End, and optional selection that follows focus, for toolbars, tabs, radio groups, listboxes and menus.
+  - `<RovingFocusGroup>`: one tab stop, arrow keys, Home and End, optional type-to-search, and optional selection that follows focus, for toolbars, tabs, radio groups, listboxes and menus.
+  - `<ActiveDescendantGroup>`: `aria-activedescendant` navigation for listboxes and comboboxes that keep focus on the input, with Enter to activate and type-to-search.
+  - `<NavigationFocus>`: a replacement for `<FocusOnNavigate>`. When a prerendered page becomes interactive, Blazor replaces the prerendered DOM and `FocusOnNavigate` moves focus to the heading, so a keyboard user who already tabbed into the page loses their place. `NavigationFocus` restores focus to the same element instead.
+- **Focus during prerendering:** `NavigationChecks.VerifyFocusSurvivesInteractivityAsync` checks that focus a user places in a prerendered page survives the page becoming interactive.
+- **Tab-stop overlay:** `focusOrder.SaveTabStopOverlayAsync(page, path)` saves a screenshot with every tab stop numbered and connected, problems in red.
 - **Visual focus order:** `FocusOrderOptions.ReportVisualOrderMismatch` reports `blazor-focus-order-visual-mismatch` (2.4.3, 1.3.2) for a stop that leaves the visual reading order, without flagging column layouts. `FocusStop.Bounds` and `FocusSnapshot.Bounds` record where each stop is.
 - **Render-mode checks:** `blazor-virtualized-set-size` reports `<Virtualize>` items that do not expose `aria-posinset` and `aria-setsize`, so screen readers count only the rendered items. `blazor-duplicate-clickable-bounds` (best practice) reports nested interactive elements with the same box.
 - **Consistent help (3.2.6):** `page.AuditConsistentHelpAsync(baseAddress, paths)` (`blazor-help-inconsistent`) compares the order and landmark of help links, `mailto:` and `tel:` links across pages.
@@ -79,6 +83,7 @@ The first group of entries closes the gaps found by the second cross-stack surve
 
 ### Fixed
 
+- Live regions: when one text node changed several times before the observer callback ran (as when Blazor renders "Saving…" and an immediate failure in quick succession), every change was recorded with the final text, so the intermediate update was lost and `ExpectLiveRegionUpdate("Saving")` failed intermittently. Each change now keeps its own value.
 - `AriaPatterns.VerifyTooltipAsync` moves the pointer onto the tooltip in one step. Intermediate steps raced the page's hide timers, so the hoverable check could fail intermittently in Firefox.
 - `AriaPatterns.VerifyFormValidationAsync` waits for focus and error links that follow the invalid markers in a later render, as Blazor's `OnAfterRenderAsync` focus calls do (seen in WebKit).
 - Browser diagnostics: `blazor-expanded-state-mismatch` skips triggers that are not rendered. A menu button hidden on wide screens, whose navigation is always shown there, is no longer reported.
@@ -98,6 +103,7 @@ The first group of entries closes the gaps found by the second cross-stack surve
 
 ### Demo
 
+- The demo uses `<NavigationFocus>` instead of `<FocusOnNavigate>`. Focus a keyboard user places while a page is prerendered is no longer moved to the heading when the page becomes interactive; new tests cover this and the focus move after client-side navigation.
 - The demo's skip link renders the current path, so it no longer points at the home page before the page becomes interactive (found by the new `BA11Y038`), and its test runs on a page other than the home page too.
 - The demo projects run the Razor analyzers at build time (`demo/Directory.Build.targets`). They are switched off only for the intentional defects in `Defects/`, and a test checks that every accessible component and showcase page is free of analyzer findings.
 - New tests:

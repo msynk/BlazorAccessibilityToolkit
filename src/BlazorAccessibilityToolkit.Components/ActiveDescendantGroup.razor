@@ -1,0 +1,101 @@
+@namespace BlazorAccessibilityToolkit.Components
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@* aria-activedescendant navigation (WAI-ARIA Authoring Practices): DOM focus stays on one element, the owner, while
+   arrow keys move the active item, which is referenced with aria-activedescendant and marked with data-active.
+   Enter clicks the active item. The owner is the group itself (a focusable listbox) or the element with OwnerId (the
+   input of a combobox). Requires an interactive render mode. *@
+<div @ref="container" role="@Role" tabindex="@(OwnerId is null ? "0" : null)" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    private ElementReference container;
+    private AccessibilityModule? module;
+    private IJSObjectReference? handle;
+    private string? appliedOptions;
+
+    /// <summary>The items.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The container role. Default <c>listbox</c>.</summary>
+    [Parameter] public string Role { get; set; } = "listbox";
+
+    /// <summary>The id of the element that keeps DOM focus, for example a combobox input. Default: the group itself, which is then focusable.</summary>
+    [Parameter] public string? OwnerId { get; set; }
+
+    /// <summary>CSS selector of the items. Default <c>[role=option]</c>.</summary>
+    [Parameter] public string ItemSelector { get; set; } = "[role=option]";
+
+    /// <summary>Which arrow keys move the active item. Default <see cref="RovingOrientation.Vertical"/>.</summary>
+    [Parameter] public RovingOrientation Orientation { get; set; } = RovingOrientation.Vertical;
+
+    /// <summary>Whether the active item wraps around. Default <c>false</c>.</summary>
+    [Parameter] public bool Wrap { get; set; }
+
+    /// <summary>Mark the active item aria-selected="true", as single-select listboxes and comboboxes do. Default <c>true</c>.</summary>
+    [Parameter] public bool SelectionFollowsFocus { get; set; } = true;
+
+    /// <summary>Typing the first letters of an item activates it (only when the group itself has focus). Default <c>true</c>.</summary>
+    [Parameter] public bool Typeahead { get; set; } = true;
+
+    /// <summary>Other attributes for the container (id, aria-label ...).</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var options = $"{OwnerId}|{ItemSelector}|{Orientation}|{Wrap}|{SelectionFollowsFocus}|{Typeahead}";
+        if (options == appliedOptions)
+        {
+            return;
+        }
+
+        appliedOptions = options;
+        module ??= new AccessibilityModule(JS);
+        try
+        {
+            await DisposeHandleAsync();
+            handle = await module.InvokeAsync<IJSObjectReference>("activeDescendantFor", container, OwnerId, new
+            {
+                itemSelector = ItemSelector,
+                orientation = Orientation.ToString().ToLowerInvariant(),
+                wrap = Wrap,
+                selectionFollowsFocus = SelectionFollowsFocus,
+                typeahead = Typeahead,
+            });
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone.
+        }
+    }
+
+    private async Task DisposeHandleAsync()
+    {
+        if (handle is null)
+        {
+            return;
+        }
+
+        var current = handle;
+        handle = null;
+        await current.InvokeVoidAsync("dispose");
+        await current.DisposeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await DisposeHandleAsync();
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or JSException or TaskCanceledException)
+        {
+            // The circuit or page is gone.
+        }
+
+        if (module is not null)
+        {
+            await module.DisposeAsync();
+        }
+    }
+}

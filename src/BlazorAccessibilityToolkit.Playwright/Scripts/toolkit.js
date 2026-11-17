@@ -1199,6 +1199,17 @@
         if (!batch.has(region)) batch.set(region, { added: [], removed: [], inserted: false });
         return batch.get(region);
       };
+      // Text nodes changed several times in one callback: each record's value is the old value of the next change of
+      // the same node (characterDataOldValue), and the last one is the node's current text. Reading textContent for
+      // every record would report the final text several times and lose the intermediate updates.
+      const nextOldValue = new Map();
+      for (let i = mutations.length - 1; i >= 0; i--) {
+        const m = mutations[i];
+        if (m.type === 'characterData') {
+          m.__value = nextOldValue.has(m.target) ? nextOldValue.get(m.target) : m.target.textContent;
+          nextOldValue.set(m.target, m.oldValue);
+        }
+      }
       for (const m of mutations) {
         if (m.type === 'childList') {
           // Resolve the region from the mutation target: an added node may already be detached again when the
@@ -1227,7 +1238,7 @@
           }
         } else if (m.type === 'characterData') {
           const region = liveRegionOf(m.target);
-          if (region) entry(region).added.push(norm(m.target.textContent));
+          if (region) entry(region).added.push(norm(m.__value));
         } else if (m.type === 'attributes') {
           // An existing element that becomes a live region starts being tracked; its current text is not an update.
           if (liveRegionOf(m.target) === m.target) state.known.add(m.target);
@@ -1272,7 +1283,7 @@
       markKnown();
       // Observe the document node rather than document.documentElement, which does not exist yet when an init script
       // installs the observer on a new document.
-      state.observer.observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['aria-live', 'role'] });
+      state.observer.observe(document, { subtree: true, childList: true, characterData: true, characterDataOldValue: true, attributes: true, attributeFilter: ['aria-live', 'role'] });
     };
     if (document.readyState === 'loading') {
       // Installed by an init script before the page was parsed: content that arrives with the server response is not

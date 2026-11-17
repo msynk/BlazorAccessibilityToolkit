@@ -1,0 +1,66 @@
+@namespace BlazorAccessibilityToolkit.Components
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@* A replacement for Blazor's <FocusOnNavigate> that does not take focus away from the user on the first load. When a
+   prerendered page becomes interactive, Blazor replaces the prerendered DOM, so the element a keyboard user already
+   tabbed to disappears, and FocusOnNavigate then moves focus to the heading. This component remembers what the user
+   focused while the page was prerendered and restores focus to the same element of the new DOM; it moves focus to
+   Selector after every later navigation, and on the first load only when the user had not focused anything. *@
+@ScriptTag
+
+@code {
+    private AccessibilityModule? module;
+    private RouteData? previous;
+    private bool pending;
+    private bool firstLoad = true;
+
+    // Razor does not allow <script> in components; the script must run while the page is still prerendered.
+    private static readonly RenderFragment ScriptTag = builder =>
+    {
+        builder.OpenElement(0, "script");
+        builder.AddAttribute(1, "src", "_content/BlazorAccessibilityToolkit.Components/prerender-focus.js");
+        builder.CloseElement();
+    };
+
+    /// <summary>The router's route data (<c>RouteData="routeData"</c> in the router's <c>Found</c> template).</summary>
+    [Parameter, EditorRequired] public RouteData? RouteData { get; set; }
+
+    /// <summary>The element that receives focus after navigation. Default <c>h1</c>.</summary>
+    [Parameter] public string Selector { get; set; } = "h1";
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(RouteData, previous))
+        {
+            previous = RouteData;
+            pending = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!pending)
+        {
+            return;
+        }
+
+        pending = false;
+        var onlyIfIdle = firstLoad;
+        firstLoad = false;
+        module ??= new AccessibilityModule(JS);
+        try
+        {
+            if (!onlyIfIdle || !await module.InvokeAsync<bool>("restorePrerenderFocus"))
+            {
+                await module.InvokeAsync<bool>("focusSelector", Selector, onlyIfIdle);
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone.
+        }
+    }
+
+    public ValueTask DisposeAsync() => module?.DisposeAsync() ?? ValueTask.CompletedTask;
+}

@@ -1,0 +1,86 @@
+@namespace BlazorAccessibilityToolkit.Components
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@* Keeps keyboard focus inside its content while Active, and returns focus to where it was when released. Use it for
+   modal dialogs, drawers and full-screen menus. Requires an interactive render mode. *@
+<div @ref="container" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    private ElementReference container;
+    private AccessibilityModule? module;
+    private IJSObjectReference? trap;
+    private bool applied;
+
+    /// <summary>The trapped content.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Whether focus is trapped. Default <c>true</c>.</summary>
+    [Parameter] public bool Active { get; set; } = true;
+
+    /// <summary>Return focus to the previously focused element when the trap is released. Default <c>true</c>.</summary>
+    [Parameter] public bool RestoreFocus { get; set; } = true;
+
+    /// <summary>A CSS selector, inside the content, of the element that receives focus when the trap starts. Default: the first focusable element.</summary>
+    [Parameter] public string? InitialFocus { get; set; }
+
+    /// <summary>Other attributes for the container (class, role, aria-labelledby ...).</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Active == applied)
+        {
+            return;
+        }
+
+        applied = Active;
+        module ??= new AccessibilityModule(JS);
+        try
+        {
+            if (Active)
+            {
+                trap = await module.InvokeAsync<IJSObjectReference>("trapFocus", container, new { initialFocus = InitialFocus });
+            }
+            else
+            {
+                await ReleaseAsync(RestoreFocus);
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone.
+        }
+    }
+
+    private async Task ReleaseAsync(bool restore)
+    {
+        if (trap is null)
+        {
+            return;
+        }
+
+        var current = trap;
+        trap = null;
+        await current.InvokeVoidAsync("release", restore);
+        await current.DisposeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await ReleaseAsync(RestoreFocus);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or JSException or TaskCanceledException)
+        {
+            // The circuit or page is gone.
+        }
+
+        if (module is not null)
+        {
+            await module.DisposeAsync();
+        }
+    }
+}

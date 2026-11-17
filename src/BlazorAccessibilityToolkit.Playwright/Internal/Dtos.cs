@@ -121,3 +121,20 @@ internal sealed class OrientationDto
 
     public List<string> Messages { get; set; } = [];
 }
+
+internal sealed class TargetDto
+{
+    public string? Selector { get; set; }
+
+    public string? Html { get; set; }
+
+    public string? Role { get; set; }
+
+    public string? Name { get; set; }
+
+    public int? Ordinal { get; set; }
+
+    public int Width { get; set; }
+
+    public int Height { get; set; }
+}

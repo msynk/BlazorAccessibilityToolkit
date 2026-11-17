@@ -19,6 +19,7 @@ public sealed class PublicApiTests
         typeof(AccessibilityFixture).Assembly.GetName().Name!,
         typeof(PlaywrightAccessibility).Assembly.GetName().Name!,
         typeof(CliApp).Assembly.GetName().Name!,
+        typeof(BlazorAccessibilityToolkit.Components.ILiveAnnouncer).Assembly.GetName().Name!,
     };
 
     [Theory]

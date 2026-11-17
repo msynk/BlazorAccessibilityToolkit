@@ -104,10 +104,12 @@ public sealed class PageTests(AppFixture app)
         audit.ShouldHaveNoViolations();
     }
 
-    [Fact]
-    public async Task Skip_link_is_the_first_stop_and_moves_focus_to_main()
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/keyboard")]
+    public async Task Skip_link_is_the_first_stop_and_moves_focus_to_main(string path)
     {
-        await using var session = await app.OpenAsync("/");
+        await using var session = await app.OpenAsync(path);
         var scenario = KeyboardScenario.For(session.Page);
 
         if (app.Browser.Name == "webkit")
@@ -125,6 +127,9 @@ public sealed class PageTests(AppFixture app)
             .PressEnter()
             .ExpectFocused("main")
             .RunAsync();
+
+        // The in-page link must not leave the page (with <base href="/">, a bare "#main" points at the home page).
+        Assert.Equal(app.Url(path), session.Page.Url.Split('#')[0]);
     }
 
     [Fact]

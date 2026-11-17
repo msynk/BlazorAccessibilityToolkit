@@ -1,0 +1,24 @@
+/* Hidden until focused, then shown in the top left corner above other content (WCAG 2.4.1, 2.4.7, 2.4.11). */
+.ba11y-skip-link {
+    position: absolute;
+    left: 0.5rem;
+    top: 0.5rem;
+    z-index: 10000;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.ba11y-skip-link:focus {
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    padding: 0.5rem 1rem;
+    background: Canvas;
+    color: LinkText;
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+}

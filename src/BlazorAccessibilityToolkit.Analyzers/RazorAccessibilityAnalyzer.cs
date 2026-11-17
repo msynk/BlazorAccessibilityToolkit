@@ -115,7 +115,7 @@ public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
         Autofocus, AccessKey, DistractingElement, MediaCaptions, ScopeAttribute, AutocompleteValid, ActiveDescendantFocus,
         RoleRequiredAttributes, AriaAttributeValue, RedundantRole, NonInteractiveTabIndex, MouseEventsWithoutFocus, NestedInteractive,
         AmbiguousLinkText, LangValid, ViewportZoom, MetaRefresh, PageTitleMissing, FocusOnNavigateMissing, PasteOrAutofillBlocked,
-        DraggingAlternative, AriaStateBoundToBool, RedundantImageAlt, PresentationRoleConflict);
+        DraggingAlternative, AriaStateBoundToBool, RedundantImageAlt, PresentationRoleConflict, FragmentLinkLeavesPage);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)

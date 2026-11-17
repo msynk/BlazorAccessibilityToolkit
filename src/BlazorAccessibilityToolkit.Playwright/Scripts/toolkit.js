@@ -590,6 +590,64 @@
         if (text) report('blazor-required-not-exposed', el, { label: truncate(text, 120) });
       }
 
+      // Names: links with the same name but different destinations (2.4.4), and names that repeat the role.
+      const linksByName = new Map();
+      for (const el of all) {
+        const isLink = el.localName === 'a' && el.hasAttribute('href');
+        const isButton = el.localName === 'button' || el.getAttribute('role') === 'button';
+        if ((!isLink && !isButton) || !isVisible(el) || isHiddenForAT(axe, el)) continue;
+        const d = describe(axe, el);
+        const name = norm(d.name);
+        if (!name) continue;
+        if (d.role === 'button' && /(^|\s)button$/i.test(name) && !/^button$/i.test(name)) {
+          report('blazor-role-in-name', el, { name, role: 'button' }, 'The name "' + name + '" ends with "button", which screen readers announce again ("' + name + ', button"). Remove the role word.');
+        } else if (d.role === 'link' && /^link(\s+to)?\s|\slink$/i.test(name)) {
+          report('blazor-role-in-name', el, { name, role: 'link' }, 'The name "' + name + '" contains the word "link", which screen readers announce again. Remove it.');
+        }
+        if (!isLink || d.role !== 'link') continue;
+        let destination;
+        try { const u = new URL(el.getAttribute('href'), document.baseURI); destination = u.origin + u.pathname + u.search; } catch (e) { destination = (el.getAttribute('href') || '').split('#')[0]; }
+        const key = name.toLowerCase();
+        if (!linksByName.has(key)) linksByName.set(key, []);
+        linksByName.get(key).push({ el, destination });
+      }
+      for (const [, links] of linksByName) {
+        const destinations = new Set(links.map((l) => l.destination));
+        if (destinations.size < 2) continue;
+        const name = norm(describe(axe, links[0].el).name);
+        report('blazor-ambiguous-link-name', links[0].el, { name, links: String(links.length), destinations: String(destinations.size) },
+          links.length + ' links are named "' + name + '" but lead to ' + destinations.size + ' different destinations. Make each name say where it goes, for example with visually hidden text.');
+      }
+
+      // The .NET reconnect modal: a named dialog whose status changes are announced.
+      const reconnect = document.getElementById('components-reconnect-modal');
+      if (reconnect && inScope(reconnect, root, exclude)) {
+        const problems = [];
+        const isDialog = reconnect.localName === 'dialog' || /^(alert)?dialog$/.test(reconnect.getAttribute('role') || '');
+        // The dialog is usually closed while audited, so its name is judged from the markup, not computed.
+        const labelledBy = (reconnect.getAttribute('aria-labelledby') || '').split(/\s+/).filter(Boolean).map((id) => byId(reconnect, id)).filter(Boolean);
+        const named = norm(reconnect.getAttribute('aria-label')) || labelledBy.some((ref) => norm(ref.textContent)) || norm(reconnect.getAttribute('title'));
+        if (isDialog && !named) problems.push('the dialog has no accessible name (add aria-labelledby that points at its message)');
+        const live = reconnect.matches('[role=status], [role=alert], [aria-live]:not([aria-live=off])') || reconnect.querySelector('[role=status], [role=alert], [aria-live]:not([aria-live=off])');
+        if (!live) problems.push('its status messages (rejoining, failed, paused) are not in a live region, so changes are not announced (wrap them in role="status")');
+        if (problems.length) {
+          report('blazor-reconnect-ui-not-accessible', reconnect, { problems: String(problems.length) }, '#components-reconnect-modal: ' + problems.join('; ') + '.');
+        }
+      }
+
+      // In-page links that resolve to another document: with Blazor's <base href="/">, href="#main" opens the home page.
+      for (const el of all) {
+        if (el.localName !== 'a') continue;
+        const raw = el.getAttribute('href') || '';
+        if (raw.length < 2 || raw[0] !== '#') continue;
+        let target;
+        try { target = new URL(el.href); } catch (e) { continue; }
+        if (target.origin + target.pathname + target.search !== location.origin + location.pathname + location.search) {
+          report('blazor-fragment-link-leaves-page', el, { href: raw, resolved: target.pathname + target.search + target.hash },
+            '<a href="' + raw + '"> resolves to ' + target.pathname + target.hash + ' (the document base URL), so it leaves this page instead of moving to ' + raw + '. Include the path in the link, or use the SkipLink component.');
+        }
+      }
+
       // WCAG 2.2: accessible authentication (3.3.8), redundant entry (3.3.7) and dragging (2.5.7).
       if (opts.wcag22 !== false) {
         for (const el of all) {
@@ -678,6 +736,63 @@
       }
     }
     return PURPOSE_BY_TYPE[type] || null;
+  }
+
+  // Help mechanisms in document order, with the landmark that contains them (WCAG 3.2.6).
+  function helpMechanisms(opts) {
+    opts = opts || {};
+    const pattern = new RegExp(opts.pattern || '\b(help|contact|support|faq|chat)\b', 'i');
+    const extra = opts.selector ? Array.from(document.querySelectorAll(opts.selector)) : [];
+    return withAxe((axe) => {
+      const found = [];
+      for (const el of document.querySelectorAll('a[href], button, [role=button], [role=link]')) {
+        if (!isVisible(el) || isHiddenForAT(axe, el)) continue;
+        const href = (el.getAttribute('href') || '').toLowerCase();
+        const name = norm(describe(axe, el).name);
+        const kind = href.startsWith('mailto:') ? 'email' : href.startsWith('tel:') ? 'phone' : pattern.test(name) ? 'link' : null;
+        if (!kind && !extra.includes(el)) continue;
+        found.push({ el, name, kind: kind || 'custom' });
+      }
+      for (const el of extra) {
+        if (!found.some((f) => f.el === el) && isVisible(el)) found.push({ el, name: norm(describe(axe, el).name || el.textContent), kind: 'custom' });
+      }
+      found.sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+      return found.map((f) => {
+        const landmark = f.el.closest('header, footer, nav, main, aside, [role=banner], [role=contentinfo], [role=navigation], [role=main], [role=complementary]');
+        let region = 'none';
+        if (landmark) {
+          try { region = axe.commons.aria.getRole(landmark) || landmark.localName; } catch (e) { region = landmark.localName; }
+        }
+        return { key: f.kind + ':' + f.name.toLowerCase(), name: f.name, kind: f.kind, region, selector: selectorFor(f.el) };
+      });
+    });
+  }
+
+  // Interactive elements smaller than the minimum size, except inline links in text (WCAG 2.5.5 exception).
+  function targetSizeReport(opts) {
+    opts = opts || {};
+    const min = opts.min || 44;
+    const exclude = opts.exclude || [];
+    const max = opts.max || 20;
+    const selector = TABBABLE_CANDIDATES + ', [role=button], [role=link], [role=checkbox], [role=radio], [role=switch], [role=tab], [role=menuitem], [role=option]';
+    return withAxe((axe) => {
+      const offenders = [];
+      for (const el of document.querySelectorAll(selector)) {
+        if (offenders.length >= max) break;
+        if (!inScope(el, null, exclude) || !isVisible(el) || isHiddenForAT(axe, el) || el.matches(':disabled')) continue;
+        if (el.localName === 'input' && el.type === 'hidden') continue;
+        if (el.tabIndex < 0 && !el.getAttribute('role')) continue;
+        // Inline links inside a sentence are exempt.
+        if (el.localName === 'a' && getComputedStyle(el).display === 'inline' && el.parentElement && norm(el.parentElement.textContent).length > norm(el.textContent).length + 1) continue;
+        // A wrapping label enlarges the target of a checkbox or radio button.
+        const label = el.closest('label');
+        const rect = (label && /^(checkbox|radio)$/.test(el.type) ? label : el).getBoundingClientRect();
+        if (rect.width >= min && rect.height >= min) continue;
+        const d = describe(axe, el);
+        offenders.push({ selector: d.selector, html: d.html, role: d.role, name: d.name, ordinal: d.ordinal, width: Math.round(rect.width), height: Math.round(rect.height) });
+      }
+      return offenders;
+    });
   }
 
   // Dispatches a synthetic, empty paste event and reports whether a handler cancelled it. Blazor implements
@@ -1184,6 +1299,8 @@
     reflowReport,
     textSpacingReport,
     motionReport,
+    targetSizeReport,
+    helpMechanisms,
     accessibilityTree,
     orientationSnapshot,
     recordFocusBaselines,

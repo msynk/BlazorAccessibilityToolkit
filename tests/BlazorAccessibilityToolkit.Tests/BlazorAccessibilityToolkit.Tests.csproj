@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit\BlazorAccessibilityToolkit.csproj" />
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Cli\BlazorAccessibilityToolkit.Cli.csproj" />
+    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Components\BlazorAccessibilityToolkit.Components.csproj" />
     <!-- Referenced only to snapshot their public API surface. -->
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.ComponentTesting\BlazorAccessibilityToolkit.ComponentTesting.csproj" />
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Playwright\BlazorAccessibilityToolkit.Playwright.csproj" />

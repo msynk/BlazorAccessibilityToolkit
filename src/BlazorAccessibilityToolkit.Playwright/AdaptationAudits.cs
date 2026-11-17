@@ -64,6 +64,19 @@ public sealed record OrientationOptions
     public AccessibilityAuditOptions? AuditOptions { get; init; }
 }
 
+/// <summary>Settings for <see cref="AdaptationAudits.AuditTargetSizeAsync"/>.</summary>
+public sealed record TargetSizeOptions
+{
+    /// <summary>Minimum width and height in CSS pixels. Default 44 (WCAG 2.5.5 and the Apple and Android touch guidelines; Android Material uses 48).</summary>
+    public int Minimum { get; init; } = 44;
+
+    /// <summary>Audit options (excluded selectors, suppressions).</summary>
+    public AccessibilityAuditOptions? AuditOptions { get; init; }
+
+    /// <summary>Maximum number of targets reported. Default 20.</summary>
+    public int MaxFindings { get; init; } = 20;
+}
+
 /// <summary>Settings for <see cref="AdaptationAudits.AuditTextSpacingAsync"/>.</summary>
 public sealed record TextSpacingOptions
 {
@@ -314,6 +327,52 @@ public static class AdaptationAudits
                     // The page closed meanwhile.
                 }
             }
+        }
+
+        return PlaywrightAccessibility.Persist(builder.Build());
+    }
+
+    /// <summary>
+    /// Reports pointer targets smaller than <see cref="TargetSizeOptions.Minimum"/> (44 CSS pixels by default) in either
+    /// dimension: the stricter profile of WCAG 2.5.5 (AAA) and of the iOS, Android and Flutter touch guidelines. axe-core
+    /// already checks the 24 pixel minimum of WCAG 2.5.8 (AA). Inline links in text are exempt, and a label that wraps a
+    /// checkbox or radio button counts as its target.
+    /// </summary>
+    public static async Task<AccessibilityAudit> AuditTargetSizeAsync(this IPage page, TargetSizeOptions? options = null, AuditLabel? label = null)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        options ??= new TargetSizeOptions();
+        var auditOptions = options.AuditOptions ?? AccessibilityAuditOptions.Default;
+        var builder = CreateBuilder(page, auditOptions, label, label?.State ?? string.Create(CultureInfo.InvariantCulture, $"targets {options.Minimum}px"));
+        try
+        {
+            await ToolkitScript.EnsureAsync(page).ConfigureAwait(false);
+            var json = await page.EvaluateAsync<JsonElement>(
+                "o => window.__blazorA11y.targetSizeReport(o)",
+                new { min = Math.Max(1, options.Minimum), exclude = auditOptions.ExcludeSelectors.ToArray(), max = Math.Max(1, options.MaxFindings) }).ConfigureAwait(false);
+            var offenders = ToolkitScript.Deserialize<TargetDto[]>(json) ?? [];
+            builder.AddEngine(ToolkitRules.EngineName, ToolkitScript.ToolkitVersion);
+            foreach (var offender in offenders)
+            {
+                builder.AddFinding(ToolkitRules.TargetSizeEnhanced.CreateFinding(
+                    new FindingTarget { Selector = offender.Selector, Html = offender.Html, Role = offender.Role, AccessibleName = offender.Name, ElementOrdinal = offender.Ordinal },
+                    remediation: string.Create(CultureInfo.InvariantCulture, $"The target is {offender.Width} x {offender.Height} CSS pixels, smaller than {options.Minimum} x {options.Minimum}. {ToolkitRules.TargetSizeEnhanced.Remediation}"),
+                    data: new Dictionary<string, string>
+                    {
+                        ["width"] = offender.Width.ToString(CultureInfo.InvariantCulture),
+                        ["height"] = offender.Height.ToString(CultureInfo.InvariantCulture),
+                        ["minimum"] = options.Minimum.ToString(CultureInfo.InvariantCulture),
+                    }));
+            }
+
+            if (offenders.Length == 0)
+            {
+                builder.AddPassedRule(ToolkitRules.TargetSizeEnhanced.Id);
+            }
+        }
+        catch (Exception ex) when (ex is PlaywrightException or InvalidOperationException or JsonException)
+        {
+            builder.AddError(ExecutionError.FromException(ex is PlaywrightException ? "browser" : "engine", ex));
         }
 
         return PlaywrightAccessibility.Persist(builder.Build());

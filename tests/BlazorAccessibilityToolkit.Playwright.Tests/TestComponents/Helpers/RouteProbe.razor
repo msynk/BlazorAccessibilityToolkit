@@ -1,0 +1,16 @@
+@using BlazorAccessibilityToolkit.Components
+@inject NavigationManager Navigation
+<RouteAnnouncer MessageFormat="Now on {0}" />
+<main>
+    <h1>Page @pageNumber</h1>
+    <button type="button" @onclick="Next">Next page</button>
+</main>
+@code {
+    private int pageNumber = 1;
+
+    private void Next()
+    {
+        pageNumber++;
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("page", pageNumber));
+    }
+}

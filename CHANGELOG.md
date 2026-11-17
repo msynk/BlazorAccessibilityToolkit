@@ -6,7 +6,7 @@
 
 The first group of entries closes the gaps found by the second cross-stack survey ([ADR 0003](docs/adr/0003-second-survey.md)).
 
-- **24 more analyzer rules, `BA11Y014` to `BA11Y037`.**
+- **25 more analyzer rules, `BA11Y014` to `BA11Y038`.**
   - Rules modeled on jsx-a11y, vue and angular-eslint:
     - autofocus, accesskey, `<marquee>`/`<blink>`, video without captions, invalid `scope`,
     - invalid `autocomplete` tokens, `aria-activedescendant` on unfocusable elements,
@@ -43,6 +43,17 @@ The first group of entries closes the gaps found by the second cross-stack surve
   - `page.AuditOrientationAsync()` (`blazor-orientation-locked`, 1.3.4) reports pages rotated, hidden or replaced by a "rotate your device" message in one orientation.
 - **Route discovery:** `BlazorRoutes.Discover(assemblies, options)` finds every `@page` and `[Route]` component, with parameter values and exclusions. `page.AuditRoutesAsync(baseAddress, routes)` audits each page and lists routes it skipped, rather than dropping them silently.
 - **Conformance drafts:** the `openacr` report format writes an OpenACR YAML file (catalog `2.5-edition-wcag-2.2-en`, the VPAT 2.5 WCAG edition). The `statement` format writes an accessibility statement draft as required by the European Accessibility Act. The CLI adds `--product`, `--product-version`, `--organization`, `--contact`, `--contact-email` and `--level`. Both formats are written only on request and never claim support without a recorded manual review.
+- **Runtime components** (new package `BlazorAccessibilityToolkit.Components`, see [docs/runtime-components.md](docs/runtime-components.md)):
+  - `ILiveAnnouncer` with a `<LiveAnnouncer />` host. Its regions exist before the first message, repeated messages are announced again, messages are cleared after a while, and `AnnounceAsync` reports when no host is rendered.
+  - `<SkipLink>`: it renders the current path with the fragment, so it works with `<base href="/">` before and after the page becomes interactive, and it moves focus to the target.
+  - `<FocusTrap>` with an initial focus, nesting and focus restoration, `<RouteAnnouncer>` for client-side navigation, and `<VisuallyHidden>`.
+- **Consistent help (3.2.6):** `page.AuditConsistentHelpAsync(baseAddress, paths)` (`blazor-help-inconsistent`) compares the order and landmark of help links, `mailto:` and `tel:` links across pages.
+- **Heuristics from mobile platforms and Blazor's runtime:**
+  - `blazor-ambiguous-link-name` (2.4.4): links with the same name but different destinations.
+  - `blazor-role-in-name` (best practice): "Submit button", "Link to ...".
+  - `blazor-reconnect-ui-not-accessible`: the .NET reconnect dialog without a name or a live region.
+  - `page.AuditTargetSizeAsync()` (`blazor-target-size-enhanced`, 2.5.5): targets smaller than 44 CSS pixels, an opt-in profile stricter than axe-core's 24 pixel check.
+- **In-page links that leave the page:** analyzer rule `BA11Y038` and browser rule `blazor-fragment-link-leaves-page`. With Blazor's `<base href="/">`, `<a href="#main">` opens the home page from every other page.
 - **Razor analyzers** (new package `BlazorAccessibilityToolkit.Analyzers`): compile-time checks of `.razor` and `.cshtml` markup with the Razor file and line, `BA11Y001` to `BA11Y013`: clickable elements without keyboard support, images without `alt`, positive `tabindex`, unknown ARIA attributes (with typo suggestions) and roles, focusable content inside `aria-hidden`, unlabeled fields (including Blazor's `Input*` components), unnamed buttons and links, empty headings, `<html>` without `lang`, untitled frames, links used as buttons, and interactive roles that cannot receive focus. Configurable with `.editorconfig` (`blazor_a11y_analyzer.enabled`, severities) and ignorable per element or file with `@* blazor-a11y-ignore ... *@`. See [docs/analyzers.md](docs/analyzers.md).
 - **New diagnostics** (browser and browserless bUnit audits):
   - `blazor-navlink-missing-aria-current`: an active navigation link without `aria-current`.
@@ -64,6 +75,8 @@ The first group of entries closes the gaps found by the second cross-stack surve
 
 ### Fixed
 
+- `AriaPatterns.VerifyTooltipAsync` moves the pointer onto the tooltip in one step. Intermediate steps raced the page's hide timers, so the hoverable check could fail intermittently in Firefox.
+- `AriaPatterns.VerifyFormValidationAsync` waits for focus and error links that follow the invalid markers in a later render, as Blazor's `OnAfterRenderAsync` focus calls do (seen in WebKit).
 - Browser diagnostics: `blazor-expanded-state-mismatch` skips triggers that are not rendered. A menu button hidden on wide screens, whose navigation is always shown there, is no longer reported.
 - Live regions: `ExpectUpdateAsync` no longer matches text that only remains in a region (for example earlier `log` entries), removals, or updates of hidden regions. Atomic and inserted regions still match on their whole text.
 - Live regions: monitoring after a navigation now works. The observer no longer depends on `document.documentElement` existing when the init script runs, does not report server-rendered regions as inserted, and expectations made before the navigation no longer hide updates on the new page.
@@ -81,6 +94,7 @@ The first group of entries closes the gaps found by the second cross-stack surve
 
 ### Demo
 
+- The demo's skip link renders the current path, so it no longer points at the home page before the page becomes interactive (found by the new `BA11Y038`), and its test runs on a page other than the home page too.
 - The demo projects run the Razor analyzers at build time (`demo/Directory.Build.targets`). They are switched off only for the intentional defects in `Defects/`, and a test checks that every accessible component and showcase page is free of analyzer findings.
 - New tests:
   - the form validation pattern on `SignupForm` (passes) and `LegacySignupForm` (fails),

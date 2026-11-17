@@ -82,6 +82,9 @@ public sealed partial class RazorAccessibilityAnalyzer
     /// <summary>role none or presentation on a focusable element.</summary>
     public static readonly DiagnosticDescriptor PresentationRoleConflict = Rule("BA11Y037", "Focusable element has role none or presentation", "<{0} role=\"{1}\"> can receive focus or has a global ARIA attribute, so browsers ignore the role; remove the role, or make the element unfocusable", "4.1.2");
 
+    /// <summary>Fragment-only link that resolves against the base URL.</summary>
+    public static readonly DiagnosticDescriptor FragmentLinkLeavesPage = Rule("BA11Y038", "In-page link leaves the page", "<a href=\"{0}\"> resolves against <base href=\"/\"> in Blazor apps, so it opens the home page instead of moving to \"{1}\" on this page; include the page's path, for example href=\"/orders#{1}\", or use the SkipLink component", "2.4.1, 2.4.4");
+
     private static readonly string[] StateTerms = ["none", "false", "true", "disabled", "enabled", "undefined", "null"];
 
     private static readonly HashSet<string> AutofillFields = new(StringComparer.OrdinalIgnoreCase)
@@ -359,6 +362,13 @@ public sealed partial class RazorAccessibilityAnalyzer
             {
                 yield return (AriaStateBoundToBool, e, attribute.Span, [attribute.Name.ToLowerInvariant(), attribute.Value!, expression]);
             }
+        }
+
+        // A handler that cancels the navigation (@onclick:preventDefault) makes the link work once the page is interactive.
+        if (e.LowerName == "a" && e.Static("href") is { Length: > 1 } fragment && fragment.StartsWith("#", StringComparison.Ordinal) && fragment.IndexOf(' ') < 0
+            && !e.Has("@onclick:preventDefault"))
+        {
+            yield return (FragmentLinkLeavesPage, e, e.Attribute("href")!.Span, [fragment, fragment.Substring(1)]);
         }
 
         if (e.LowerName == "img" && e.Static("alt") is { } alt && !hidden)

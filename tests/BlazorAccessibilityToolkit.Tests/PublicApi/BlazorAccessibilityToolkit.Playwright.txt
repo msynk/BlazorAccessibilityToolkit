@@ -43,6 +43,7 @@ static class BlazorAccessibilityToolkit.Playwright.AdaptationAudits
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditMotionAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.MotionOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditOrientationAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.OrientationOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditReflowAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.ReflowOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditTargetSizeAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.TargetSizeOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditTextSpacingAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.TextSpacingOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditUnderAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.DisplayConditions conditions, BlazorAccessibilityToolkit.AccessibilityAuditOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)
 static class BlazorAccessibilityToolkit.Playwright.AriaPatterns
@@ -93,6 +94,14 @@ sealed class BlazorAccessibilityToolkit.Playwright.BrowserSession
   Microsoft.Playwright.IBrowserContext Context { get; }
   Microsoft.Playwright.IPage Page { get; }
   System.Threading.Tasks.ValueTask DisposeAsync()
+static class BlazorAccessibilityToolkit.Playwright.ConsistentHelp
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditConsistentHelpAsync(Microsoft.Playwright.IPage page, System.Uri baseAddress, System.Collections.Generic.IEnumerable<System.String> paths, BlazorAccessibilityToolkit.Playwright.ConsistentHelpOptions options = null)
+sealed class BlazorAccessibilityToolkit.Playwright.ConsistentHelpOptions
+  BlazorAccessibilityToolkit.AccessibilityAuditOptions AuditOptions { get; init; }
+  System.Func<Microsoft.Playwright.IPage, System.Threading.Tasks.Task> BeforeAudit { get; init; }
+  System.String NamePattern { get; init; }
+  System.String Selector { get; init; }
+  ctor()
 sealed class BlazorAccessibilityToolkit.Playwright.DiscoveredRoute
   System.Collections.Generic.IReadOnlyList<System.String> Parameters { get; init; }
   System.Collections.Generic.IReadOnlyList<System.String> RequiredParameters { get; init; }
@@ -394,6 +403,11 @@ static class BlazorAccessibilityToolkit.Playwright.ScreenReaderTranscripts
   static System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.AccessibilityNode>> GetAccessibilityTreeAsync(Microsoft.Playwright.IPage page)
   static System.Threading.Tasks.Task<System.String> GetScreenReaderTranscriptAsync(Microsoft.Playwright.ILocator locator)
   static System.Threading.Tasks.Task<System.String> GetScreenReaderTranscriptAsync(Microsoft.Playwright.IPage page)
+sealed class BlazorAccessibilityToolkit.Playwright.TargetSizeOptions
+  BlazorAccessibilityToolkit.AccessibilityAuditOptions AuditOptions { get; init; }
+  System.Int32 MaxFindings { get; init; }
+  System.Int32 Minimum { get; init; }
+  ctor()
 enum BlazorAccessibilityToolkit.Playwright.TextMatch
   Contains
   Exact

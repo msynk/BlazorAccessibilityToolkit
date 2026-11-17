@@ -1,0 +1,8 @@
+@using BlazorAccessibilityToolkit.Components
+@inject ILiveAnnouncer Announcer
+<LiveAnnouncer />
+<main>
+    <h1>Announcer</h1>
+    <button type="button" @onclick="@(() => Announcer.AnnounceAsync("Saved"))">Save</button>
+    <button type="button" @onclick="@(() => Announcer.AnnounceAsync("Error: not saved", Politeness.Assertive))">Fail</button>
+</main>

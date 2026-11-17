@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <Description>Runtime accessibility helpers for Blazor apps: a live announcer service, skip links, focus traps with focus restoration, visually hidden content and a route announcer for client-side navigation.</Description>
+    <RootNamespace>BlazorAccessibilityToolkit.Components</RootNamespace>
+    <PackageTags>$(PackageTags);components;live-region;focus-trap;skip-link</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>

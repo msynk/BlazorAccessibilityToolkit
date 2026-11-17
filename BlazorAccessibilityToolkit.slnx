@@ -8,6 +8,7 @@
   <Folder Name="/src/">
     <Project Path="src/BlazorAccessibilityToolkit.Analyzers/BlazorAccessibilityToolkit.Analyzers.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit.Cli/BlazorAccessibilityToolkit.Cli.csproj" />
+    <Project Path="src/BlazorAccessibilityToolkit.Components/BlazorAccessibilityToolkit.Components.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit.ComponentTesting/BlazorAccessibilityToolkit.ComponentTesting.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit.Playwright/BlazorAccessibilityToolkit.Playwright.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit/BlazorAccessibilityToolkit.csproj" />

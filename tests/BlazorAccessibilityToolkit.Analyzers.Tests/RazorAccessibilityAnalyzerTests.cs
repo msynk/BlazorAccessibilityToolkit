@@ -154,6 +154,7 @@ public sealed class RazorAccessibilityAnalyzerTests
         var showcase = Path.GetFullPath(Path.Combine(root, "..", "BlazorAccessibilityToolkit.Demo.WebApp", "Components"));
         var accessible = Directory.GetFiles(Path.Combine(root, "Accessible"), "*.razor")
             .Concat(Directory.GetFiles(showcase, "*.razor", SearchOption.AllDirectories))
+            .Concat(Directory.GetFiles(Path.GetFullPath(Path.Combine(root, "..", "..", "src", "BlazorAccessibilityToolkit.Components")), "*.razor"))
             .ToArray();
         Assert.True(accessible.Length > 20);
         foreach (var file in accessible)

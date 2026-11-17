@@ -1,8 +1,10 @@
 @inherits LayoutComponentBase
 @implements IDisposable
 @inject NavigationManager Navigation
-@* Blazor's router intercepts in-page links: it scrolls to #main but does not move keyboard focus, so focus it explicitly. *@
-<a class="skip-link" href="#main" @onclick="SkipToMainAsync" @onclick:preventDefault>Skip to main content</a>
+@* Blazor's router intercepts in-page links: it scrolls to #main but does not move keyboard focus, so focus it explicitly.
+   The href includes the current path: with <base href="/">, a bare "#main" points at the home page, which is where the
+   link would go before the page becomes interactive. *@
+<a class="skip-link" href="@MainHref" @onclick="SkipToMainAsync" @onclick:preventDefault>Skip to main content</a>
 <div class="shell @(navOpen ? "shell--nav-open" : null)">
     <header class="masthead">
         <a class="brand" href="">
@@ -62,14 +64,14 @@
 
     private async Task SkipToMainAsync() => await main.FocusAsync();
 
-    // The collapsed navigation closes after choosing a page, so the new page is visible.
+    private string MainHref => new Uri(Navigation.Uri).GetLeftPart(UriPartial.Query) + "#main";
+
+    // The collapsed navigation closes after choosing a page, so the new page is visible, and the skip link follows the
+    // new path.
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        if (navOpen)
-        {
-            navOpen = false;
-            InvokeAsync(StateHasChanged);
-        }
+        navOpen = false;
+        InvokeAsync(StateHasChanged);
     }
 
     public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;

@@ -1,0 +1,66 @@
+@namespace BlazorAccessibilityToolkit.Components
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@* Announces the new page after client-side navigation, like the route announcers of Next.js and SvelteKit. Blazor's
+   router changes the page without loading a document, so screen readers say nothing unless focus moves (FocusOnNavigate)
+   or the change is announced. Use it when focus deliberately stays where it is. Requires an interactive render mode. *@
+<div style="@VisuallyHidden.Style" aria-live="polite" aria-atomic="true" data-ba11y-route-announcer>@message</div>
+
+@code {
+    private AccessibilityModule? module;
+    private string message = string.Empty;
+    private bool pending;
+
+    /// <summary>The announcement; <c>{0}</c> is the page title (or the first heading, or the path). Default "Navigated to {0}".</summary>
+    [Parameter] public string MessageFormat { get; set; } = "Navigated to {0}";
+
+    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        pending = true;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!pending)
+        {
+            return;
+        }
+
+        pending = false;
+        module ??= new AccessibilityModule(JS);
+        try
+        {
+            var name = await module.InvokeAsync<string>("currentPageName");
+            var next = string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat, name);
+            if (next == message)
+            {
+                // The same text would not be announced again: clear the region first.
+                message = string.Empty;
+                StateHasChanged();
+                await Task.Delay(150);
+            }
+
+            message = next;
+            StateHasChanged();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone.
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+        if (module is not null)
+        {
+            await module.DisposeAsync();
+        }
+    }
+}

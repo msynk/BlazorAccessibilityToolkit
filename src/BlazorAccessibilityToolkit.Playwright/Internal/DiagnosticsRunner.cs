@@ -70,5 +70,9 @@ internal static class DiagnosticsRunner
         ToolkitRules.PasteBlocked.Id,
         ToolkitRules.DraggingAlternative.Id,
         ToolkitRules.RedundantEntry.Id,
+        ToolkitRules.FragmentLinkLeavesPage.Id,
+        ToolkitRules.AmbiguousLinkName.Id,
+        ToolkitRules.RoleInName.Id,
+        ToolkitRules.ReconnectUiNotAccessible.Id,
     };
 }

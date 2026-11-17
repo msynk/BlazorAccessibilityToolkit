@@ -1,0 +1,98 @@
+@namespace BlazorAccessibilityToolkit.Components
+@implements IDisposable
+@inject LiveAnnouncerService Service
+@* Two visually hidden live regions that exist from the first render, so that later text changes are announced. *@
+<div style="@VisuallyHidden.Style" data-ba11y-live-announcer>
+    <div aria-live="polite" aria-atomic="true">@polite.Text</div>
+    <div aria-live="assertive" aria-atomic="true">@assertive.Text</div>
+</div>
+
+@code {
+    private readonly Region polite = new();
+    private readonly Region assertive = new();
+
+    /// <summary>How long a message stays in its region before it is cleared, so that it is not found later when reading the page. Default 7 seconds; <see cref="Timeout.InfiniteTimeSpan"/> keeps it.</summary>
+    [Parameter] public TimeSpan ClearAfter { get; set; } = TimeSpan.FromSeconds(7);
+
+    /// <summary>How long a region stays empty before a repeated message is inserted again. Default 150 ms.</summary>
+    [Parameter] public TimeSpan RepeatDelay { get; set; } = TimeSpan.FromMilliseconds(150);
+
+    protected override void OnInitialized() => Service.Attach(this);
+
+    internal async Task AnnounceAsync(string message, Politeness politeness)
+    {
+        var region = politeness == Politeness.Assertive ? assertive : polite;
+        var version = region.Next();
+        if (region.Text == message)
+        {
+            // Screen readers ignore a region whose text did not change: empty it first, then insert the message again.
+            region.Text = string.Empty;
+            await InvokeAsync(StateHasChanged);
+            await Task.Delay(RepeatDelay);
+            if (!region.IsCurrent(version))
+            {
+                return;
+            }
+        }
+
+        region.Text = message;
+        await InvokeAsync(StateHasChanged);
+
+        if (ClearAfter != Timeout.InfiniteTimeSpan && ClearAfter > TimeSpan.Zero)
+        {
+            _ = ClearLaterAsync(region, version);
+        }
+    }
+
+    internal Task ClearAsync()
+    {
+        polite.Next();
+        assertive.Next();
+        polite.Text = assertive.Text = string.Empty;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ClearLaterAsync(Region region, int version)
+    {
+        try
+        {
+            await Task.Delay(ClearAfter, region.Cancellation);
+            if (region.IsCurrent(version))
+            {
+                region.Text = string.Empty;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException)
+        {
+            // The component was disposed.
+        }
+    }
+
+    public void Dispose()
+    {
+        Service.Detach(this);
+        polite.Dispose();
+        assertive.Dispose();
+    }
+
+    private sealed class Region : IDisposable
+    {
+        private readonly CancellationTokenSource cancellation = new();
+        private int version;
+
+        public string Text { get; set; } = string.Empty;
+
+        public CancellationToken Cancellation => cancellation.Token;
+
+        public int Next() => Interlocked.Increment(ref version);
+
+        public bool IsCurrent(int value) => Volatile.Read(ref version) == value;
+
+        public void Dispose()
+        {
+            cancellation.Cancel();
+            cancellation.Dispose();
+        }
+    }
+}

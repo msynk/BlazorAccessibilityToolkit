@@ -258,6 +258,90 @@ public static class ToolkitRules
         Environments = [Markup, Browser],
     };
 
+    /// <summary>Help mechanisms appear in a different place or order across pages.</summary>
+    public static AccessibilityRule HelpInconsistent { get; } = new()
+    {
+        Id = "blazor-help-inconsistent",
+        Description = "Help mechanisms that are repeated on several pages (contact details, a contact or help link, a chat, a FAQ) must appear in the same relative order and region on each page, so that people who need help can find it again.",
+        Help = "Help mechanism moved relative to other pages",
+        Remediation = "Render help links and contact details from the shared layout (header or footer) in a fixed order, instead of per page.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Moderate,
+        Wcag = ["3.2.6"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/consistent-help.html",
+        Environments = [Browser],
+    };
+
+    /// <summary>Links with the same accessible name lead to different destinations.</summary>
+    public static AccessibilityRule AmbiguousLinkName { get; } = new()
+    {
+        Id = "blazor-ambiguous-link-name",
+        Description = "Links with the same accessible name should lead to the same destination. Screen reader users often list links by name, out of context, and cannot tell several \"Read more\" or \"Edit\" links apart.",
+        Help = "Links with the same name go to different places",
+        Remediation = "Make each name unique, for example \"Edit order 42\", by adding visually hidden text or aria-label that includes the visible text.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Moderate,
+        Wcag = ["2.4.4", "2.4.9"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html",
+        Environments = [Browser],
+    };
+
+    /// <summary>The accessible name repeats the role.</summary>
+    public static AccessibilityRule RoleInName { get; } = new()
+    {
+        Id = "blazor-role-in-name",
+        Description = "Accessible names should not repeat the role, which screen readers already announce (\"Submit button, button\").",
+        Help = "Accessible name repeats the role",
+        Remediation = "Remove the role word from the name: \"Submit\" instead of \"Submit button\", \"Order history\" instead of \"Link to order history\".",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Minor,
+        IsBestPractice = true,
+        HelpUrl = "https://www.w3.org/WAI/ARIA/apg/practices/names-and-descriptions/",
+        Environments = [Browser],
+    };
+
+    /// <summary>The Blazor reconnect modal is not named or does not announce its status.</summary>
+    public static AccessibilityRule ReconnectUiNotAccessible { get; } = new()
+    {
+        Id = "blazor-reconnect-ui-not-accessible",
+        Description = "The Blazor reconnect modal (#components-reconnect-modal) should be a named dialog whose status messages (reconnecting, failed, retry) are announced.",
+        Help = "Blazor reconnect modal is not accessible",
+        Remediation = "Give the dialog an accessible name (aria-labelledby the heading or first message) and put the status messages in a role=\"status\" element, so that changes are announced while the dialog is open.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Serious,
+        Wcag = ["4.1.2", "4.1.3"],
+        HelpUrl = "https://learn.microsoft.com/aspnet/core/blazor/fundamentals/signalr#reflect-the-server-side-connection-state-in-the-ui",
+        Environments = [Browser],
+    };
+
+    /// <summary>A pointer target is smaller than 44 by 44 CSS pixels.</summary>
+    public static AccessibilityRule TargetSizeEnhanced { get; } = new()
+    {
+        Id = "blazor-target-size-enhanced",
+        Description = "Pointer targets should be at least 44 by 44 CSS pixels (WCAG 2.5.5, AAA; the size Apple and Android guidelines recommend for touch), except inline links in text.",
+        Help = "Target is smaller than 44 by 44 CSS pixels",
+        Remediation = "Increase the clickable area with padding or min-width/min-height, or enlarge the hit area with a pseudo-element.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Moderate,
+        Wcag = ["2.5.5"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced.html",
+        Environments = [Browser],
+    };
+
+    /// <summary>An in-page link that navigates to another page because of the base URL.</summary>
+    public static AccessibilityRule FragmentLinkLeavesPage { get; } = new()
+    {
+        Id = "blazor-fragment-link-leaves-page",
+        Description = "In-page links (skip links, tables of contents, \"back to top\") must move to the target on the same page. In Blazor apps, <base href=\"/\"> makes href=\"#id\" resolve to the home page.",
+        Help = "In-page link opens another page",
+        Remediation = "Include the current path in the link (href=\"/orders#details\"), or use BlazorAccessibilityToolkit.Components' <SkipLink>, which also moves focus to the target. A click handler with @onclick:preventDefault only helps once the page is interactive, not while it is prerendered or statically rendered.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Serious,
+        Wcag = ["2.4.1"],
+        HelpUrl = "https://learn.microsoft.com/aspnet/core/blazor/fundamentals/routing#hashed-routing-to-named-elements",
+        Environments = [Browser],
+    };
+
     /// <summary>Animation keeps running while the user asks for reduced motion.</summary>
     public static AccessibilityRule MotionNotReduced { get; } = new()
     {
@@ -544,10 +628,10 @@ public static class ToolkitRules
     [
         ClickHandlerSemantics, ValidationMessageAssociation, InvalidWithoutErrorReference, DuplicateId, DuplicateIdReferenced,
         IdReferenceMissing, RadioGroupUngrouped, FieldsetMissingLegend, ExpandedStateMismatch, TabSelectionMismatch,
-        NavLinkCurrent, InputPurposeMissing, RequiredNotExposed, ErrorUiNotAccessible, PasteBlocked, DraggingAlternative, RedundantEntry,
+        NavLinkCurrent, InputPurposeMissing, RequiredNotExposed, ErrorUiNotAccessible, PasteBlocked, DraggingAlternative, RedundantEntry, FragmentLinkLeavesPage, AmbiguousLinkName, RoleInName, ReconnectUiNotAccessible, HelpInconsistent,
         MarkupImageAlt, MarkupControlName, MarkupFormLabel, MarkupAriaHiddenFocusable, MarkupInvalidAriaAttribute, MarkupInvalidRole, MarkupPositiveTabIndex,
         FocusStuck, FocusTrap, FocusHiddenTarget, FocusIndicatorNotDetected, FocusRepeated, FocusObscured,
-        ReflowHorizontalScroll, TextSpacingClipped, MotionNotReduced, OrientationLocked,
+        ReflowHorizontalScroll, TextSpacingClipped, MotionNotReduced, OrientationLocked, TargetSizeEnhanced,
         LiveRegionInsertedWithContent, LiveRegionHiddenUpdate, LiveRegionPolitenessConflict,
     ];
 

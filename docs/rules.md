@@ -91,12 +91,18 @@ Engine `blazor-a11y`. Environments: *markup* means bUnit markup without a browse
 | `blazor-orientation-locked` | Potential | 1.3.4 | browser | one orientation rotates the page, shows a "rotate your device" message or hides most of the text |
 | `blazor-paste-blocked` | Potential | 3.3.8 | markup, browser | `@onpaste:preventDefault` (bUnit sees it as an attribute; the browser check dispatches an empty paste event to credential fields and reports a cancelled one; this runs the page's paste handlers, and disabling the rule skips it), or a password field with `autocomplete="off"` |
 | `blazor-dragging-alternative` | Potential | 2.5.7 | markup, browser | `draggable="true"` content (one finding per container): check that a single-pointer alternative exists |
+| `blazor-fragment-link-leaves-page` | Potential | 2.4.1 | browser | an `<a href="#id">` that resolves to another document because of `<base href>` (Blazor's default `<base href="/">` sends it to the home page). A click handler that cancels navigation fixes it only once the page is interactive |
+| `blazor-help-inconsistent` | Potential | 3.2.6 | browser | `page.AuditConsistentHelpAsync(baseAddress, paths)`: a help mechanism repeated across pages appears in a different order or landmark |
+| `blazor-ambiguous-link-name` | Potential | 2.4.4, 2.4.9 | browser | links with the same accessible name that lead to different destinations ("Read more", "Edit"); one finding per name |
+| `blazor-role-in-name` | Potential (best practice) | — | browser | button names ending in "button", link names starting with "Link to" or ending in "link" |
+| `blazor-reconnect-ui-not-accessible` | Potential | 4.1.2, 4.1.3 | browser | `#components-reconnect-modal` (the .NET reconnect dialog) has no accessible name, or its status messages are not in a live region |
+| `blazor-target-size-enhanced` | Potential | 2.5.5 | browser | `page.AuditTargetSizeAsync()`: pointer targets smaller than 44 by 44 CSS pixels (configurable, for example 48 for Material), except inline links; axe-core covers the 24 pixel minimum of 2.5.8 |
 | `blazor-redundant-entry` | Potential | 3.3.7 | markup, browser | a second field for information already asked for (`ConfirmEmail`, `EmailConfirmation`, `repeat-phone` ...); repeated passwords are exempt |
 | `blazor-markup-image-alt`, `-control-name`, `-form-label`, `-aria-hidden-focusable`, `-invalid-aria-attribute`, `-invalid-role`, `-positive-tabindex` | mostly Violation | various | markup (fallback only) | conservative browserless equivalents of axe rules, only when no browser engine runs |
 | `blazor-focus-*` | Potential | 2.1.2, 2.4.3, 2.4.7, 2.4.11 | browser | see [focus order](interactive-testing.md#focus-order) |
 | `blazor-live-region-*` | Potential | 4.1.3 | browser | see [live regions](interactive-testing.md#live-regions) |
 
-The full metadata (descriptions and remediation) is in `ToolkitRules.All`; `blazor-a11y rules` prints it. Compile-time checks of `.razor` files (`BA11Y001` to `BA11Y037`) are described in [Razor analyzers](analyzers.md).
+The full metadata (descriptions and remediation) is in `ToolkitRules.All`; `blazor-a11y rules` prints it. Compile-time checks of `.razor` files (`BA11Y001` to `BA11Y038`) are described in [Razor analyzers](analyzers.md).
 
 ## Fingerprints
 

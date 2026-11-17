@@ -53,6 +53,7 @@ Pages/Cart.razor(14,6): warning BA11Y001: <div> has a Blazor @onclick handler, b
 | <a id="ba11y035"></a>`BA11Y035` | `aria-expanded`, `aria-pressed`, `aria-checked` or `aria-selected` bound to a bool. Blazor leaves out an attribute whose value is `false`, so the collapsed, unpressed or unchecked state is never exposed. See [ARIA states bound to bools](#aria-states-bound-to-bools) | 4.1.2 |
 | <a id="ba11y036"></a>`BA11Y036` | `alt` text that contains "image", "picture", "photo", "graphic" or "icon" (info) | 1.1.1 |
 | <a id="ba11y037"></a>`BA11Y037` | `role="none"` or `role="presentation"` on a focusable element or on one with global ARIA attributes, where browsers ignore the role | 4.1.2 |
+| <a id="ba11y038"></a>`BA11Y038` | In-page link with a bare fragment (`<a href="#main">`). Blazor apps set `<base href="/">`, so the link resolves to the home page and leaves the current page. Include the path (`href="/orders#main"`) or use the [`SkipLink`](runtime-components.md#skiplink) component. A link with `@onclick:preventDefault` is accepted, because Blazor cancels the navigation once the page is interactive (not while it is prerendered) | 2.4.1, 2.4.4 |
 
 Rules marked *info* report suggestions (`DiagnosticSeverity.Info`). The others report warnings.
 

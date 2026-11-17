@@ -1,0 +1,17 @@
+@using BlazorAccessibilityToolkit.Components
+<main>
+    <h1>Trap</h1>
+    <button type="button" @onclick="() => open = true">Open filters</button>
+    @if (open)
+    {
+        <FocusTrap role="dialog" aria-label="Filters" InitialFocus="#second">
+            <button type="button">First</button>
+            <button type="button" id="second">Second</button>
+            <button type="button" @onclick="() => open = false">Close</button>
+        </FocusTrap>
+    }
+    <button type="button">After</button>
+</main>
+@code {
+    private bool open;
+}

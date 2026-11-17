@@ -54,6 +54,7 @@ public sealed class AdditionalRuleTests
     [InlineData("<img src=\"a.png\" alt=\"Photo of the team\">", "BA11Y036")]
     [InlineData("<button role=\"presentation\">Save</button>", "BA11Y037")]
     [InlineData("<div role=\"none\" tabindex=\"0\">x</div>", "BA11Y037")]
+    [InlineData("<a href=\"#main\">Skip to main content</a>", "BA11Y038")]
     public void Reports_defects(string markup, string expected) => Assert.Contains(expected, Ids(markup));
 
     [Theory]
@@ -106,6 +107,8 @@ public sealed class AdditionalRuleTests
     [InlineData("<input id=\"p\" type=\"password\" autocomplete=\"new-password\">")]
     [InlineData("<img src=\"a.png\" alt=\"Team at the 2026 offsite\">")]
     [InlineData("<div role=\"none\">x</div>")]
+    [InlineData("<a href=\"#main\" @onclick=\"Skip\" @onclick:preventDefault>Skip to main content</a>")]
+    [InlineData("<a href=\"/orders#main\">Skip to main content</a>")]
     public void Accepts_accessible_markup(string markup) => Assert.Empty(Ids(markup));
 
     [Fact]

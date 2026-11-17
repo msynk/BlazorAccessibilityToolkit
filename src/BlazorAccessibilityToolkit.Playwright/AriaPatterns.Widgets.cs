@@ -398,7 +398,9 @@ public static partial class AriaPatterns
             var box = await tooltip.BoundingBoxAsync().ConfigureAwait(false);
             if (box is not null)
             {
-                await page.Mouse.MoveAsync(box.X + (box.Width / 2), box.Y + (box.Height / 2), new MouseMoveOptions { Steps = 5 }).ConfigureAwait(false);
+                // One direct move: intermediate steps race the page's own hide timers and make the result depend on
+                // how fast the browser dispatches mouse events.
+                await page.Mouse.MoveAsync(box.X + (box.Width / 2), box.Y + (box.Height / 2), new MouseMoveOptions { Steps = 1 }).ConfigureAwait(false);
                 await page.WaitForTimeoutAsync(300).ConfigureAwait(false);
                 checks.Add(new("Tooltip stays visible when the pointer moves onto it (WCAG 1.4.13 hoverable)", await Shown().ConfigureAwait(false)));
             }

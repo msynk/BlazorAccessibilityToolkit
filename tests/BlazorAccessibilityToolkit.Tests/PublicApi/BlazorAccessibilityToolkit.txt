@@ -490,6 +490,7 @@ static class BlazorAccessibilityToolkit.Rules.ToolkitRules
   const System.String Browser
   const System.String EngineName
   const System.String Markup
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule AmbiguousLinkName { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ClickHandlerSemantics { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule DraggingAlternative { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule DuplicateId { get; }
@@ -504,6 +505,8 @@ static class BlazorAccessibilityToolkit.Rules.ToolkitRules
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusRepeated { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusStuck { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusTrap { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule FragmentLinkLeavesPage { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule HelpInconsistent { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule IdReferenceMissing { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule InputPurposeMissing { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule InvalidWithoutErrorReference { get; }
@@ -522,10 +525,13 @@ static class BlazorAccessibilityToolkit.Rules.ToolkitRules
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule OrientationLocked { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule PasteBlocked { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule RadioGroupUngrouped { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule ReconnectUiNotAccessible { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule RedundantEntry { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ReflowHorizontalScroll { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule RequiredNotExposed { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule RoleInName { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule TabSelectionMismatch { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule TargetSizeEnhanced { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule TextSpacingClipped { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ValidationMessageAssociation { get; }
   static System.Collections.Generic.IReadOnlyList<BlazorAccessibilityToolkit.Rules.AccessibilityRule> All { get; }

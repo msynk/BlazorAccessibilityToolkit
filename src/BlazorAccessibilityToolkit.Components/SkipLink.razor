@@ -1,0 +1,66 @@
+@namespace BlazorAccessibilityToolkit.Components
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@* A link to the main content that appears when it receives focus. Interactive: it moves focus to the target (Blazor's
+   router would otherwise only scroll). Static: the fragment link works natively.
+   The href includes the current path: with Blazor's <base href="/">, a bare "#main-content" resolves to the home page
+   and navigates away from the current one. *@
+<a href="@Href" class="ba11y-skip-link @Class" @onclick="FocusTargetAsync" @onclick:preventDefault @attributes="AdditionalAttributes">@(ChildContent ?? (RenderFragment)(b => b.AddContent(0, Text)))</a>
+
+@code {
+    private AccessibilityModule? module;
+
+    /// <summary>The id of the element to skip to, usually the <c>main</c> element. Default <c>main-content</c>.</summary>
+    [Parameter] public string Target { get; set; } = "main-content";
+
+    /// <summary>The link text when there is no child content. Default "Skip to main content".</summary>
+    [Parameter] public string Text { get; set; } = "Skip to main content";
+
+    /// <summary>Custom link content.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Extra CSS classes.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Other attributes for the link.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(Target);
+        if (Target.StartsWith('#'))
+        {
+            Target = Target[1..];
+        }
+    }
+
+    private string Href => new Uri(Navigation.Uri).GetLeftPart(UriPartial.Query) + "#" + Uri.EscapeDataString(Target);
+
+    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) => _ = InvokeAsync(StateHasChanged);
+
+    // Event handlers only run once the component is interactive; until then (static rendering, prerendering) the
+    // browser follows the fragment link itself.
+    private async Task FocusTargetAsync()
+    {
+        module ??= new AccessibilityModule(JS);
+        try
+        {
+            await module.InvokeAsync<bool>("focusById", Target);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit is gone.
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+        return module?.DisposeAsync() ?? ValueTask.CompletedTask;
+    }
+}

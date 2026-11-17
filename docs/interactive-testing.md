@@ -115,6 +115,7 @@ var forced = await page.AuditUnderAsync(DisplayConditions.ForcedColorsActive);  
 await page.EmulateDisplayConditionsAsync(DisplayConditions.MoreContrast);         // for your own scenarios
 var motion = await page.AuditMotionAsync();                         // prefers-reduced-motion: reduce, then restored
 var orientation = await page.AuditOrientationAsync();               // portrait and landscape, then the viewport is restored
+var targets = await page.AuditTargetSizeAsync();                    // 44 x 44 CSS px (2.5.5); new TargetSizeOptions { Minimum = 48 } for Material
 ```
 
 | Rule | WCAG | What it reports |
@@ -122,6 +123,7 @@ var orientation = await page.AuditOrientationAsync();               // portrait 
 | `blazor-reflow-horizontal-scroll` | 1.4.10 | At 320 CSS pixels the page scrolls horizontally, and this element is where the overflow starts. Content inside tables, grids, toolbars, `pre`, `svg`, `canvas`, video, maps and `[data-a11y-allow-horizontal-scroll]` is exempt (a warning lists it); `ReflowOptions.IncludeTwoDimensionalContent` reports it too. `AuditAtWidth = true` also runs axe-core at that width. |
 | `blazor-text-spacing-clipped` | 1.4.12 | With line height 1.5, paragraph spacing 2, letter spacing 0.12 and word spacing 0.16 times the font size, the element's text overflows a container that hides overflow (or line clamping). Elements that clipped before the change are not reported. |
 | `blazor-motion-not-reduced` | 2.2.2, 2.3.3 | With `prefers-reduced-motion: reduce`, an animation still moves content (transform, position, size, background position) or runs longer than five seconds, or media keeps playing for longer than five seconds. Loading indicators (`role="progressbar"`, `role="status"`, `aria-busy`, spinner and loader classes) are not reported. |
+| `blazor-target-size-enhanced` | 2.5.5 | A pointer target is smaller than `TargetSizeOptions.Minimum` (44 CSS pixels) in either dimension: the AAA criterion and the iOS, Android and Flutter touch guidelines. Inline links in text are exempt, and a label that wraps a checkbox or radio button counts as its target. axe-core already checks the 24 pixel minimum (2.5.8). |
 | `blazor-orientation-locked` | 1.3.4 | In portrait or landscape (390 x 844 CSS pixels by default), the page is rotated by 90 degrees, a "rotate your device" message appears, or less than a quarter of the text of the other orientation is shown. |
 
 These are potential issues: they show where content overflows, which usually means lost content, but whether content is really lost or exempt needs a person. Display conditions matter because contrast, `box-shadow` focus rings and background-image icons often fail only in dark mode or with forced colors. Forced colors emulation is supported by Chromium only.
@@ -183,6 +185,14 @@ var result = await page.AuditRoutesAsync(baseAddress, routes, options,
     beforeAudit: (p, route) => p.Locator("main[data-interactive=true]").WaitForAsync());
 result.ShouldHaveNoViolations();     // lists every failing route
 Assert.Empty(result.Skipped);         // routes whose required parameters have no value
+```
+
+Consistent help (WCAG 3.2.6) is checked across the same pages: help links and buttons (names matching help, contact, support, FAQ or chat), `mailto:` and `tel:` links must keep the same relative order and landmark on every page that has them:
+
+```csharp
+var help = await page.AuditConsistentHelpAsync(baseAddress, routes.Where(r => r.Url is not null).Select(r => r.Url!),
+    new ConsistentHelpOptions { Selector = "#chat-launcher", BeforeAudit = p => p.Locator("main[data-interactive=true]").WaitForAsync() });
+help.ShouldHaveNoViolations(AccessibilityExpectation.Strict);   // blazor-help-inconsistent is a potential issue
 ```
 
 Optional (`{tab?}`) and catch-all (`{*path}`) parameters are left out when they have no value; routes with a required parameter that has no value are returned in `Skipped` instead of being dropped silently. Each audit is labelled with its route template.

@@ -424,7 +424,7 @@ public sealed partial class RazorAccessibilityAnalyzer
             "a" or "area" when e.Has("href") => "link",
             "nav" => "navigation",
             "main" => "main",
-            "aside" => "complementary",
+            "aside" when HasNameAttribute(e) || !e.Ancestors().Any(a => !a.IsComponent && a.LowerName is "article" or "aside" or "nav" or "section") => "complementary",
             "article" => "article",
             "ul" or "ol" => "list",
             "li" => "listitem",
@@ -617,6 +617,22 @@ public sealed partial class RazorAccessibilityAnalyzer
         /// The C# expression when an attribute value is a Razor expression that is evidently a bool: a negation, a
         /// comparison or logical operation, a literal, or a member declared as <c>bool</c> in this file. Otherwise null.
         /// </summary>
+        // The index of the parenthesis that closes the one at index 0, or -1.
+        private static int ClosingParenthesis(string text)
+        {
+            var depth = 0;
+            for (var i = 0; i < text.Length; i++)
+            {
+                depth += text[i] == '(' ? 1 : text[i] == ')' ? -1 : 0;
+                if (depth == 0)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         public string? IsBoolExpression(string value)
         {
             var trimmed = value.Trim();
@@ -626,9 +642,14 @@ public sealed partial class RazorAccessibilityAnalyzer
             }
 
             var expression = trimmed.Substring(1).Trim();
-            if (expression.StartsWith("(", StringComparison.Ordinal) && expression.EndsWith(")", StringComparison.Ordinal))
+            if (expression.StartsWith("(", StringComparison.Ordinal) && ClosingParenthesis(expression) == expression.Length - 1)
             {
                 expression = expression.Substring(1, expression.Length - 2).Trim();
+            }
+            else if (expression.StartsWith("(", StringComparison.Ordinal))
+            {
+                // "@(a) && (b)" renders "@(a)" and then the text " && (b)": not an expression.
+                return null;
             }
 
             if (expression.Length == 0 || expression.IndexOf('"') >= 0 || expression.IndexOf('?') >= 0 || expression.IndexOf('$') >= 0
@@ -726,7 +747,10 @@ internal sealed class AnalyzerSettings
         return From(new DictionaryOptions(values));
     }
 
-    private sealed class DictionaryOptions(Dictionary<string, string> values) : AnalyzerConfigOptions
+    /// <summary>Settings from the analyzer options of an <c>.editorconfig</c> section (the <c>blazor-a11y fix</c> command).</summary>
+    public static AnalyzerSettings From(IReadOnlyDictionary<string, string> values) => From(new DictionaryOptions(values));
+
+    private sealed class DictionaryOptions(IReadOnlyDictionary<string, string> values) : AnalyzerConfigOptions
     {
         public override bool TryGetValue(string key, out string value)
         {

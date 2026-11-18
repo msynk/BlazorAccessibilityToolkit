@@ -19,7 +19,10 @@ We have compared the toolkit with accessibility tools in other stacks twice. [AD
 - **Focus lost when `<Virtualize>` recycles the focused row.** It happens only when a pointer user scrolls the focused row out of view, and the result depends on the browser's sequential focus starting point. A check would be noisy, and the fix (keeping the focused item rendered) belongs in the component. Keyboard navigation through a virtualized list keeps the focused row in view and is not affected.
 - **Real screen-reader automation** (Guidepup with NVDA or VoiceOver in CI), beyond the virtual transcripts.
 - **An MCP server or overlay component** that exposes findings to agents or shows them in the running app during development.
-- **Roslyn code fixes** for analyzer findings that have one safe fix (for example `aria-labeledby` to `aria-labelledby`).
+
+## Done after the second survey
+
+- Code fixes for the analyzer findings that have one safe edit, in the IDE and with `blazor-a11y fix` ([Razor analyzers](analyzers.md#fixes)).
 
 ## Done in the second survey
 

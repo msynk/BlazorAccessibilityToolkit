@@ -15,6 +15,24 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The blazor-a11y fix command runs the rules and fixes outside the compiler. -->
+    <InternalsVisibleTo Include="BlazorAccessibilityToolkit.Cli" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Built first so that its assembly can be packed next to the analyzer; not referenced by the analyzer. -->
+    <ProjectReference Include="..\BlazorAccessibilityToolkit.Analyzers.CodeFixes\BlazorAccessibilityToolkit.Analyzers.CodeFixes.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
+  <!-- Packs the code fix assembly next to the analyzer, taking its path from the project instead of guessing the output folder. -->
+  <Target Name="PackCodeFixes" BeforeTargets="_GetPackageFiles">
+    <MSBuild Projects="..\BlazorAccessibilityToolkit.Analyzers.CodeFixes\BlazorAccessibilityToolkit.Analyzers.CodeFixes.csproj" Targets="GetTargetPath">
+      <Output TaskParameter="TargetOutputs" ItemName="_CodeFixesAssembly" />
+    </MSBuild>
+    <Error Condition="!Exists('@(_CodeFixesAssembly)')" Text="The code fix assembly '@(_CodeFixesAssembly)' has not been built." />
+    <ItemGroup>
+      <None Include="@(_CodeFixesAssembly)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    </ItemGroup>
+  </Target>
 </Project>

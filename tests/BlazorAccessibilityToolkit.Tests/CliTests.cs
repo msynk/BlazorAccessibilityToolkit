@@ -166,4 +166,105 @@ public sealed class CliTests : IDisposable
         Assert.Equal(QualityGateResult.Success, Run("--help").Code);
         Assert.Equal(QualityGateResult.Success, Run("--version").Code);
     }
+
+    [Fact]
+    public void Fix_applies_the_safe_fixes_and_keeps_the_byte_order_mark()
+    {
+        var pages = Directory.CreateDirectory(Path.Combine(_root, "src", "Pages")).FullName;
+        var orders = Path.Combine(pages, "Orders.razor");
+        File.WriteAllText(orders, "@page \"/orders\"\r\n<a href=\"#list\">Skip</a>\r\n<input id=\"q\" aria-labeledby=\"l\">\r\n<input id=\"p\" type=\"password\" autocomplete=\"off\">\r\n", new System.Text.UTF8Encoding(true));
+        var generated = Directory.CreateDirectory(Path.Combine(_root, "src", "obj")).FullName;
+        File.WriteAllText(Path.Combine(generated, "Copy.razor"), "<input id=\"q\" aria-labeledby=\"l\">");
+
+        var (code, output, _) = Run("fix", Path.Combine(_root, "src"));
+
+        Assert.Equal(QualityGateResult.Success, code);
+        var bytes = File.ReadAllBytes(orders);
+        Assert.Equal([0xEF, 0xBB, 0xBF], bytes[..3]);
+        Assert.Equal("@page \"/orders\"\r\n<a href=\"/orders#list\">Skip</a>\r\n<input id=\"q\" aria-labelledby=\"l\">\r\n<input id=\"p\" type=\"password\" autocomplete=\"off\">\r\n", System.Text.Encoding.UTF8.GetString(bytes[3..]));
+        Assert.Contains("Orders.razor(3,15): BA11Y004: Rename to 'aria-labelledby'", output, StringComparison.Ordinal);
+        Assert.Contains("BA11Y033: not changed, choose one: Change to autocomplete=\"current-password\" or Change to autocomplete=\"new-password\"", output, StringComparison.Ordinal);
+        Assert.Contains("Fixed 2 finding(s) in 1 of 1 file(s). 1 finding(s) offer a choice of fixes and were left for you.", output, StringComparison.Ordinal);
+        Assert.Equal("<input id=\"q\" aria-labeledby=\"l\">", File.ReadAllText(Path.Combine(generated, "Copy.razor")));
+    }
+
+    [Fact]
+    public void Fix_dry_run_lists_without_changing_and_fails_when_something_is_fixable()
+    {
+        var file = Path.Combine(_root, "Menu.razor");
+        const string markup = "<button role=\"button\" aria-labeledby=\"t\">Menu</button>";
+        File.WriteAllText(file, markup);
+
+        var (code, output, _) = Run("fix", file, "--rule", "BA11Y023", "--dry-run");
+
+        Assert.Equal(QualityGateResult.FindingsFailed, code);
+        Assert.Equal(markup, File.ReadAllText(file));
+        Assert.Contains("BA11Y023: Remove role=\"button\"", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("BA11Y004", output, StringComparison.Ordinal);
+        Assert.Contains("Would fix 1 finding(s) in 1 of 1 file(s).", output, StringComparison.Ordinal);
+
+        Assert.Equal(QualityGateResult.Success, Run("fix", file, "--rule", "BA11Y003", "--dry-run").Code);
+    }
+
+    [Fact]
+    public void Fix_rejects_rules_without_a_fix_and_missing_paths()
+    {
+        var (code, _, error) = Run("fix", _root, "--rule", "BA11Y002");
+        Assert.Equal(QualityGateResult.InvalidUsage, code);
+        Assert.Contains("BA11Y002 has no automatic fix", error, StringComparison.Ordinal);
+
+        Assert.Equal(QualityGateResult.InvalidUsage, Run("fix", Path.Combine(_root, "missing")).Code);
+    }
+
+    [Fact]
+    public void Fix_rejects_a_file_that_is_not_razor()
+    {
+        var file = Path.Combine(_root, "Page.cs");
+        File.WriteAllText(file, "var html = \"<button role=\\\"button\\\">Save</button>\";");
+
+        var (code, _, error) = Run("fix", file);
+
+        Assert.Equal(QualityGateResult.InvalidUsage, code);
+        Assert.Contains("is not a .razor or .cshtml file", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Fix_skips_files_it_cannot_write_back_unchanged_and_keeps_utf16()
+    {
+        var latin1 = Path.Combine(_root, "Legacy.razor");
+        byte[] cp1252 = [.. System.Text.Encoding.ASCII.GetBytes("<p>Caf"), 0xE9, .. System.Text.Encoding.ASCII.GetBytes("</p><button role=\"button\">Save</button>")];
+        File.WriteAllBytes(latin1, cp1252);
+        var utf16 = Path.Combine(_root, "Wide.razor");
+        File.WriteAllText(utf16, "<p>Café</p><button role=\"button\">Save</button>", new System.Text.UnicodeEncoding(false, true));
+
+        var (code, output, error) = Run("fix", _root);
+
+        Assert.Equal(QualityGateResult.Success, code);
+        Assert.Equal(cp1252, File.ReadAllBytes(latin1));
+        Assert.Contains("Legacy.razor: skipped", error, StringComparison.Ordinal);
+        var bytes = File.ReadAllBytes(utf16);
+        Assert.Equal([0xFF, 0xFE], bytes[..2]);
+        Assert.Equal("<p>Café</p><button>Save</button>", System.Text.Encoding.Unicode.GetString(bytes[2..]));
+        Assert.Contains("Fixed 1 finding(s) in 1 of 2 file(s). 1 file(s) skipped.", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Fix_follows_editorconfig_and_skips_hidden_and_build_folders()
+    {
+        File.WriteAllText(Path.Combine(_root, ".editorconfig"), "root = true\n\n[*.razor]\ndotnet_diagnostic.BA11Y023.severity = none\n\n[Legacy/**.razor]\nblazor_a11y_analyzer.enabled = false\n");
+        const string markup = "<button role=\"button\" aria-labeledby=\"t\">Menu</button>";
+        foreach (var folder in new[] { "Pages", "Legacy", ".git", "node_modules" })
+        {
+            File.WriteAllText(Path.Combine(Directory.CreateDirectory(Path.Combine(_root, folder)).FullName, "Menu.razor"), markup);
+        }
+
+        var (code, output, _) = Run("fix", _root);
+
+        Assert.Equal(QualityGateResult.Success, code);
+        Assert.Equal("<button role=\"button\" aria-labelledby=\"t\">Menu</button>", File.ReadAllText(Path.Combine(_root, "Pages", "Menu.razor")));
+        Assert.Equal(markup, File.ReadAllText(Path.Combine(_root, "Legacy", "Menu.razor")));
+        Assert.Equal(markup, File.ReadAllText(Path.Combine(_root, ".git", "Menu.razor")));
+        Assert.Equal(markup, File.ReadAllText(Path.Combine(_root, "node_modules", "Menu.razor")));
+        Assert.Contains("Fixed 1 finding(s) in 1 of 2 file(s).", output, StringComparison.Ordinal);
+    }
 }

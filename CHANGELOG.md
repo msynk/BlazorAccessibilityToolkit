@@ -4,6 +4,8 @@
 
 ### Added
 
+- **Code fixes for the Razor analyzer.** Findings of `BA11Y003`, `BA11Y004`, `BA11Y023`, `BA11Y028`, `BA11Y029`, `BA11Y033`, `BA11Y035` and `BA11Y038` that have one safe edit carry it. Examples: `aria-labeledby` to `aria-labelledby`, `<button role="button">` to `<button>`, `en_US` to `en-US`, `aria-expanded="@open"` to `"@(open ? "true" : "false")"`, and `href="#list"` to `href="/orders#list"`. The fixes are offered in the IDE, including "fix all", where the IDE supports code fixes in additional files. They also run from the command line with the new **`blazor-a11y fix`** command, with `--rule` and `--dry-run`, because `dotnet format` only fixes C# files. A fix is skipped when the attribute changed after it was analyzed. The command follows the analyzer's `.editorconfig` settings and keeps the file's encoding and byte order mark. It skips files that would not be written back byte for byte. See [Razor analyzers](docs/analyzers.md#fixes).
+
 The first group of entries closes the gaps found by the second cross-stack survey ([ADR 0003](docs/adr/0003-second-survey.md)).
 
 - **25 more analyzer rules, `BA11Y014` to `BA11Y038`.**
@@ -87,6 +89,8 @@ The first group of entries closes the gaps found by the second cross-stack surve
 
 ### Fixed
 
+- `BA11Y035` no longer reads `aria-expanded="@(a) && (b)"` as one bool expression. Razor renders it as the value of `a` followed by the text ` && (b)`.
+- `BA11Y023` no longer calls `role="complementary"` redundant on an unnamed `<aside>` inside `<article>`, `<aside>`, `<nav>` or `<section>`. Such an `<aside>` is generic without the role.
 - `blazor-click-handler-semantics` and `BA11Y001` no longer report clickable items of a composite widget whose container manages focus and keys, such as options of an `aria-activedescendant` listbox (found by the demo's analyzer dogfooding).
 - `AriaPatterns.VerifyToolbarAsync` accepts a toolbar that is the last tab stop of the page when Tab leaves focus on the same control, as headless Firefox does at the end of the tab order.
 - Verifier fixes from a code review:

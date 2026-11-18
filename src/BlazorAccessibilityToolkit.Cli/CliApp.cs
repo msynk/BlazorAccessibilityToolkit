@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text;
+using BlazorAccessibilityToolkit.Analyzers;
 using BlazorAccessibilityToolkit.Baselines;
 using BlazorAccessibilityToolkit.ManualReview;
 using BlazorAccessibilityToolkit.Reporting;
@@ -18,6 +20,8 @@ public static class CliApp
           blazor-a11y manual init --name <name> [--scope <scope>] [--template standard|wcag22aa] --output <file>
           blazor-a11y manual validate <file>...
           blazor-a11y rules                List the toolkit's own rules
+          blazor-a11y fix [<path>...] [--rule <id>] [--dry-run]
+                                           Apply the Razor analyzer's safe fixes to .razor and .cshtml files
           blazor-a11y --version | --help
 
         report / baseline options:
@@ -39,6 +43,11 @@ public static class CliApp
           --sarif-fallback-uri <path>  Repository-relative file for SARIF results without a component file (page audits)
           --step-summary          Append the Markdown report to $GITHUB_STEP_SUMMARY (GitHub Actions job summary)
           --allow-failed          (baseline) write a baseline even if some audits failed
+
+        fix options:
+          <path>                  .razor or .cshtml file, or a directory searched recursively (bin and obj are skipped). Default: .
+          --rule <id>             Only fix findings of this rule (repeatable, or comma-separated), for example BA11Y004
+          --dry-run               List the fixes without changing files; exit code 1 when there is something to fix
 
         Exit codes: 0 success, 1 accessibility findings failed the policy, 2 audits failed/no results/unreadable input, 3 usage error.
         Automated checks cannot prove WCAG conformance.
@@ -71,6 +80,7 @@ public static class CliApp
                 "baseline" => Baseline(parsed, output, error),
                 "manual" => Manual(parsed, output, error),
                 "rules" => Rules(output),
+                "fix" => Fix(parsed, output, error),
                 _ => throw new UsageException($"Unknown command '{args[0]}'."),
             };
         }
@@ -275,6 +285,189 @@ public static class CliApp
         }
     }
 
+    private static int Fix(Arguments args, TextWriter output, TextWriter error)
+    {
+        var rules = args.All("rule").SelectMany(r => r.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)).Select(r => r.ToUpperInvariant()).ToHashSet(StringComparer.Ordinal);
+        foreach (var rule in rules.Where(r => !MarkupFixProperties.FixableIds.Contains(r)))
+        {
+            throw new UsageException($"{rule} has no automatic fix. Rules with fixes: {string.Join(", ", MarkupFixProperties.FixableIds)}.");
+        }
+
+        var dryRun = args.Flag("dry-run");
+        var files = new List<string>();
+        foreach (var path in args.Positional.DefaultIfEmpty("."))
+        {
+            if (File.Exists(path))
+            {
+                if (!IsRazorFile(path))
+                {
+                    throw new UsageException($"'{path}' is not a .razor or .cshtml file.");
+                }
+
+                files.Add(path);
+            }
+            else if (Directory.Exists(path))
+            {
+                files.AddRange(RazorFiles(path, error).Order(StringComparer.Ordinal));
+            }
+            else
+            {
+                throw new UsageException($"'{path}' does not exist.");
+            }
+        }
+
+        var editorConfig = EditorConfigFor(files);
+        int fixedCount = 0, changedFiles = 0, choices = 0, skipped = 0;
+        var focusOrderChanged = false;
+        foreach (var file in files)
+        {
+            // The same .editorconfig settings as the analyzer: files it is turned off for, rules set to none, component mapping.
+            var options = editorConfig.GetOptionsForSourcePath(Path.GetFullPath(file));
+            if (options.AnalyzerOptions.TryGetValue("blazor_a11y_analyzer.enabled", out var enabled) && string.Equals(enabled.Trim(), "false", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var fileRules = (rules.Count == 0 ? MarkupFixProperties.FixableIds.ToHashSet(StringComparer.Ordinal) : rules)
+                .Where(id => !(options.TreeOptions.TryGetValue(id, out var severity) && severity == Microsoft.CodeAnalysis.ReportDiagnostic.Suppress))
+                .ToHashSet(StringComparer.Ordinal);
+
+            var bytes = File.ReadAllBytes(file);
+            if (!TryDecode(bytes, out var encoding, out var preamble, out var markup))
+            {
+                error.WriteLine($"{file}: skipped, the file is not valid UTF-8 or UTF-16 and would not be written back unchanged.");
+                skipped++;
+                continue;
+            }
+
+            var (text, applied, needChoice) = RazorFixer.Fix(markup, fileRules, AnalyzerSettings.From(options.AnalyzerOptions));
+            foreach (var fix in applied)
+            {
+                output.WriteLine($"{file}({fix.Line},{fix.Column}): {fix.RuleId}: {fix.Title}");
+            }
+
+            foreach (var choice in needChoice)
+            {
+                output.WriteLine($"{file}({choice.Line},{choice.Column}): {choice.RuleId}: not changed, choose one: {choice.Title}");
+            }
+
+            fixedCount += applied.Count;
+            choices += needChoice.Count;
+            focusOrderChanged |= applied.Any(f => f.RuleId == "BA11Y003");
+            if (applied.Count > 0)
+            {
+                changedFiles++;
+                if (!dryRun)
+                {
+                    File.WriteAllBytes(file, [.. bytes.AsSpan(0, preamble), .. encoding.GetBytes(text)]);
+                }
+            }
+        }
+
+        var verb = dryRun ? "Would fix" : "Fixed";
+        output.WriteLine($"{verb} {fixedCount} finding(s) in {changedFiles} of {files.Count} file(s)."
+            + (choices > 0 ? $" {choices} finding(s) offer a choice of fixes and were left for you." : string.Empty)
+            + (skipped > 0 ? $" {skipped} file(s) skipped." : string.Empty));
+        if (focusOrderChanged)
+        {
+            output.WriteLine("BA11Y003 fixes change the focus order to the markup order: check that the markup is in a logical order.");
+        }
+
+        return dryRun && fixedCount > 0 ? QualityGateResult.FindingsFailed : QualityGateResult.Success;
+    }
+
+    private static bool IsRazorFile(string path) =>
+        path.EndsWith(".razor", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase);
+
+    // Walks the tree without entering build output, dependencies or hidden folders (.git, .vs), and skips folders it
+    // cannot read instead of failing the run.
+    private static IEnumerable<string> RazorFiles(string root, TextWriter error)
+    {
+        var pending = new Stack<string>([root]);
+        while (pending.Count > 0)
+        {
+            var directory = pending.Pop();
+            string[] entries, subdirectories;
+            try
+            {
+                entries = Directory.GetFiles(directory);
+                subdirectories = Directory.GetDirectories(directory);
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+            {
+                error.WriteLine($"{directory}: skipped, {ex.Message}");
+                continue;
+            }
+
+            foreach (var file in entries.Where(IsRazorFile))
+            {
+                yield return file;
+            }
+
+            foreach (var subdirectory in subdirectories)
+            {
+                var name = Path.GetFileName(subdirectory);
+                if (name is not ("bin" or "obj" or "node_modules") && !name.StartsWith('.'))
+                {
+                    pending.Push(subdirectory);
+                }
+            }
+        }
+    }
+
+    // The .editorconfig files in the folders above the files, which the analyzer would also read.
+    private static Microsoft.CodeAnalysis.AnalyzerConfigSet EditorConfigFor(IEnumerable<string> files)
+    {
+        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var directory in files.Select(f => Path.GetDirectoryName(Path.GetFullPath(f))).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            for (var current = directory; current is not null; current = Path.GetDirectoryName(current))
+            {
+                var candidate = Path.Combine(current, ".editorconfig");
+                if (!paths.Contains(candidate) && File.Exists(candidate))
+                {
+                    paths.Add(candidate);
+                }
+            }
+        }
+
+        return Microsoft.CodeAnalysis.AnalyzerConfigSet.Create(paths.Select(path => Microsoft.CodeAnalysis.AnalyzerConfig.Parse(File.ReadAllText(path), path)).ToList());
+    }
+
+    // Decodes strictly and only accepts files that encode back to the same bytes, so that writing the file back changes
+    // nothing but the fixes. Keeps the byte order mark as it was.
+    private static bool TryDecode(byte[] bytes, out Encoding encoding, out int preamble, out string text)
+    {
+        (encoding, preamble) = bytes switch
+        {
+            [0xFF, 0xFE, 0x00, 0x00, ..] or [0x00, 0x00, 0xFE, 0xFF, ..] => (Encoding.UTF32, -1),
+            [0xEF, 0xBB, 0xBF, ..] => (new UTF8Encoding(false, true), 3),
+            [0xFF, 0xFE, ..] => (new UnicodeEncoding(false, false, true), 2),
+            [0xFE, 0xFF, ..] => (new UnicodeEncoding(true, false, true), 2),
+            _ => ((Encoding)new UTF8Encoding(false, true), 0),
+        };
+        text = string.Empty;
+        if (preamble < 0)
+        {
+            preamble = 0;
+            return false;
+        }
+
+        try
+        {
+            text = encoding.GetString(bytes, preamble, bytes.Length - preamble);
+            return encoding.GetBytes(text).AsSpan().SequenceEqual(bytes.AsSpan(preamble));
+        }
+        catch (DecoderFallbackException)
+        {
+            return false;
+        }
+        catch (EncoderFallbackException)
+        {
+            return false;
+        }
+    }
+
     private static int Rules(TextWriter output)
     {
         foreach (var rule in ToolkitRules.All)
@@ -354,7 +547,7 @@ public static class CliApp
 
     private sealed class Arguments
     {
-        private static readonly HashSet<string> Flags = new(StringComparer.Ordinal) { "fail-on-potential", "fail-on-inconclusive", "fail-on-manual-review", "strict", "allow-empty", "allow-failed", "step-summary" };
+        private static readonly HashSet<string> Flags = new(StringComparer.Ordinal) { "fail-on-potential", "fail-on-inconclusive", "fail-on-manual-review", "strict", "allow-empty", "allow-failed", "step-summary", "dry-run" };
 
         private readonly Dictionary<string, List<string>> _values = new(StringComparer.Ordinal);
 
@@ -411,7 +604,7 @@ public static class CliApp
 
         private void Add(string name, string value)
         {
-            var known = new[] { "input", "baseline", "manual-review", "format", "output", "fail-on", "source-root", "sarif-fallback-uri", "name", "scope", "template", "product", "product-version", "organization", "contact", "contact-email", "level" };
+            var known = new[] { "input", "baseline", "manual-review", "format", "output", "fail-on", "source-root", "sarif-fallback-uri", "name", "scope", "template", "product", "product-version", "organization", "contact", "contact-email", "level", "rule" };
             if (!Flags.Contains(name) && !known.Contains(name))
             {
                 throw new UsageException($"Unknown option --{name}.");

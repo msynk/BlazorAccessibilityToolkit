@@ -146,9 +146,11 @@ public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
         }
 
         var settings = AnalyzerSettings.From(options);
-        foreach (var (descriptor, element, span, args) in Analyze(text.ToString(), settings))
+        var markup = text.ToString();
+        foreach (var (descriptor, element, span, args) in Analyze(markup, settings))
         {
-            context.ReportDiagnostic(Diagnostic.Create(descriptor, Location.Create(path, span, text.Lines.GetLinePositionSpan(span)), args));
+            var location = Location.Create(path, span, text.Lines.GetLinePositionSpan(span));
+            context.ReportDiagnostic(CreateDiagnostic(descriptor, location, FixesFor(descriptor, element, span, args, markup), args));
         }
     }
 

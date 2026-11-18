@@ -7,6 +7,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/BlazorAccessibilityToolkit.Analyzers/BlazorAccessibilityToolkit.Analyzers.csproj" />
+    <Project Path="src/BlazorAccessibilityToolkit.Analyzers.CodeFixes/BlazorAccessibilityToolkit.Analyzers.CodeFixes.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit.Cli/BlazorAccessibilityToolkit.Cli.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit.Components/BlazorAccessibilityToolkit.Components.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit.ComponentTesting/BlazorAccessibilityToolkit.ComponentTesting.csproj" />

@@ -28,9 +28,9 @@ dotnet run --project demo/BlazorAccessibilityToolkit.Demo.WebApp   # http://loca
 | `BlazorAccessibilityToolkit` | Core model, assertions, baselines, suppressions, quality gates, manual review and reports (console, JSON, JUnit, SARIF, HTML). No dependencies. |
 | `BlazorAccessibilityToolkit.ComponentTesting` | bUnit component fixtures, Razor markup rules and component attribution. Works without a browser. |
 | `BlazorAccessibilityToolkit.Playwright` | axe-core audits, keyboard scenarios, focus order, live regions, ARIA snapshots, ARIA pattern checks, a browser engine for bUnit markup, and an in-process interactive component host. |
-| `BlazorAccessibilityToolkit.Cli` | The `blazor-a11y` dotnet tool: aggregates results, compares them with a baseline, applies the failure policy and writes reports (including a Markdown job summary) with CI exit codes. |
+| `BlazorAccessibilityToolkit.Cli` | The `blazor-a11y` dotnet tool: aggregates results, compares them with a baseline, applies the failure policy and writes reports (including a Markdown job summary) with CI exit codes. `blazor-a11y fix` applies the Razor analyzer's safe fixes. |
 | `BlazorAccessibilityToolkit.Components` | Runtime helpers for your app: a live announcer service, a skip link that works with `<base href="/">`, focus traps with focus restoration, a route announcer and visually hidden text. |
-| `BlazorAccessibilityToolkit.Analyzers` | Compile-time checks of `.razor` markup: clickable `div`s, images without `alt`, unlabeled fields, unnamed buttons, invalid ARIA, missing page titles and more (38 rules), with component-library mapping. Warnings with the Razor file and line. |
+| `BlazorAccessibilityToolkit.Analyzers` | Compile-time checks of `.razor` markup: clickable `div`s, images without `alt`, unlabeled fields, unnamed buttons, invalid ARIA, missing page titles and more (38 rules), with component-library mapping. Warnings with the Razor file and line, and fixes for findings with one safe edit. |
 
 Requirements: .NET 10, and Playwright browsers for browser features (installed explicitly, see [Getting started](docs/getting-started.md)).
 

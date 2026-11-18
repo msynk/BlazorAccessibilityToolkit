@@ -71,6 +71,42 @@ Blazor renders an attribute whose value is the bool `false` by leaving it out. T
 
 `BA11Y035` reports such an attribute when its value is clearly a bool: a negation, a comparison or logical expression, a `true` or `false` literal, or a field, property or parameter declared as `bool` in the same `.razor` file. Values that are strings, ternaries or `ToString()` calls are accepted. Rendered-markup audits cannot see this defect: the attribute is simply absent, as if it had never been written.
 
+## Fixes
+
+Some findings have one edit that is always right. The analyzer attaches that edit to the finding, and you can apply it in two ways:
+
+- **In the IDE**, as a code fix ("light bulb"), one at a time or with "fix all" in the project or solution. The fixes come with the analyzer package. Your IDE must support code fixes in additional files, because `.razor` files reach analyzers as additional files. Whether the Razor editor shows them depends on the IDE and its version.
+- **From the command line**, with `blazor-a11y fix` from the [CLI tool](ci-integration.md#the-cli). It works in any editor and in CI. `dotnet format` does not help here: it only fixes C# files.
+
+```bash
+blazor-a11y fix src                       # apply every safe fix under src (bin and obj are skipped)
+blazor-a11y fix src --rule BA11Y004       # only one rule (repeatable, or comma-separated)
+blazor-a11y fix src --dry-run             # list the fixes; exit code 1 when there is something to fix
+```
+
+| Rule | Fix |
+| --- | --- |
+| `BA11Y003` | `tabindex="3"` becomes `tabindex="0"`. The element then follows the markup order, so check that the markup order is logical. |
+| `BA11Y004` | A misspelled attribute is renamed to the suggested one, such as `aria-labeledby` to `aria-labelledby`. No fix when there is no close match, or when the element already has the suggested attribute. |
+| `BA11Y023` | The redundant `role` is removed (`<button role="button">` becomes `<button>`). |
+| `BA11Y028` | An underscore becomes a hyphen when the result is a valid tag (`en_US` to `en-US`). No fix for values like `english`. |
+| `BA11Y029` | `user-scalable=no` and a `maximum-scale` below 2 are removed from the viewport `content`. |
+| `BA11Y033` | `@onpaste:preventDefault`, or an `onpaste="return false"` handler that only blocks pasting, is removed. For `<input type="password" autocomplete="off">` the IDE offers `current-password` or `new-password`. `blazor-a11y fix` lists those findings without changing them, because only a person knows which token is right. |
+| `BA11Y035` | `aria-expanded="@open"` becomes `aria-expanded="@(open ? "true" : "false")"`. |
+| `BA11Y038` | `href="#list"` gets the page's path, such as `href="/orders#list"`. This happens only when the file has exactly one `@page` route and the route has no parameters. The path is root-relative, like the rule's advice. In an app hosted under a path base (`<base href="/admin/">`), do not apply this fix. Use the `SkipLink` component instead. |
+
+A fix is applied only when the attribute is still what the analyzer saw.
+
+The command line follows the same configuration as the analyzer:
+
+- `blazor-a11y-ignore` comments,
+- `blazor_a11y_analyzer.enabled = false`, the component map and `dotnet_diagnostic.<id>.severity = none` from the `.editorconfig` files above each file.
+
+It also takes these precautions:
+
+- It skips `bin`, `obj`, `node_modules` and hidden folders.
+- It leaves alone a file that is not valid UTF-8 or UTF-16, because writing it back would change other characters.
+
 ## What the analyzer assumes
 
 The rules read the markup as written, so they only report what the markup states:

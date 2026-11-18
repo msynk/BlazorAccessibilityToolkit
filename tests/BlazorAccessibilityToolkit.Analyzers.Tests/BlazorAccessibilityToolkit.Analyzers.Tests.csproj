@@ -4,9 +4,11 @@
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Analyzers\BlazorAccessibilityToolkit.Analyzers.csproj" />
+    <ProjectReference Include="../../src/BlazorAccessibilityToolkit.Analyzers.CodeFixes/BlazorAccessibilityToolkit.Analyzers.CodeFixes.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

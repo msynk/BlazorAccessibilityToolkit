@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Code fixes run in the IDE, which loads netstandard2.0 assemblies. They live apart from the analyzer because the
+         compiler does not provide the Workspaces assemblies that code fixes need. -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Description>Code fixes for the Razor accessibility analyzer. Packed inside BlazorAccessibilityToolkit.Analyzers.</Description>
+    <RootNamespace>BlazorAccessibilityToolkit.Analyzers</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\BlazorAccessibilityToolkit.Analyzers\MarkupFixProperties.cs" Link="MarkupFixProperties.cs" />
+  </ItemGroup>
+</Project>

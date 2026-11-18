@@ -1,13 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <Description>Command-line tool for CI: aggregates Blazor Accessibility Toolkit audit results, compares them with a baseline, applies failure thresholds and writes console, JSON, JUnit, SARIF and HTML reports with meaningful exit codes.</Description>
+    <Description>Command-line tool for CI: aggregates Blazor Accessibility Toolkit audit results, compares them with a baseline, applies failure thresholds and writes console, JSON, JUnit, SARIF and HTML reports with meaningful exit codes. Also applies the Razor analyzer's safe fixes to .razor files (blazor-a11y fix).</Description>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>blazor-a11y</ToolCommandName>
     <PackageId>BlazorAccessibilityToolkit.Cli</PackageId>
     <RootNamespace>BlazorAccessibilityToolkit.Cli</RootNamespace>
+    <!-- Microsoft.CodeAnalysis (for the fix command) ships resources for 13 languages; the tool prints English only. -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\BlazorAccessibilityToolkit\BlazorAccessibilityToolkit.csproj" />
+    <!-- The fix command runs the Razor analyzer's rules and fixes on .razor files. -->
+    <ProjectReference Include="..\BlazorAccessibilityToolkit.Analyzers\BlazorAccessibilityToolkit.Analyzers.csproj" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" />
   </ItemGroup>
 </Project>

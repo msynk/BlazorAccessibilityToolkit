@@ -12,7 +12,7 @@ async function announce() {
     }
 
     const name = await currentPageName();
-    const text = (region.dataset.ba11yFormat || 'Navigated to {0}').replace('{0}', name);
+    const text = (region.dataset.ba11yFormat || 'Navigated to {0}').replace('{0}', () => name);
     if (region.textContent === text) {
         region.textContent = '';
         await new Promise(resolve => setTimeout(resolve, 150));

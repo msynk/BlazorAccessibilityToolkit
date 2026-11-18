@@ -16,7 +16,7 @@ Pages/Cart.razor(14,6): warning BA11Y001: <div> has a Blazor @onclick handler, b
 
 | Id | Title | WCAG |
 | --- | --- | --- |
-| <a id="ba11y001"></a>`BA11Y001` | Clickable element is not keyboard accessible: `@onclick`, `@onmousedown`, `@onmouseup`, `@onpointerdown`, `@onpointerup` or `@ondblclick` on an element that is not a button, link or form control, without an interactive role, `tabindex` or `@onkeydown`/`@onkeyup` | 2.1.1, 4.1.2 |
+| <a id="ba11y001"></a>`BA11Y001` | Clickable element is not keyboard accessible: `@onclick`, `@onmousedown`, `@onmouseup`, `@onpointerdown`, `@onpointerup` or `@ondblclick` on an element that is not a button, link or form control, without an interactive role, `tabindex` or `@onkeydown`/`@onkeyup`. Items of a composite widget whose container manages focus and keys (an `option` in a `listbox`, a `gridcell` in a `grid`, or an item in `ActiveDescendantGroup` or `RovingFocusGroup`) are accepted | 2.1.1, 4.1.2 |
 | <a id="ba11y002"></a>`BA11Y002` | `<img>`, `<input type="image">` or `<area href>` without `alt`, or `<svg role="img">` without `<title>` or `aria-label` (use `alt=""` for decorative images) | 1.1.1 |
 | <a id="ba11y003"></a>`BA11Y003` | Positive `tabindex` | 2.4.3 |
 | <a id="ba11y004"></a>`BA11Y004` | Unknown `aria-*` attribute, with a suggestion for typos such as `aria-labeledby` | 4.1.2 |

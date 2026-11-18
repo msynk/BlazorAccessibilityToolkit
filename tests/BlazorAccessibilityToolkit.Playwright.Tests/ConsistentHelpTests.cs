@@ -59,4 +59,19 @@ public sealed class ConsistentHelpTests(BrowserFixture browser)
         Assert.Contains("\"Help centre\" is in the banner landmark, but on /a in the contentinfo landmark", moved.Remediation, StringComparison.Ordinal);
         Assert.All(audit.Findings, f => Assert.Equal(["3.2.6"], f.Wcag.Select(w => w.Id)));
     }
+
+    [Fact]
+    public async Task Help_repeated_in_header_and_footer_in_the_same_order_passes()
+    {
+        const string help = """<a href="/help">Help centre</a>""";
+        await using var session = await SiteAsync(new()
+        {
+            ["/a"] = Page("Orders", help + " " + Standard, header: help),
+            ["/b"] = Page("Account", help + " " + Standard, header: help),
+        });
+
+        var audit = await session.Page.AuditConsistentHelpAsync(new Uri("http://site.test/"), ["/a", "/b"]);
+
+        Assert.Empty(audit.Findings);
+    }
 }

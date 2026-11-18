@@ -118,7 +118,11 @@ export function trapFocus(container, options) {
 
 // The page title after Blazor's HeadOutlet updated it, then the first heading, then the path.
 export async function currentPageName() {
-    await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    // requestAnimationFrame does not run in background tabs, so a timer bounds the wait.
+    await new Promise(resolve => {
+        const timer = setTimeout(resolve, 100);
+        requestAnimationFrame(() => setTimeout(() => { clearTimeout(timer); resolve(); }, 0));
+    });
     const title = (document.title || '').trim();
     if (title) {
         return title;
@@ -396,6 +400,8 @@ export function activeDescendant(container, owner, options) {
         dispose() {
             observer.disconnect();
             owner.removeEventListener('keydown', onKeyDown);
+            // Do not leave the owner pointing at an option that is about to be removed or re-created.
+            setActive(null);
         },
     };
 }

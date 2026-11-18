@@ -82,4 +82,21 @@ public sealed class SortableTableTests(BrowserFixture browser, HostFixture host)
         var result = await AriaPatterns.VerifyPaginationAsync(session.Page.Locator("#next"), session.Page.Locator("#list"), Fast);
         Assert.True(result.Passed, result.Describe());
     }
+
+    [Fact]
+    public async Task A_table_with_one_row_cannot_prove_its_order()
+    {
+        const string html = """
+            <main><h1>x</h1><table><thead><tr><th aria-sort="none"><button id="b">Name</button></th></tr></thead>
+            <tbody><tr><td>Ana</td></tr></tbody></table></main>
+            <script>
+              const th = document.querySelector('th');
+              document.getElementById('b').addEventListener('click', () => th.setAttribute('aria-sort', th.getAttribute('aria-sort') === 'ascending' ? 'descending' : 'ascending'));
+            </script>
+            """;
+        await using var session = await browser.PageAsync(html);
+        var result = await AriaPatterns.VerifySortableTableAsync(session.Page.Locator("table"), options: Fast);
+
+        Assert.Contains(result.Checks, c => !c.Passed && c.Requirement.StartsWith("Rows are in ascending order", StringComparison.Ordinal) && c.Detail == "fewer than two rows to compare");
+    }
 }

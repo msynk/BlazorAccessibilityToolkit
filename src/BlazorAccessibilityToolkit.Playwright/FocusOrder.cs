@@ -393,7 +393,8 @@ public static class FocusOrder
                 continue;
             }
 
-            if (VisuallyBefore(previous, next, rightToLeft)
+            // When the neighbors share a row, focus is reading down a column and moving to the next one: not reported.
+            if (VisuallyBefore(previous, next, rightToLeft) && !SameRow(previous, next)
                 && ((VisuallyBefore(current, previous, rightToLeft) && VisuallyBefore(current, next, rightToLeft))
                     || (VisuallyBefore(previous, current, rightToLeft) && VisuallyBefore(next, current, rightToLeft))))
             {
@@ -403,6 +404,12 @@ public static class FocusOrder
                     data: new Dictionary<string, string> { ["index"] = (i + 1).ToString(CultureInfo.InvariantCulture) });
             }
         }
+    }
+
+    private static bool SameRow(FocusBounds a, FocusBounds b)
+    {
+        var tolerance = Math.Min(a.Height, b.Height) / 2;
+        return a.Y + a.Height > b.Y + tolerance && b.Y + b.Height > a.Y + tolerance;
     }
 
     // Reading order: a row above comes first; within a row (vertical overlap), the start side comes first.

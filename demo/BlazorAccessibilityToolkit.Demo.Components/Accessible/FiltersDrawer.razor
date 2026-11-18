@@ -1,0 +1,34 @@
+@* A modal drawer: FocusTrap (BlazorAccessibilityToolkit.Components) keeps Tab inside, moves focus in when it opens and
+   back to the button when it closes. Escape closes it. *@
+<div class="save">
+    <button type="button" @onclick="() => open = true" aria-haspopup="dialog">Filters</button>
+    <p>Showing: @(inStock ? "in stock only" : "all products")</p>
+</div>
+@if (open)
+{
+    <div class="dialog-backdrop">
+        <FocusTrap class="dialog" role="dialog" aria-modal="true" aria-labelledby="@TitleId" @onkeydown="Key">
+            <h2 id="@TitleId">Filters</h2>
+            <label><input type="checkbox" checked="@inStock" @onchange="e => inStock = (bool)e.Value!" /> In stock only</label>
+            <div class="dialog-actions">
+                <button type="button" class="primary" @onclick="() => open = false">Apply</button>
+            </div>
+        </FocusTrap>
+    </div>
+}
+
+@code {
+    private readonly string titleId = $"filters-{Guid.NewGuid():N}";
+    private bool open;
+    private bool inStock;
+
+    private string TitleId => titleId;
+
+    private void Key(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            open = false;
+        }
+    }
+}

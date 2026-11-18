@@ -318,6 +318,17 @@ public static partial class AriaPatterns
         return focus.Element?.ElementKey == info.ElementKey;
     }
 
+    // True when no tabbable element follows the container in document order.
+    private static Task<bool> LastTabStopAsync(ILocator container) => container.EvaluateAsync<bool>("""
+        c => {
+          const t = window.__blazorA11y;
+          return !t.tabbables(null).some(x => {
+            const el = document.querySelector(x.selector);
+            return el && !c.contains(el) && (c.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+          });
+        }
+        """);
+
     private static async Task<bool> ContainsFocusAsync(ILocator container)
     {
         if (await container.CountAsync().ConfigureAwait(false) != 1)

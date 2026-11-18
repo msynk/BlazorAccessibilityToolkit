@@ -1,0 +1,21 @@
+@* A formatting toolbar with one tab stop: RovingFocusGroup (BlazorAccessibilityToolkit.Components) moves focus with the
+   arrow keys, Home and End. Compare FormattingToolbar, which implements the same pattern by hand. *@
+<RovingFocusGroup class="toolbar" aria-label="Text formatting">
+    @foreach (var (name, _) in formats)
+    {
+        <button type="button" aria-pressed="@(pressed.Contains(name) ? "true" : "false")" @onclick="() => Toggle(name)">@name</button>
+    }
+</RovingFocusGroup>
+
+@code {
+    private readonly (string Name, string Key)[] formats = [("Bold", "b"), ("Italic", "i"), ("Underline", "u")];
+    private readonly HashSet<string> pressed = [];
+
+    private void Toggle(string name)
+    {
+        if (!pressed.Remove(name))
+        {
+            pressed.Add(name);
+        }
+    }
+}

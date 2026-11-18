@@ -358,4 +358,27 @@ public sealed class PageTests(AppFixture app)
         result.ShouldPass();
         Assert.Equal("h1", (await session.Page.GetFocusAsync()).Element?.TagName);
     }
+
+    /// <summary>
+    /// The sidebar is sticky only on viewports tall enough for the whole menu. A sticky panel taller than the viewport
+    /// would focus its last links out of sight; this guards against the menu outgrowing the media query.
+    /// </summary>
+    [Theory]
+    [InlineData(720)]
+    [InlineData(900)]
+    [InlineData(1200)]
+    public async Task Sticky_navigation_always_fits_in_the_viewport(int height)
+    {
+        await using var session = await app.OpenAsync("/manual-review", new BrowserNewContextOptions { ViewportSize = new() { Width = 1280, Height = height } });
+
+        var state = await session.Page.EvaluateAsync<bool[]>("""
+            () => {
+              const inner = document.querySelector('.sidenav__inner');
+              return [getComputedStyle(inner).position === 'sticky', inner.getBoundingClientRect().height <= innerHeight];
+            }
+            """);
+        var (sticky, fits) = (state[0], state[1]);
+
+        Assert.True(!sticky || fits, $"The sticky navigation is taller than a {height}px viewport.");
+    }
 }

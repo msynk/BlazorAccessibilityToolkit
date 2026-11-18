@@ -51,4 +51,14 @@ public sealed class Wcag22MarkupTests
         Assert.Equal("email", finding.Data["purpose"]);
         Assert.Equal(["3.3.7"], finding.Wcag.Select(w => w.Id));
     }
+
+    [Fact]
+    public async Task Options_of_a_focus_managing_listbox_are_not_click_handler_findings()
+    {
+        await using var fixture = await AccessibilityFixture.For<ManagedOptions>().BuildAsync();
+        var audit = await fixture.AuditAsync();
+
+        var finding = Assert.Single(audit.Findings, f => f.RuleId == "blazor-click-handler-semantics");
+        Assert.Equal("#loose", finding.Target.Selector);
+    }
 }

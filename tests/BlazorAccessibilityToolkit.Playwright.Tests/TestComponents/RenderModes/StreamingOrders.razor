@@ -3,6 +3,10 @@
    and completion. Otherwise it shows a bare "Loading…" placeholder. *@
 <main>
     <h1>Orders</h1>
+    @if (CartStatus is not null)
+    {
+        <p role="status">@CartStatus</p>
+    }
     @if (Accessible)
     {
         <p role="status">@(orders is null ? "Loading orders…" : $"{orders.Length} orders loaded")</p>
@@ -27,6 +31,9 @@
     private string[]? orders;
 
     [Parameter] public bool Accessible { get; set; }
+
+    /// <summary>An unrelated status message that is there before, during and after loading.</summary>
+    [Parameter] public string? CartStatus { get; set; }
 
     protected override async Task OnInitializedAsync()
     {

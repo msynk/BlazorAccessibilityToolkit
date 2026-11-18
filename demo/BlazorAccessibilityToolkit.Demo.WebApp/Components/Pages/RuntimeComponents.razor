@@ -1,0 +1,62 @@
+@page "/runtime-components"
+<PageTitle>Runtime components · Blazor Accessibility Toolkit</PageTitle>
+
+<div class="page-intro">
+    <p class="eyebrow">In your app · BlazorAccessibilityToolkit.Components</p>
+    <h1>Runtime components</h1>
+    <p class="lead">
+        The other packages test accessibility. <code>BlazorAccessibilityToolkit.Components</code> goes into the app itself
+        and makes the accessible path the easy one: announcements, focus traps, keyboard navigation for composite widgets,
+        and focus management around navigation. Each component below is verified live with the toolkit's own patterns.
+    </p>
+</div>
+
+<RunAllTests />
+
+<ul class="reasons">
+    <li><strong>This showcase uses them too:</strong> the layout hosts the <code>LiveAnnouncer</code>, and the router uses <code>NavigationFocus</code>, so focus a keyboard user places while a page is still prerendered is not moved to the heading.</li>
+    <li><strong>Interactive render modes:</strong> the components use a small JavaScript module, loaded on first use from <code>_content/BlazorAccessibilityToolkit.Components</code>.</li>
+</ul>
+
+<section aria-labelledby="announcer">
+    <h2 id="announcer">Announcements with ILiveAnnouncer</h2>
+    <p>
+        <code>AnnounceAsync</code> writes into live regions that exist from the first render, announces a repeated message
+        again, and clears old messages. Compare the toast on the <a href="live-regions">live regions</a> page.
+    </p>
+    <ExampleCard Title="A cart button that announces the new total" Example="RuntimeExamples.AnnouncedCart" Sources="@(["AnnouncedCartButton.razor"])"
+                 Hears="1 item in the cart" HearsLabel="After adding an item, a screen reader announces">
+        <Stage><AnnouncedCartButton /></Stage>
+    </ExampleCard>
+</section>
+
+<section aria-labelledby="roving">
+    <h2 id="roving">One tab stop with RovingFocusGroup</h2>
+    <p>Arrow keys, Home and End move between the buttons; Tab leaves the toolbar. No JavaScript of your own.</p>
+    <ExampleCard Title="A formatting toolbar" Example="RuntimeExamples.RovingToolbarPattern" Sources="@(["RovingToolbar.razor"])">
+        <Stage><RovingToolbar /></Stage>
+    </ExampleCard>
+</section>
+
+<section aria-labelledby="active-descendant">
+    <h2 id="active-descendant">An editable combobox with ActiveDescendantGroup</h2>
+    <p>Focus stays in the input while ArrowDown and ArrowUp move the active option; Enter chooses it, Escape closes the list.</p>
+    <ExampleCard Title="A fruit picker" Example="RuntimeExamples.FruitPickerPattern" Sources="@(["FruitPicker.razor"])">
+        <Stage><FruitPicker /></Stage>
+    </ExampleCard>
+</section>
+
+<section aria-labelledby="trap">
+    <h2 id="trap">A modal drawer with FocusTrap</h2>
+    <p>Focus moves into the drawer, Tab stays inside it, and focus returns to the button when it closes.</p>
+    <ExampleCard Title="A filters drawer" Example="RuntimeExamples.FiltersDrawerPattern" Sources="@(["FiltersDrawer.razor"])">
+        <Stage><FiltersDrawer /></Stage>
+    </ExampleCard>
+</section>
+
+<div class="callout">
+    <p>
+        Read <a href="https://github.com/msynk/BlazorAccessibilityToolkit/blob/main/docs/runtime-components.md">the runtime components guide</a>
+        for <code>SkipLink</code>, <code>RouteAnnouncer</code>, <code>NavigationFocus</code> and <code>VisuallyHidden</code>.
+    </p>
+</div>

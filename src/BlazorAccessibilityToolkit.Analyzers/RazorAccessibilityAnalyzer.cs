@@ -237,7 +237,8 @@ public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
         var role = FirstRole(e);
         var pointer = e.Attributes.Where(a => PointerEvents.Contains(a.Name)).Select(a => a.Name.Substring(1)).ToArray();
 
-        if (pointer.Length > 0 && !splatted && !hidden && !IsNativelyInteractive(e) && !labelsWithControls.Contains(e) && !e.Ancestors().Any(IsInteractiveAncestor))
+        if (pointer.Length > 0 && !splatted && !hidden && !IsNativelyInteractive(e) && !labelsWithControls.Contains(e) && !e.Ancestors().Any(IsInteractiveAncestor)
+            && !IsManagedItem(e, role))
         {
             var problems = new List<string>();
             var dynamicRole = e.Attribute("role") is { IsDynamic: true };
@@ -411,6 +412,15 @@ public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
 
     private static bool IsNativelyFocusable(RazorElement e) =>
         (e.LowerName is "audio" or "video" && e.Has("controls")) || e.LowerName == "iframe" || e.Has("contenteditable");
+
+    // Items of a composite widget whose container manages focus and keys (aria-activedescendant or roving tabindex):
+    // an option in a listbox, a gridcell in a grid ... They are activated through the container's keyboard handling.
+    private static readonly HashSet<string> ManagedItemRoles = new(StringComparer.Ordinal) { "option", "gridcell", "row", "treeitem", "menuitem", "menuitemcheckbox", "menuitemradio" };
+
+    private static bool IsManagedItem(RazorElement e, string? role) =>
+        role is not null && ManagedItemRoles.Contains(role)
+        && e.Ancestors().Any(a => a.Name is "ActiveDescendantGroup" or "RovingFocusGroup"
+            || (!a.IsComponent && FirstRole(a) is "listbox" or "grid" or "treegrid" or "tree" or "menu" or "menubar"));
 
     private static bool IsInteractiveAncestor(RazorElement e) =>
         !e.IsComponent && (e.LowerName is "button" or "summary" or "select" or "option" || (e.LowerName == "a" && e.Has("href")));

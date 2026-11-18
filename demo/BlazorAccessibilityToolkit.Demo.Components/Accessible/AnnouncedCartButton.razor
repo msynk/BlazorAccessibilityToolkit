@@ -1,0 +1,24 @@
+@* Announces what happened through ILiveAnnouncer (BlazorAccessibilityToolkit.Components), instead of a toast inserted
+   with its message. The layout renders the <LiveAnnouncer /> host; rendered on its own, the component brings one. *@
+@inject ILiveAnnouncer Announcer
+@if (ownHost)
+{
+    <LiveAnnouncer />
+}
+<div class="save">
+    <button type="button" class="primary" @onclick="AddAsync">Add to cart</button>
+    <p>Items in the cart: @count</p>
+</div>
+
+@code {
+    private bool ownHost;
+    private int count;
+
+    protected override void OnInitialized() => ownHost = !Announcer.IsAttached;
+
+    private async Task AddAsync()
+    {
+        count++;
+        await Announcer.AnnounceAsync(count == 1 ? "1 item in the cart" : $"{count} items in the cart");
+    }
+}

@@ -79,7 +79,9 @@ p, li { max-width: 75ch; }
 .masthead__link:hover { color: var(--accent-strong); text-decoration: underline; }
 .menu-toggle { display: none; align-items: center; gap: 0.5rem; background: var(--surface); color: var(--text); border-color: var(--line-strong); }
 .sidenav { grid-area: nav; background: var(--surface); border-right: 1px solid var(--line); padding: 1.25rem 0.75rem 2rem; }
-.sidenav__inner { position: sticky; top: 0; }
+/* Sticky only when the whole menu fits: a sticky panel taller than the viewport can never show its last links, which
+   then receive focus out of sight (WCAG 2.4.11). */
+@media (min-height: 56rem) { .sidenav__inner { position: sticky; top: 0; } }
 .nav-group { margin-bottom: 1.25rem; }
 .nav-group__title { margin: 0 0.75rem 0.25rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .sidenav ul { list-style: none; margin: 0; padding: 0; }

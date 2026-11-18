@@ -71,12 +71,12 @@ public static class ConsistentHelp
         var reported = false;
         if (reference.Mechanisms is { Length: > 0 })
         {
-            var referenceOrder = reference.Mechanisms.Select(m => m.Key).ToList();
+            var referenceOrder = reference.Mechanisms.Select(m => m.Key).Distinct().ToList();
             foreach (var (path, mechanisms) in pages.Where(p => p.Path != reference.Path))
             {
                 // Only mechanisms that appear on both pages are compared: 3.2.6 does not require every page to offer help.
                 var shared = mechanisms.Where(m => referenceOrder.Contains(m.Key)).ToArray();
-                var expectedOrder = referenceOrder.Where(k => shared.Any(m => m.Key == k)).ToArray();
+                var expectedOrder = referenceOrder.Where(k => shared.Any(m => m.Key == k)).Distinct().ToArray();
                 var actualOrder = shared.Select(m => m.Key).Distinct().ToArray();
                 var problems = new List<string>();
                 if (!expectedOrder.SequenceEqual(actualOrder))
@@ -84,12 +84,16 @@ public static class ConsistentHelp
                     problems.Add($"the order is {Names(actualOrder, mechanisms)}, but on {reference.Path} it is {Names(expectedOrder, reference.Mechanisms)}");
                 }
 
-                foreach (var mechanism in shared)
+                // A mechanism repeated on the page (in the header and the footer) is compared occurrence by occurrence.
+                foreach (var group in shared.GroupBy(m => m.Key))
                 {
-                    var expected = reference.Mechanisms.First(m => m.Key == mechanism.Key);
-                    if (expected.Region != mechanism.Region)
+                    var expectedRegions = reference.Mechanisms.Where(m => m.Key == group.Key).ToArray();
+                    foreach (var (mechanism, expected) in group.Zip(expectedRegions))
                     {
-                        problems.Add($"\"{mechanism.Name}\" is in {Region(mechanism.Region)}, but on {reference.Path} in {Region(expected.Region)}");
+                        if (expected.Region != mechanism.Region)
+                        {
+                            problems.Add($"\"{mechanism.Name}\" is in {Region(mechanism.Region)}, but on {reference.Path} in {Region(expected.Region)}");
+                        }
                     }
                 }
 

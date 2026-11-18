@@ -87,6 +87,20 @@ The first group of entries closes the gaps found by the second cross-stack surve
 
 ### Fixed
 
+- `blazor-click-handler-semantics` and `BA11Y001` no longer report clickable items of a composite widget whose container manages focus and keys, such as options of an `aria-activedescendant` listbox (found by the demo's analyzer dogfooding).
+- `AriaPatterns.VerifyToolbarAsync` accepts a toolbar that is the last tab stop of the page when Tab leaves focus on the same control, as headless Firefox does at the end of the tab order.
+- Verifier fixes from a code review:
+  - `AuditConsistentHelpAsync` compares a help link repeated in the header and the footer occurrence by occurrence.
+  - `VerifyLoadingStateAsync` no longer counts a status that is there before, during and after the load (a cart count) as announcing it.
+  - `VerifySortableTableAsync` needs at least two rows to judge the order, and accepts ordinal as well as culture-specific sorting.
+  - `ReportVisualOrderMismatch` no longer reports focus that reads down one column and moves to the next.
+  - `VerifyFocusSurvivesInteractivityAsync` tells apart two elements with the same name.
+  - The default help-link pattern of the in-page helper used a backspace instead of a word boundary.
+- Runtime component fixes from the same review:
+  - `RovingFocusGroup`, `ActiveDescendantGroup` and `FocusTrap` release their JavaScript handles when they are disposed while the handle is still being created.
+  - `ActiveDescendantGroup` clears `aria-activedescendant` when it is disposed.
+  - A newer `LiveAnnouncer` host replaces the previous one instead of throwing when a layout change renders both.
+  - `RouteAnnouncer` no longer expands `$` in page titles, and no longer waits forever in background tabs.
 - Live regions: when one text node changed several times before the observer callback ran (as when Blazor renders "Saving…" and an immediate failure in quick succession), every change was recorded with the final text, so the intermediate update was lost and `ExpectLiveRegionUpdate("Saving")` failed intermittently. Each change now keeps its own value.
 - `AriaPatterns.VerifyTooltipAsync` moves the pointer onto the tooltip in one step. Intermediate steps raced the page's hide timers, so the hoverable check could fail intermittently in Firefox.
 - `AriaPatterns.VerifyFormValidationAsync` waits for focus and error links that follow the invalid markers in a later render, as Blazor's `OnAfterRenderAsync` focus calls do (seen in WebKit).
@@ -107,6 +121,9 @@ The first group of entries closes the gaps found by the second cross-stack surve
 
 ### Demo
 
+- New **Runtime components** page: a cart button that announces through `ILiveAnnouncer`, a `RovingFocusGroup` toolbar, an `ActiveDescendantGroup` combobox and a `FocusTrap` drawer, each verified live with the matching ARIA pattern. The layout hosts the app's `LiveAnnouncer`.
+- Demo buttons without a class get the theme's colors. In WebKit's dark mode they kept the browser's light gray background with white text (contrast 1.81:1).
+- The sticky navigation sidebar is sticky only on viewports tall enough for the whole menu. Before, its last links could receive focus without ever becoming visible (found by the focus-order test after the navigation grew); a test guards the limit.
 - The demo uses `<NavigationFocus>` instead of `<FocusOnNavigate>`. Focus a keyboard user places while a page is prerendered is no longer moved to the heading when the page becomes interactive; new tests cover this and the focus move after client-side navigation.
 - The demo's skip link renders the current path, so it no longer points at the home page before the page becomes interactive (found by the new `BA11Y038`), and its test runs on a page other than the home page too.
 - The demo projects run the Razor analyzers at build time (`demo/Directory.Build.targets`). They are switched off only for the intentional defects in `Defects/`, and a test checks that every accessible component and showcase page is free of analyzer findings.

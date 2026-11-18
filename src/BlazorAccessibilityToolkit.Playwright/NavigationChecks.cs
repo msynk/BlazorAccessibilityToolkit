@@ -170,7 +170,7 @@ public static class NavigationChecks
         await element.FocusAsync().ConfigureAwait(false);
         await ToolkitScript.EnsureAsync(page).ConfigureAwait(false);
         var focused = await page.GetFocusAsync().ConfigureAwait(false);
-        var before = focused.Element is { } was ? (was.Name + "|" + was.TagName) : null;
+        var before = focused.Element is { } was ? (was.Name + "|" + was.TagName + "|" + await FocusOrdinalAsync(page).ConfigureAwait(false)) : null;
         checks.Add(new("The target receives focus before the page is interactive", before is not null, before));
         if (before is null)
         {
@@ -194,11 +194,22 @@ public static class NavigationChecks
         await page.WaitForTimeoutAsync(300).ConfigureAwait(false);
         await ToolkitScript.EnsureAsync(page).ConfigureAwait(false);
         var focus = await page.GetFocusAsync().ConfigureAwait(false);
-        var after = focus.Element is { } now ? (now.Name + "|" + now.TagName) : null;
+        var after = focus.Element is { } now ? (now.Name + "|" + now.TagName + "|" + await FocusOrdinalAsync(page).ConfigureAwait(false)) : null;
         var kept = after is not null && string.Equals(Normalize(after), Normalize(before), StringComparison.Ordinal);
         checks.Add(new("Focus stays on the target when the page becomes interactive", kept, $"focus moved to {focus}"));
         return new PatternVerification { Pattern = "Focus during prerendering", Checks = checks };
     }
+
+    // The position of the focused element among the elements with the same tag and text, so that focus moving to a
+    // sibling with the same name (a second "Next" button) is not mistaken for the restored element.
+    private static Task<int> FocusOrdinalAsync(IPage page) => page.EvaluateAsync<int>("""
+        () => {
+          const a = window.__blazorA11y.activeElementDeep();
+          if (!a) return -1;
+          const text = e => (e.textContent || '').replace(/\s+/g, ' ').trim();
+          return Array.from(document.getElementsByTagName(a.localName)).filter(e => text(e) === text(a)).indexOf(a);
+        }
+        """);
 
     private static string Normalize(string value) => string.Join(' ', value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
 }

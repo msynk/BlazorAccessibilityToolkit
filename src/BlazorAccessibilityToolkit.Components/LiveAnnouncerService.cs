@@ -58,15 +58,9 @@ public sealed class LiveAnnouncerService : ILiveAnnouncer
     /// <inheritdoc />
     public Task ClearAsync() => _host?.ClearAsync() ?? Task.CompletedTask;
 
-    internal void Attach(LiveAnnouncer host)
-    {
-        if (_host is not null && !ReferenceEquals(_host, host))
-        {
-            throw new InvalidOperationException("Render only one <LiveAnnouncer /> per circuit (usually in the main layout); two hosts would announce every message twice.");
-        }
-
-        _host = host;
-    }
+    // The most recent host wins: when the layout changes, the new layout's host is initialized before the old one is
+    // disposed. Messages always go to exactly one host, so nothing is announced twice.
+    internal void Attach(LiveAnnouncer host) => _host = host;
 
     internal void Detach(LiveAnnouncer host)
     {

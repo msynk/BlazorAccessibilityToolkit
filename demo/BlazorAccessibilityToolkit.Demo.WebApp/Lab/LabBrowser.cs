@@ -44,7 +44,12 @@ public sealed class LabBrowser : IAsyncDisposable
             browser ??= await AccessibilityBrowser.LaunchAsync();
 
             // The host serves this app's static web assets (blazor.web.js and the component library's files).
-            var options = new BlazorTestHostOptions { Title = "Showcase component", ApplicationAssembly = typeof(Program).Assembly };
+            var options = new BlazorTestHostOptions
+            {
+                Title = "Showcase component",
+                ApplicationAssembly = typeof(Program).Assembly,
+                ConfigureServices = s => BlazorAccessibilityToolkit.Components.AccessibilityServiceCollectionExtensions.AddAccessibilityComponents(s),
+            };
             options.Stylesheets.Add("_content/BlazorAccessibilityToolkit.Demo.Components/components.css");
             host ??= await BlazorTestHost.StartAsync(options, cancellationToken);
 

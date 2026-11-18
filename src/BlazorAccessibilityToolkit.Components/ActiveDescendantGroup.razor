@@ -13,6 +13,7 @@
     private AccessibilityModule? module;
     private IJSObjectReference? handle;
     private string? appliedOptions;
+    private bool disposed;
 
     /// <summary>The items.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
@@ -43,6 +44,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (disposed)
+        {
+            return;
+        }
+
         var options = $"{OwnerId}|{ItemSelector}|{Orientation}|{Wrap}|{SelectionFollowsFocus}|{Typeahead}";
         if (options == appliedOptions)
         {
@@ -62,6 +68,11 @@
                 selectionFollowsFocus = SelectionFollowsFocus,
                 typeahead = Typeahead,
             });
+            // The component may have been disposed while the handle was being created: release it at once.
+            if (disposed)
+            {
+                await DisposeHandleAsync();
+            }
         }
         catch (JSDisconnectedException)
         {
@@ -84,6 +95,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        disposed = true;
         try
         {
             await DisposeHandleAsync();

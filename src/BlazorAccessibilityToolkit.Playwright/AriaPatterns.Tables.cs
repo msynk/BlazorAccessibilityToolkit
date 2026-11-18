@@ -77,7 +77,7 @@ public static partial class AriaPatterns
             if (changed && after is "ascending" or "descending")
             {
                 var values = await table.Locator("tbody tr").EvaluateAllAsync<string[]>("(rows, i) => rows.map(r => (r.children[i] ? r.children[i].textContent : '').trim())", index).ConfigureAwait(false);
-                checks.Add(new($"Rows are in {after} order ({round} press)", IsOrdered(values, after == "ascending"), string.Join(", ", values.Take(6))));
+                checks.Add(new($"Rows are in {after} order ({round} press)", IsOrdered(values, after == "ascending"), values.Length < 2 ? "fewer than two rows to compare" : string.Join(", ", values.Take(6))));
             }
         }
 
@@ -165,15 +165,30 @@ public static partial class AriaPatterns
         return states;
     }
 
-    // Numbers compare as numbers, everything else with the current culture's case-insensitive order.
+    // Numbers compare as numbers; text is accepted in the culture's order or an ordinal order (with or without case),
+    // since apps sort with different collations. Fewer than two rows prove nothing.
     private static bool IsOrdered(IReadOnlyList<string> values, bool ascending)
     {
-        var numeric = values.All(v => double.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out _));
+        if (values.Count < 2)
+        {
+            return false;
+        }
+
+        if (values.All(v => double.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out _)))
+        {
+            var numbers = values.Select(v => double.Parse(v, NumberStyles.Any, CultureInfo.InvariantCulture)).ToArray();
+            return InOrder(numbers, Comparer<double>.Default, ascending);
+        }
+
+        return new IComparer<string>[] { StringComparer.CurrentCultureIgnoreCase, StringComparer.OrdinalIgnoreCase, StringComparer.Ordinal }
+            .Any(comparer => InOrder(values, comparer, ascending));
+    }
+
+    private static bool InOrder<T>(IReadOnlyList<T> values, IComparer<T> comparer, bool ascending)
+    {
         for (var i = 1; i < values.Count; i++)
         {
-            var comparison = numeric
-                ? double.Parse(values[i - 1], NumberStyles.Any, CultureInfo.InvariantCulture).CompareTo(double.Parse(values[i], NumberStyles.Any, CultureInfo.InvariantCulture))
-                : string.Compare(values[i - 1], values[i], CultureInfo.CurrentCulture, CompareOptions.IgnoreCase);
+            var comparison = comparer.Compare(values[i - 1], values[i]);
             if (ascending ? comparison > 0 : comparison < 0)
             {
                 return false;

@@ -74,8 +74,15 @@ public static partial class AriaPatterns
 
         // Every recorded state before the last one belongs to the loading phase.
         var loadingStates = history.Length > 1 ? history[..^1] : [];
-        var whileLoading = loadingStates.FirstOrDefault(h => h.Busy || h.Live.Count > 0) ?? loadingStates.FirstOrDefault();
         var sawLoading = loadingStates.Length > 0;
+
+        // Status text that is there before, during and after the load (a cart count, a greeting) is not about the load:
+        // only text that differs from the final state counts while loading, and only new text counts afterwards.
+        var finalLive = history.Length > 0 ? history[^1].Live : [];
+        var relevant = loadingStates
+            .Select(h => new LoadingSnapshot { Busy = h.Busy, Live = h.Live.Except(finalLive, StringComparer.Ordinal).ToList() })
+            .ToArray();
+        var whileLoading = relevant.FirstOrDefault(h => h.Busy || h.Live.Count > 0) ?? relevant.FirstOrDefault();
         var done = await loaded.CountAsync().ConfigureAwait(false) > 0;
         if (!sawLoading)
         {
@@ -95,7 +102,8 @@ public static partial class AriaPatterns
 
         var final = Internal.ToolkitScript.Deserialize<LoadingSnapshot>(await page.EvaluateAsync<JsonElement>(LoadingStateScript, regionSelector).ConfigureAwait(false)) ?? new LoadingSnapshot();
         checks.Add(new("aria-busy is cleared when loading is complete", !final.Busy));
-        var reported = final.Live.Except(whileLoading?.Live ?? [], StringComparer.Ordinal).ToArray();
+        var before = loadingStates.SelectMany(h => h.Live).ToHashSet(StringComparer.Ordinal);
+        var reported = final.Live.Where(text => !before.Contains(text)).ToArray();
         checks.Add(new("A status message reports the result", reported.Length > 0, reported.Length > 0 ? string.Join(" | ", reported) : "no new status text"));
         return Result("Loading state", checks);
     }

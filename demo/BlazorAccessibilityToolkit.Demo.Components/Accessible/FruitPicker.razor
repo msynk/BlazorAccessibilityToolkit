@@ -1,0 +1,52 @@
+@* An editable combobox: DOM focus stays in the input while ActiveDescendantGroup (BlazorAccessibilityToolkit.Components)
+   moves the active option with aria-activedescendant. Typing filters the options. *@
+<div class="field">
+    <label for="@InputId">Favorite fruit</label>
+    <input id="@InputId" role="combobox" aria-autocomplete="list" aria-expanded="@(open ? "true" : "false")" aria-controls="@ListId"
+           autocomplete="off" value="@text" @oninput="Filter" @onkeydown="Key" />
+    <ActiveDescendantGroup id="@ListId" OwnerId="@InputId" aria-label="Fruits" class="options" hidden="@(!open)">
+        @foreach (var fruit in Matches)
+        {
+            <div role="option" aria-selected="false" @onclick="() => Choose(fruit)">@fruit</div>
+        }
+    </ActiveDescendantGroup>
+    <p class="hint">Chosen: @(chosen ?? "nothing yet")</p>
+</div>
+
+@code {
+    private static readonly string[] Fruits = ["Apple", "Apricot", "Banana", "Blueberry", "Cherry", "Grape", "Mango", "Orange"];
+    private readonly string id = $"fruit-{Guid.NewGuid():N}";
+    private string text = string.Empty;
+    private string? chosen;
+    private bool open;
+
+    private string InputId => id + "-input";
+
+    private string ListId => id + "-list";
+
+    private IEnumerable<string> Matches => Fruits.Where(f => f.StartsWith(text, StringComparison.OrdinalIgnoreCase));
+
+    private void Filter(ChangeEventArgs e)
+    {
+        text = e.Value?.ToString() ?? string.Empty;
+        open = Matches.Any();
+    }
+
+    private void Key(KeyboardEventArgs e)
+    {
+        if (e.Key == "ArrowDown" && !open)
+        {
+            open = Matches.Any();
+        }
+        else if (e.Key == "Escape")
+        {
+            open = false;
+        }
+    }
+
+    private void Choose(string fruit)
+    {
+        chosen = text = fruit;
+        open = false;
+    }
+}

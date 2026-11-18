@@ -26,7 +26,11 @@ public sealed class TestEnvironment : IAsyncLifetime
     {
         Browser = await AccessibilityBrowser.LaunchAsync();
 
-        var hostOptions = new BlazorTestHostOptions { Title = "Demo components" };
+        var hostOptions = new BlazorTestHostOptions
+        {
+            Title = "Demo components",
+            ConfigureServices = s => BlazorAccessibilityToolkit.Components.AccessibilityServiceCollectionExtensions.AddAccessibilityComponents(s),
+        };
         hostOptions.Stylesheets.Add("_content/BlazorAccessibilityToolkit.Demo.Components/components.css");
         Host = await BlazorTestHost.StartAsync(hostOptions);
 

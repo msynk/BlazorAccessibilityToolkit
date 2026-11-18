@@ -1,8 +1,12 @@
 using BlazorAccessibilityToolkit.Demo.WebApp.Components;
 using BlazorAccessibilityToolkit.Demo.WebApp.Lab;
+using BlazorAccessibilityToolkit.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+
+// Runtime accessibility helpers (ILiveAnnouncer); the layout renders the <LiveAnnouncer /> host.
+builder.Services.AddAccessibilityComponents();
 
 // Live runs of the toolkit (the "Run this test" buttons): see Lab/.
 builder.Services.AddSingleton<LabBrowser>();

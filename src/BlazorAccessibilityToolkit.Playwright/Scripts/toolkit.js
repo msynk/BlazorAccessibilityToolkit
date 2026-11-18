@@ -778,7 +778,7 @@
   // Help mechanisms in document order, with the landmark that contains them (WCAG 3.2.6).
   function helpMechanisms(opts) {
     opts = opts || {};
-    const pattern = new RegExp(opts.pattern || '\b(help|contact|support|faq|chat)\b', 'i');
+    const pattern = new RegExp(opts.pattern || '\\b(help|contact|support|faq|chat)\\b', 'i');
     const extra = opts.selector ? Array.from(document.querySelectorAll(opts.selector)) : [];
     return withAxe((axe) => {
       const found = [];

@@ -39,6 +39,8 @@
         @Body
         <TourNav />
     </main>
+    @* One live announcer for the whole app: components announce through ILiveAnnouncer. *@
+    <BlazorAccessibilityToolkit.Components.LiveAnnouncer />
     <footer class="footer">
         <p>Blazor Accessibility Toolkit demo. Automated checks find a subset of accessibility problems; they cannot prove WCAG conformance.</p>
         <p>This showcase is audited by the toolkit itself, in the light and dark themes, on Chromium, Firefox and WebKit.</p>

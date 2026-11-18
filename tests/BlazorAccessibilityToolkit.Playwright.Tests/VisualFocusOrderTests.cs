@@ -68,4 +68,20 @@ public sealed class VisualFocusOrderTests(BrowserFixture browser)
             Directory.Delete(Path.GetDirectoryName(path)!, recursive: true);
         }
     }
+
+    [Fact]
+    public async Task Reading_down_a_column_then_the_next_is_not_reported()
+    {
+        const string html = """
+            <main><h1>Form</h1>
+              <div style="display:grid; grid-template-columns: 200px 200px; grid-auto-flow: column; grid-template-rows: auto auto; gap: 12px">
+                <button>Name</button><button>Email</button><button>Phone</button><button>Address</button>
+              </div>
+            </main>
+            """;
+        await using var session = await browser.PageAsync(html);
+        var result = await session.Page.CaptureFocusOrderAsync(Visual);
+
+        Assert.DoesNotContain(result.Findings, f => f.RuleId == "blazor-focus-order-visual-mismatch");
+    }
 }

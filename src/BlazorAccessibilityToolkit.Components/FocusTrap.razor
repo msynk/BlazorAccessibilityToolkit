@@ -12,6 +12,7 @@
     private AccessibilityModule? module;
     private IJSObjectReference? trap;
     private bool applied;
+    private bool disposed;
 
     /// <summary>The trapped content.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
@@ -30,7 +31,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (Active == applied)
+        if (disposed || Active == applied)
         {
             return;
         }
@@ -42,6 +43,12 @@
             if (Active)
             {
                 trap = await module.InvokeAsync<IJSObjectReference>("trapFocus", container, new { initialFocus = InitialFocus });
+
+                // The component may have been disposed while the trap was being created: release it at once.
+                if (disposed)
+                {
+                    await ReleaseAsync(RestoreFocus);
+                }
             }
             else
             {
@@ -69,6 +76,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        disposed = true;
         try
         {
             await ReleaseAsync(RestoreFocus);

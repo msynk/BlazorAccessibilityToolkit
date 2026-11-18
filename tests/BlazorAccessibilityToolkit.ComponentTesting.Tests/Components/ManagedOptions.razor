@@ -1,0 +1,7 @@
+@* Options of a listbox that manages focus with aria-activedescendant: clickable but deliberately not focusable. A loose
+   clickable option outside any listbox is still reported. *@
+<div role="listbox" aria-label="Fruits" tabindex="0" aria-activedescendant="apple">
+    <div role="option" id="apple" aria-selected="true" @onclick="() => { }">Apple</div>
+    <div role="option" id="pear" aria-selected="false" @onclick="() => { }">Pear</div>
+</div>
+<div id="loose" role="option" @onclick="() => { }">Loose</div>

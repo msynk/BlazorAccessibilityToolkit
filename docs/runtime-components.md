@@ -53,7 +53,7 @@ It solves the problems that make hand-written live regions fail:
 - **Regions exist before the message.** A live region inserted together with its text is often not announced. The host renders two empty regions on the first render, one polite and one assertive.
 - **Repeated messages are announced again.** Screen readers ignore a region whose text did not change. The host empties the region and inserts the message again after `RepeatDelay` (150 ms).
 - **Old messages do not linger.** Messages are cleared after `ClearAfter` (7 seconds), so they are not found later when someone reads the page.
-- **Messages are not lost silently.** `AnnounceAsync` returns `false` when no host is rendered, for example during prerendering or in static rendering, and `IsAttached` tells you in advance. Rendering a second host throws, because every message would be announced twice.
+- **Messages are not lost silently.** `AnnounceAsync` returns `false` when no host is rendered, for example during prerendering or in static rendering, and `IsAttached` tells you in advance. Render one host per app. If a layout change renders a new host before the old one is gone, the newest host receives the messages, so nothing is announced twice.
 
 Test it with the toolkit's live-region monitor:
 

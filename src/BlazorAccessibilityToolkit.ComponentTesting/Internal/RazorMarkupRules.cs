@@ -105,7 +105,7 @@ internal static partial class RazorMarkupRules
         foreach (var element in scope)
         {
             var pointer = element.Attributes.Where(a => PointerEvents.Contains(a.Name)).Select(a => a.Name["blazor:".Length..]).ToArray();
-            if (pointer.Length == 0 || IsHiddenFromAT(element) || IsNativelyInteractive(element) || ForwardsKeyboardActivation(element) || element.Ancestors<IElement>().Any(IsInteractiveAncestor))
+            if (pointer.Length == 0 || IsHiddenFromAT(element) || IsNativelyInteractive(element) || ForwardsKeyboardActivation(element) || element.Ancestors<IElement>().Any(IsInteractiveAncestor) || IsManagedItem(element))
             {
                 continue;
             }
@@ -624,6 +624,12 @@ internal static partial class RazorMarkupRules
         element.LocalName == "label"
         && element.QuerySelectorAll("input, button").Any(c => c.LocalName == "button"
             || (c.GetAttribute("type")?.ToLowerInvariant() is "checkbox" or "radio" or "submit" or "reset" or "button" or "image"));
+
+    // An item of a composite widget whose container manages focus and keys (aria-activedescendant or roving tabindex),
+    // such as an option in a listbox: it is activated through the container's keyboard handling.
+    private static bool IsManagedItem(IElement element) =>
+        FirstRole(element) is "option" or "gridcell" or "row" or "treeitem" or "menuitem" or "menuitemcheckbox" or "menuitemradio"
+        && element.Ancestors<IElement>().Any(a => FirstRole(a) is "listbox" or "grid" or "treegrid" or "tree" or "menu" or "menubar");
 
     // Content inside these elements is activated through the ancestor (keyboard included).
     private static bool IsInteractiveAncestor(IElement element) =>

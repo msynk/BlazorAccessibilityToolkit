@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Playwright\BlazorAccessibilityToolkit.Playwright.csproj" />
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Components\BlazorAccessibilityToolkit.Components.csproj" />
+    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.DevTools\BlazorAccessibilityToolkit.DevTools.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

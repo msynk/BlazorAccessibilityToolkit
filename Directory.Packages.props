@@ -6,6 +6,8 @@
   <ItemGroup Label="Runtime dependencies (pinned, upgrade deliberately; see docs/upgrading.md)">
     <!-- Deque.AxeCore.Playwright tracks axe-core major.minor: 4.14.x bundles axe-core 4.14. -->
     <PackageVersion Include="Deque.AxeCore.Playwright" Version="4.14.0" />
+    <!-- The development overlay serves the axe-core script of Deque.AxeCore.Commons: keep the same version as above. -->
+    <PackageVersion Include="Deque.AxeCore.Commons" Version="4.14.0" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.64.1" />
     <PackageVersion Include="bunit" Version="2.13.3" />
     <!-- The Razor analyzer targets Roslyn 4.8 so that it loads in every .NET 8 and later SDK. -->

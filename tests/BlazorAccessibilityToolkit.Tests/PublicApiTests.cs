@@ -20,6 +20,8 @@ public sealed class PublicApiTests
         typeof(PlaywrightAccessibility).Assembly.GetName().Name!,
         typeof(CliApp).Assembly.GetName().Name!,
         typeof(BlazorAccessibilityToolkit.Components.ILiveAnnouncer).Assembly.GetName().Name!,
+        typeof(BlazorAccessibilityToolkit.DevTools.AccessibilityDevOverlay).Assembly.GetName().Name!,
+        typeof(BlazorAccessibilityToolkit.DevTools.AccessibilityDevOverlay).Assembly.GetName().Name!,
     };
 
     [Theory]

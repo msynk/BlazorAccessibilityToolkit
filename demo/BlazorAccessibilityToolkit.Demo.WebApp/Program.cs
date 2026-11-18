@@ -1,6 +1,7 @@
 using BlazorAccessibilityToolkit.Demo.WebApp.Components;
 using BlazorAccessibilityToolkit.Demo.WebApp.Lab;
 using BlazorAccessibilityToolkit.Components;
+using BlazorAccessibilityToolkit.DevTools;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
@@ -25,6 +26,13 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 app.UseAntiforgery();
 app.MapStaticAssets();
 ReportStore.MapEndpoints(app);
+
+// The development overlay (<AccessibilityDevOverlay /> in App.razor) loads its scripts from these endpoints.
+if (app.Environment.IsDevelopment())
+{
+    app.MapAccessibilityDevTools();
+}
+
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.Run();
 

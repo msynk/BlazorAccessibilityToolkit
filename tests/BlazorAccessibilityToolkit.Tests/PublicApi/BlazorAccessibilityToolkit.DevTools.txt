@@ -1,0 +1,18 @@
+sealed class BlazorAccessibilityToolkit.DevTools.AccessibilityDevOverlay : Microsoft.AspNetCore.Components.ComponentBase
+  BlazorAccessibilityToolkit.DevTools.DevOverlayPosition Position { get; set; }
+  System.Boolean LogToConsole { get; set; }
+  System.Collections.Generic.IReadOnlyCollection<System.String> Exclude { get; set; }
+  System.Collections.Generic.IReadOnlyCollection<System.String> Tags { get; set; }
+  System.Nullable<System.Boolean> Enabled { get; set; }
+  System.String AxeScriptUrl { get; set; }
+  System.String ScriptUrl { get; set; }
+  System.TimeSpan Delay { get; set; }
+  ctor()
+static class BlazorAccessibilityToolkit.DevTools.AccessibilityDevToolsEndpoints
+  const System.String BasePath
+  static Microsoft.AspNetCore.Routing.RouteGroupBuilder MapAccessibilityDevTools(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder endpoints)
+enum BlazorAccessibilityToolkit.DevTools.DevOverlayPosition
+  BottomEnd
+  BottomStart
+  TopEnd
+  TopStart

@@ -11,6 +11,7 @@
     <Project Path="src/BlazorAccessibilityToolkit.Cli/BlazorAccessibilityToolkit.Cli.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit.Components/BlazorAccessibilityToolkit.Components.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit.ComponentTesting/BlazorAccessibilityToolkit.ComponentTesting.csproj" />
+    <Project Path="src/BlazorAccessibilityToolkit.DevTools/BlazorAccessibilityToolkit.DevTools.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit.Playwright/BlazorAccessibilityToolkit.Playwright.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit/BlazorAccessibilityToolkit.csproj" />
   </Folder>

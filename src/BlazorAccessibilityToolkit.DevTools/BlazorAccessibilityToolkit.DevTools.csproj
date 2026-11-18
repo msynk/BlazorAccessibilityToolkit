@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <Description>Development-time accessibility overlay for Blazor apps: runs axe-core in the running app after each page change and lists the violations in a small panel and in the browser console, like @axe-core/react and vue-axe.</Description>
+    <RootNamespace>BlazorAccessibilityToolkit.DevTools</RootNamespace>
+    <PackageTags>$(PackageTags);devtools;overlay</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <!-- Provides the bundled axe-core script; keep in step with Deque.AxeCore.Playwright. -->
+    <PackageReference Include="Deque.AxeCore.Commons" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts\devtools.js" LogicalName="BlazorAccessibilityToolkit.DevTools.devtools.js" />
+  </ItemGroup>
+</Project>

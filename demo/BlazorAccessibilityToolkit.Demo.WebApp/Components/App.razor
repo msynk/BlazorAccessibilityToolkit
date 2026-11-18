@@ -16,6 +16,8 @@
     <Routes @rendermode="PageRenderMode" Theme="@Theme" />
     <script src="@Assets["theme.js"]"></script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
+    @* Development only: axe-core checks each page as it changes and lists the violations (the intentional defects too). *@
+    <BlazorAccessibilityToolkit.DevTools.AccessibilityDevOverlay />
 </body>
 </html>
 

@@ -4,6 +4,15 @@
 
 ### Added
 
+- **Focus indicators measured from screenshots** (WCAG 2.4.7 and 2.4.13). The toolkit screenshots an element unfocused, focuses it as the keyboard would and screenshots it again. It then counts the pixels that changed and those whose color changed by a contrast of at least 3:1. The images are decoded in the browser, so there is no new dependency.
+  - `locator.MeasureFocusAppearanceAsync()` returns a `FocusAppearanceMeasurement` with `ChangedArea`, `ContrastingArea`, `RequiredArea` (a 2 CSS pixel perimeter) and `UserAgentIndicator`.
+  - `FocusOrderOptions.MeasureFocusAppearance` measures every tab stop (`FocusStop.Appearance`). It reports `blazor-focus-not-visible` (2.4.7, a violation) when nothing changes on screen, and with `ReportFocusAppearance` also `blazor-focus-appearance` (2.4.13, AAA). The browser's own focus ring is exempt from 2.4.13, as the success criterion says.
+  - `KeyboardScenario.ExpectVisibleFocus(focusAppearance)` asserts the same for the focused element.
+  - Tested in Chromium, Firefox and WebKit. See [Measuring focus indicators](docs/interactive-testing.md#measuring-focus-indicators).
+- **ACT rules implementation report** for the Razor analyzer. It runs 15 analyzer rules on the test cases of 18 W3C ACT Rules (285 pages, snapshot in `tests/BlazorAccessibilityToolkit.Analyzers.Tests/ActRules`). The results are published as [docs/act-rules.md](docs/act-rules.md) and as an EARL report in the ACT Task Force's format (`docs/act-rules/razor-analyzer.earl.json`).
+  - 16 of the 18 rules are consistent. One finds 10 of its 11 failed examples (the 11th is reported by another analyzer rule), and one raises a false alarm on a page that relies on a script. Each remaining difference is explained in the report.
+  - A test fails when an outcome changes, until the report is regenerated.
+  - The first run found 27 false alarms and 31 missed failures; the analyzer fixes are listed under Fixed.
 - **MCP server for coding agents:** `blazor-a11y mcp` runs a Model Context Protocol server over standard input and output, built on the official C# SDK (`ModelContextProtocol.Core`). It has five tools:
   - `check_razor` runs the Razor analyzer on files, folders or a markup snippet;
   - `fix_razor` applies the safe fixes;
@@ -98,6 +107,27 @@ The first group of entries closes the gaps found by the second cross-stack surve
 
 ### Fixed
 
+- Analyzer rules checked against the W3C ACT Rules test cases ([ACT rules implementation report](docs/act-rules.md)). Fewer false alarms:
+  - Content hidden with an inline `style` (`display: none`, `visibility: hidden`) is treated as hidden, like the `hidden` attribute (`BA11Y002`, `BA11Y006`, `BA11Y007`, `BA11Y008`, `BA11Y011`, `BA11Y019`, `BA11Y021`).
+  - A link or button is named by an image with `aria-label`, `aria-labelledby` or `title`, not only `alt` (`BA11Y008`).
+  - `BA11Y019` skips disabled fields. `BA11Y011` skips frames with `tabindex="-1"` or a presentational role, and `BA11Y007` a disabled field with one.
+  - `BA11Y028` checks the primary language subtag against the IANA Language Subtag Registry, which is what assistive technologies use, so `en-US-GB` is accepted. On elements other than `<html>` it reports only a `lang` that applies to some content.
+  - `BA11Y029` ignores a negative `maximum-scale`. `BA11Y030` reports only the first refresh tag, as browsers use only that one.
+- More failures found:
+  - `BA11Y002`: `alt=" "`, an image button with `alt=""`, and elements with `role="img"` but no name.
+  - `BA11Y007`: elements with a form field role (`textbox`, `combobox`, `slider` ...) and no `aria-label` or `aria-labelledby`.
+  - `BA11Y008`: `role="none"` on a focusable button or link, which browsers ignore, and DPUB link roles such as `doc-biblioref`.
+  - `BA11Y009`: empty `role="heading"`, and headings whose only content is an image with `role="presentation"`.
+  - `BA11Y011`: a blank `title`.
+  - `BA11Y021`: `role="heading"` without `aria-level`, which WAI-ARIA 1.2 requires; the documentation said the opposite. Also a focusable `separator` without `aria-valuenow`, and `<input role="combobox">` without `aria-expanded`.
+  - `BA11Y028`: `eng` (English is `en`), `i-lux`, a `lang` of only spaces, and a `lang` that applies to aria-hidden text.
+  - `BA11Y029`: `maximum-scale=yes`, `user-scalable=0.5` and values that are not numbers, read as browsers read them.
+  - `BA11Y030`: a delay of exactly 20 hours. Refresh tags whose content browsers cannot read (`+5`, `0: url`) are skipped.
+  - `aria-labelledby` that references only empty elements in the same file no longer counts as a name.
+- These changes bring new warnings to some existing markup, all of which assistive technologies do get wrong:
+  - an unnamed `<ul role="listbox">` (a common autocomplete popup), the ARIA 1.1 combobox wrapper `<div role="combobox"><input aria-label="City"></div>`, and `<label>Name <div role="textbox"></div></label>` (`BA11Y007`);
+  - `<div role="heading">` without `aria-level` (`BA11Y021`);
+  - `user-scalable=true`, which browsers read as `no` (`BA11Y029`).
 - `BA11Y035` no longer reads `aria-expanded="@(a) && (b)"` as one bool expression. Razor renders it as the value of `a` followed by the text ` && (b)`.
 - `BA11Y023` no longer calls `role="complementary"` redundant on an unnamed `<aside>` inside `<article>`, `<aside>`, `<nav>` or `<section>`. Such an `<aside>` is generic without the role.
 - `blazor-click-handler-semantics` and `BA11Y001` no longer report clickable items of a composite widget whose container manages focus and keys, such as options of an `aria-activedescendant` listbox (found by the demo's analyzer dogfooding).

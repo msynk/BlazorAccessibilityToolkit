@@ -129,6 +129,7 @@ blazor-a11y report --input a11y-results --baseline a11y-baseline.json --output a
 - [Browser and interactive testing](docs/interactive-testing.md): pages, the component host, keyboard, focus, live regions, patterns and snapshots
 - [Rules and findings](docs/rules.md)
 - [Razor analyzers](docs/analyzers.md): compile-time checks of `.razor` files
+- [ACT rules implementation report](docs/act-rules.md): the analyzer against the W3C ACT Rules test cases
 - [Runtime components](docs/runtime-components.md): live announcer, skip link, focus trap, route announcer
 - [Development overlay](docs/dev-overlay.md): axe-core findings in the running app while you work
 - [MCP server](docs/mcp-server.md): checks, fixes and test results for coding agents

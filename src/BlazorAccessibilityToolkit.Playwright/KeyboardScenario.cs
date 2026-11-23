@@ -339,6 +339,36 @@ public sealed class KeyboardScenario
     }
 
     /// <summary>
+    /// Expects keyboard focus to be visible, measured from screenshots: something in or around the focused element must
+    /// change on screen when it receives focus (WCAG 2.4.7). With <paramref name="focusAppearance"/>, the indicator must
+    /// also be at least as large as a 2 CSS pixel perimeter with 3:1 contrast between the states (WCAG 2.4.13, AAA); the
+    /// browser's own focus ring is accepted. The step blurs the element for a moment and focuses it again.
+    /// </summary>
+    public KeyboardScenario ExpectVisibleFocus(bool focusAppearance = false)
+    {
+        var description = focusAppearance ? "expect a focus indicator that meets WCAG 2.4.13" : "expect focus to be visible on screen";
+        return Enqueue(description, ScenarioStepKind.Expectation, async () =>
+        {
+            var focus = await Page.GetFocusAsync().ConfigureAwait(false);
+            if (focus.Element?.Selector is not { } selector || await Page.Locator(selector).CountAsync().ConfigureAwait(false) != 1)
+            {
+                throw new AccessibilityAssertionException($"Failed to {description}: the focused element ({focus}) cannot be located for screenshots.");
+            }
+
+            var measurement = await FocusAppearance.MeasureAsync(Page.Locator(selector), null, keepFocus: true).ConfigureAwait(false);
+            if (measurement is null)
+            {
+                throw new AccessibilityAssertionException($"Failed to {description}: {focus} is not on screen.");
+            }
+
+            if (!measurement.IsVisible || (focusAppearance && !measurement.MeetsFocusAppearance && !measurement.UserAgentIndicator))
+            {
+                throw new AccessibilityAssertionException($"Failed to {description} on {focus}: {measurement}.");
+            }
+        });
+    }
+
+    /// <summary>
     /// Expects the document title to contain <paramref name="text"/> (or equal it, with <see cref="TextMatch.Exact"/>), for
     /// example after a client-side navigation changed the page (WCAG 2.4.2; Blazor's <c>&lt;PageTitle&gt;</c>).
     /// </summary>

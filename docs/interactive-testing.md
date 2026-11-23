@@ -92,6 +92,8 @@ The capture presses Tab until focus leaves the page, wraps, cycles or gets stuck
 | `blazor-focus-repeated` | One element was reached twice in a single cycle. |
 | `blazor-focus-obscured` | The focused element was entirely covered by other content (sticky header, cookie banner, non-modal overlay), WCAG 2.4.11. On by default (`ReportObscuredFocus`). `FocusStop.Obscuration` also records partial covering (2.4.12). |
 | `blazor-focus-indicator-not-detected` | Opt-in: the element looked the same focused and unfocused. Verify manually, because indicators drawn by other elements are not seen. |
+| `blazor-focus-not-visible` | With `MeasureFocusAppearance`: no pixel in or around the element changed when it received focus (2.4.7). A violation, measured from screenshots; see [measuring focus indicators](#measuring-focus-indicators). |
+| `blazor-focus-appearance` | With `MeasureFocusAppearance` and `ReportFocusAppearance`: the indicator is smaller than a 2 CSS pixel perimeter or changes contrast by less than 3:1 (2.4.13, AAA). |
 
 A positive `tabindex` is reported, not judged. Whether an order is *logical* needs the expectation you write in `ShouldMatch`.
 
@@ -124,7 +126,33 @@ Before tabbing, the capture records the unfocused style of every focusable eleme
 
 For each stop the toolkit also asks the browser which element is on top at nine points of the focused element (`elementFromPoint`). When none of them is the element or part of it, focus is *entirely obscured* (`blazor-focus-obscured`). When focus lands on an element outside the viewport (an off-screen skip link that stays off-screen), it is reported as `blazor-focus-hidden-target`. Smooth scrolling is given time to settle before a stop is judged.
 
-The contrast and size of an indicator (WCAG 2.4.13, AAA, and 1.4.11) are not measured. Track them in the [manual review](manual-review.md).
+### Measuring focus indicators
+
+The style comparison above guesses. Screenshots measure: they show what actually changes on screen when an element receives focus.
+
+```csharp
+var order = await page.CaptureFocusOrderAsync(new FocusOrderOptions { MeasureFocusAppearance = true });       // 2.4.7
+var aaa = await page.CaptureFocusOrderAsync(new FocusOrderOptions { MeasureFocusAppearance = true, ReportFocusAppearance = true }); // and 2.4.13
+var save = await page.GetByRole(AriaRole.Button, new() { Name = "Save" }).MeasureFocusAppearanceAsync();
+Console.WriteLine(save);   // for example "704 px² changed, 668 px² with 3:1 contrast, 608 px² needed for 2.4.13"
+
+await KeyboardScenario.For(page).StartFromDocument().PressTab().ExpectVisibleFocus().RunAsync();
+```
+
+For each element, the toolkit scrolls it to the middle of the viewport and focuses it once to learn where it is when focused, because a skip link is off screen or clipped to a pixel until then. It then removes focus and takes a screenshot of the element and 8 CSS pixels around it, in both positions. Next it focuses the element as the keyboard would (so `:focus-visible` styles apply), takes a second screenshot and compares the two pixel by pixel. Animations are stopped and the text caret is hidden in both screenshots. The measurement (`FocusAppearanceMeasurement`, also on `FocusStop.Appearance`) reports:
+
+- `ChangedArea`: the CSS pixels whose color changed. When it is 0, focus is not visible (`blazor-focus-not-visible`, WCAG 2.4.7).
+- `ContrastingArea`: the changed pixels whose focused and unfocused colors have a contrast ratio of at least 3:1.
+- `RequiredArea`: the area of a 2 CSS pixel thick perimeter of the unfocused element, 4 × (width + height). WCAG 2.4.13 (AAA) needs `ContrastingArea` to be at least this large (`blazor-focus-appearance`).
+- `HiddenUntilFocused`: the element is not visible until it receives focus, like a skip link. Its focused size is used for `RequiredArea`.
+- `UserAgentIndicator`: the browser's own focus ring is drawn (`outline-style: auto`). 2.4.13 exempts indicators the user agent determines, so they are not reported under that rule.
+
+What it does not do:
+
+- An indicator drawn more than 8 CSS pixels away from the element is not seen. `FocusAppearanceOptions.Margin` widens the area.
+- The measurement focuses each element twice more after the tab sequence is captured, so it runs `onfocus` and `onblur` handlers again. An element that stays off screen when focused is not measured; the capture reports it as `blazor-focus-hidden-target`.
+- The comparison treats a pixel that is covered in both screenshots as unchanged. Combine it with `blazor-focus-obscured` for indicators hidden behind sticky content.
+- 1.4.11 contrast of the indicator against adjacent colors is not measured; 2.4.13 compares each pixel's focused and unfocused colors, as the success criterion defines it.
 
 ## Adaptation: reflow, text spacing and display preferences
 

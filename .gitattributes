@@ -1,0 +1,2 @@
+# The W3C ACT Rules test cases are kept byte for byte as published.
+tests/BlazorAccessibilityToolkit.Analyzers.Tests/ActRules/testcases/** -text

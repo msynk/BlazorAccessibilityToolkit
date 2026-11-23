@@ -123,6 +123,24 @@ sealed class BlazorAccessibilityToolkit.Playwright.DisplayConditions
   static BlazorAccessibilityToolkit.Playwright.DisplayConditions ForcedColorsActive { get; }
   static BlazorAccessibilityToolkit.Playwright.DisplayConditions Light { get; }
   static BlazorAccessibilityToolkit.Playwright.DisplayConditions MoreContrast { get; }
+static class BlazorAccessibilityToolkit.Playwright.FocusAppearance
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.FocusAppearanceMeasurement> MeasureFocusAppearanceAsync(Microsoft.Playwright.ILocator element, BlazorAccessibilityToolkit.Playwright.FocusAppearanceOptions options = null)
+sealed class BlazorAccessibilityToolkit.Playwright.FocusAppearanceMeasurement
+  System.Boolean FocusVisibleMatched { get; init; }
+  System.Boolean HiddenUntilFocused { get; init; }
+  System.Boolean IsVisible { get; }
+  System.Boolean MeetsFocusAppearance { get; }
+  System.Boolean UserAgentIndicator { get; init; }
+  System.Double Height { get; init; }
+  System.Double RequiredArea { get; }
+  System.Double Width { get; init; }
+  System.Int32 ChangedArea { get; init; }
+  System.Int32 ContrastingArea { get; init; }
+  ctor()
+sealed class BlazorAccessibilityToolkit.Playwright.FocusAppearanceOptions
+  System.Int32 Margin { get; init; }
+  System.Int32 Tolerance { get; init; }
+  ctor()
 sealed class BlazorAccessibilityToolkit.Playwright.FocusBounds
   System.Double Height { get; init; }
   System.Double Width { get; init; }
@@ -145,7 +163,10 @@ static class BlazorAccessibilityToolkit.Playwright.FocusOrder
   static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.Playwright.FocusOrderResult> CaptureFocusOrderAsync(Microsoft.Playwright.IPage page, BlazorAccessibilityToolkit.Playwright.FocusOrderOptions options = null)
   static System.Threading.Tasks.Task<System.String> SaveTabStopOverlayAsync(BlazorAccessibilityToolkit.Playwright.FocusOrderResult result, Microsoft.Playwright.IPage page, System.String path)
 sealed class BlazorAccessibilityToolkit.Playwright.FocusOrderOptions
+  BlazorAccessibilityToolkit.Playwright.FocusAppearanceOptions FocusAppearance { get; init; }
   Microsoft.Playwright.ILocator StartAfter { get; init; }
+  System.Boolean MeasureFocusAppearance { get; init; }
+  System.Boolean ReportFocusAppearance { get; init; }
   System.Boolean ReportMissingFocusIndicator { get; init; }
   System.Boolean ReportObscuredFocus { get; init; }
   System.Boolean ReportVisualOrderMismatch { get; init; }
@@ -184,6 +205,7 @@ sealed class BlazorAccessibilityToolkit.Playwright.FocusSnapshot
   ctor()
 sealed class BlazorAccessibilityToolkit.Playwright.FocusStop
   BlazorAccessibilityToolkit.Playwright.AccessibleElementInfo Element { get; init; }
+  BlazorAccessibilityToolkit.Playwright.FocusAppearanceMeasurement Appearance { get; init; }
   BlazorAccessibilityToolkit.Playwright.FocusBounds Bounds { get; init; }
   BlazorAccessibilityToolkit.Playwright.FocusIndicator Indicator { get; init; }
   BlazorAccessibilityToolkit.Playwright.FocusObscuration Obscuration { get; init; }
@@ -267,6 +289,7 @@ sealed class BlazorAccessibilityToolkit.Playwright.KeyboardScenario
   BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectLiveRegionUpdate(System.String text, BlazorAccessibilityToolkit.Playwright.TextMatch match = Contains, System.String politeness = null)
   BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectState(Microsoft.Playwright.ILocator locator, System.String state, System.String value)
   BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectTitle(System.String text, BlazorAccessibilityToolkit.Playwright.TextMatch match = Contains)
+  BlazorAccessibilityToolkit.Playwright.KeyboardScenario ExpectVisibleFocus(System.Boolean focusAppearance = False)
   BlazorAccessibilityToolkit.Playwright.KeyboardScenario FocusOn(Microsoft.Playwright.ILocator locator)
   BlazorAccessibilityToolkit.Playwright.KeyboardScenario Press(System.String key, System.Int32 times = 1)
   BlazorAccessibilityToolkit.Playwright.KeyboardScenario PressArrowDown(System.Int32 times = 1)

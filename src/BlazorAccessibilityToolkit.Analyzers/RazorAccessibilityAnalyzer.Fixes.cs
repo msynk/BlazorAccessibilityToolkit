@@ -42,7 +42,7 @@ public sealed partial class RazorAccessibilityAnalyzer
 
             case "BA11Y028" when attribute.Value is { } lang:
                 var tag = lang.Trim().Replace('_', '-');
-                return LanguageTag.IsMatch(tag) ? One(ReplaceValue(markup, attribute, tag, $"Change to lang=\"{tag}\"", id)) : [];
+                return IsValidLanguageTag(tag) ? One(ReplaceValue(markup, attribute, tag, $"Change to lang=\"{tag}\"", id)) : [];
 
             case "BA11Y033" when attribute.Name == "autocomplete":
                 return new[] { "current-password", "new-password" }

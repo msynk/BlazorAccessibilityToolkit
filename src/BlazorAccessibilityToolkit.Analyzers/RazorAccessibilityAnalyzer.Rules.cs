@@ -101,10 +101,11 @@ public sealed partial class RazorAccessibilityAnalyzer
         "tel", "tel-country-code", "tel-national", "tel-area-code", "tel-local", "tel-local-prefix", "tel-local-suffix", "tel-extension", "email", "impp",
     };
 
-    private static readonly Dictionary<string, string[]> RequiredAttributes = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, string[]> RequiredAttributesByRole = new(StringComparer.Ordinal)
     {
         ["checkbox"] = ["aria-checked"],
         ["combobox"] = ["aria-expanded"],
+        ["heading"] = ["aria-level"],
         ["menuitemcheckbox"] = ["aria-checked"],
         ["menuitemradio"] = ["aria-checked"],
         ["meter"] = ["aria-valuenow"],
@@ -171,10 +172,6 @@ public sealed partial class RazorAccessibilityAnalyzer
     ];
 
     private static readonly string[] RedundantAltWords = ["image", "picture", "photo", "photograph", "graphic", "icon"];
-
-    private static readonly Regex LanguageTag = new(
-        "^(?:[a-z]{2,3}(?:-[a-z]{3}){0,3})(?:-[a-z]{4})?(?:-(?:[a-z]{2}|[0-9]{3}))?(?:-(?:[a-z0-9]{5,8}|[0-9][a-z0-9]{3}))*(?:-[a-wy-z0-9](?:-[a-z0-9]{2,8})+)*(?:-x(?:-[a-z0-9]{1,8})+)?$|^x(?:-[a-z0-9]{1,8})+$",
-        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static IEnumerable<(DiagnosticDescriptor Descriptor, RazorElement? Element, TextSpan Span, object[] Args)> CheckMore(RazorElement e, FileFacts file, AnalyzerSettings settings)
     {
@@ -246,7 +243,9 @@ public sealed partial class RazorAccessibilityAnalyzer
             }
         }
 
+        // A disabled or hidden field is never filled in, so its autocomplete value does not matter.
         if (e.LowerName is "input" or "select" or "textarea" && e.Attribute("autocomplete") is { IsDynamic: false, Value: { } autocomplete } autocompleteAttribute
+            && !hidden && e.Static("disabled") is null && !string.Equals(e.Static("aria-disabled")?.Trim(), "true", StringComparison.OrdinalIgnoreCase)
             && InvalidAutocomplete(autocomplete) is { } autocompleteProblem)
         {
             yield return (AutocompleteValid, e, autocompleteAttribute.Span, [autocomplete, autocompleteProblem]);
@@ -257,7 +256,7 @@ public sealed partial class RazorAccessibilityAnalyzer
             yield return (ActiveDescendantFocus, e, tag, [e.Name]);
         }
 
-        if (role is not null && !splatted && RequiredAttributes.TryGetValue(role, out var required) && !ProvidesStateNatively(e))
+        if (role is not null && !splatted && !hidden && RequiredAttributes(e, role) is { Length: > 0 } required && !ProvidesStateNatively(e, role))
         {
             var missing = required.Where(a => !e.Has(a)).ToArray();
             if (missing.Length > 0)
@@ -315,7 +314,11 @@ public sealed partial class RazorAccessibilityAnalyzer
             }
         }
 
-        if (e.Attribute("lang") is { IsDynamic: false, Value: { } lang } langAttribute && lang.Trim().Length > 0 && !LanguageTag.IsMatch(lang.Trim()))
+        // lang="" means "unknown language" and is valid; lang=" " is not. On other elements than <html>, a tag only matters
+        // when the element has content in that language (not only children with their own lang).
+        // On <html>, BA11Y010 already reports a lang of only spaces.
+        if (e.Attribute("lang") is { IsDynamic: false, Value: { } lang } langAttribute && lang.Length > 0 && !IsValidLanguageTag(lang)
+            && (e.LowerName == "html" ? lang.Trim().Length > 0 : HasOwnLanguageContent(e)))
         {
             yield return (LangValid, e, langAttribute.Span, [lang]);
         }
@@ -329,7 +332,9 @@ public sealed partial class RazorAccessibilityAnalyzer
                 yield return (ViewportZoom, e, tag, [viewportProblem]);
             }
 
-            if (string.Equals(e.Static("http-equiv")?.Trim(), "refresh", StringComparison.OrdinalIgnoreCase) && content is not null && RefreshDelay(content) is > 0 and < 72000)
+            // Browsers act on the first refresh <meta> with a valid delay only. "More than 20 hours" is the WCAG 2.2.1 exception.
+            if (content is not null && IsRefresh(e) && RefreshDelay(content) is > 0 and <= 72000
+                && file.Elements.First(IsRefresh) == e)
             {
                 yield return (MetaRefresh, e, tag, [content]);
             }
@@ -407,8 +412,16 @@ public sealed partial class RazorAccessibilityAnalyzer
         || (FirstRole(e) is { } role && ControlRoles.Contains(role));
 
     // Native elements that provide the state a role requires (an <input type="checkbox" role="switch"> is checked natively).
-    private static bool ProvidesStateNatively(RazorElement e) =>
-        e.LowerName is "input" or "select" or "meter" or "progress" or "option" or "h1" or "h2" or "h3" or "h4" or "h5" or "h6";
+    // The required states and properties of a role (WAI-ARIA 1.2). A focusable separator is a splitter, which needs a value.
+    private static string[] RequiredAttributes(RazorElement e, string role) =>
+        role == "separator" && e.Static("tabindex") is { } separatorTabIndex && !separatorTabIndex.Trim().StartsWith("-", StringComparison.Ordinal) && IsFocusable(e) ? ["aria-valuenow"]
+        : RequiredAttributesByRole.TryGetValue(role, out var required) ? required : [];
+
+    // Native elements that expose the state themselves: a checkbox input is checked or not, a heading has a level. An
+    // <input role="combobox"> does not say whether its popup is expanded; a <select> does.
+    private static bool ProvidesStateNatively(RazorElement e, string role) => role == "combobox"
+        ? e.LowerName == "select"
+        : e.LowerName is "input" or "select" or "meter" or "progress" or "option" or "h1" or "h2" or "h3" or "h4" or "h5" or "h6";
 
     private static string? ImplicitRole(RazorElement e)
     {
@@ -554,12 +567,13 @@ public sealed partial class RazorAccessibilityAnalyzer
 
             var key = pair[0].Trim().ToLowerInvariant();
             var value = pair[1].Trim().ToLowerInvariant();
-            if (key == "user-scalable" && value is "no" or "0")
+            if (key == "user-scalable" && Math.Abs(ViewportNumber(value, no: 0)) < 1)
             {
-                return $"user-scalable={value}";
+                // Browsers read words other than yes (such as true) as no.
+                return value is "no" || LeadingNumber.IsMatch(value) ? $"user-scalable={value}" : $"user-scalable={value} (read as no; write user-scalable=yes or leave it out)";
             }
 
-            if (key == "maximum-scale" && double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var max) && max < 2)
+            if (key == "maximum-scale" && ViewportNumber(value, no: 0.1) is var max && max >= 0 && max < 2)
             {
                 return $"maximum-scale={value}";
             }
@@ -568,11 +582,91 @@ public sealed partial class RazorAccessibilityAnalyzer
         return null;
     }
 
+    // Values are read as browsers read them (CSS Device Adaptation): yes is 1, no is 0 (user-scalable) or 0.1,
+    // device-width and device-height are 10, a number is read up to the first character that is not part of it, and
+    // anything else counts as 0. So user-scalable allows zooming when its value is at least 1 (or at most -1), and a
+    // negative maximum-scale is ignored.
+    private static double ViewportNumber(string value, double no)
+    {
+        switch (value)
+        {
+            case "yes":
+                return 1;
+            case "no":
+                return no;
+            case "device-width" or "device-height":
+                return 10;
+        }
+
+        var match = LeadingNumber.Match(value);
+        return match.Success && double.TryParse(match.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) ? number : 0;
+    }
+
+    private static readonly Regex LeadingNumber = new("^[+-]?(?:[0-9]+(?:[.][0-9]*)?|[.][0-9]+)(?:e[+-]?[0-9]+)?", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    /// <summary>
+    /// A language tag whose primary subtag is registered (as the ACT rules require; assistive technologies only use that
+    /// part) and whose other subtags are well-formed: one to eight letters or digits. Tags without a language, such as
+    /// private use (x-...) and grandfathered (i-...) tags, tell assistive technologies nothing they can use.
+    /// </summary>
+    private static bool IsValidLanguageTag(string tag)
+    {
+        var subtags = tag.Trim().Split('-');
+        return subtags.All(s => s.Length is > 0 and <= 8 && s.All(c => c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9'))
+            && subtags[0].Length is 2 or 3
+            && LanguageSubtags.IsPrimaryLanguage(subtags[0]);
+    }
+
+    // Rendered text (also aria-hidden text, which is still read on screen), a named image or dynamic content whose
+    // closest lang attribute is this element's.
+    private static bool HasOwnLanguageContent(RazorElement e)
+    {
+        if (e.HasDynamicContent || e.HasChildComponent)
+        {
+            return true;
+        }
+
+        if (e.HasLanguageText)
+        {
+            return true;
+        }
+
+        // An image with alt text that is not inside a descendant with its own lang.
+        var stack = new Stack<RazorElement>(e.Children);
+        while (stack.Count > 0)
+        {
+            var child = stack.Pop();
+            if (child.Has("lang"))
+            {
+                continue;
+            }
+
+            if (child.LowerName == "img" && !child.IsComponent && !string.IsNullOrWhiteSpace(child.Attribute("alt")?.Value) && child.Static("hidden") is null && !child.StyleHidden)
+            {
+                return true;
+            }
+
+            foreach (var grandchild in child.Children)
+            {
+                stack.Push(grandchild);
+            }
+        }
+
+        return false;
+    }
+
+    // The delay as the HTML specification reads a refresh <meta>: leading digits (a fraction is ignored) followed by the
+    // end, a separator or white space. Anything else ("+5", "0: url") makes browsers ignore the element.
     private static double? RefreshDelay(string content)
     {
-        var delay = content.Split([';', ','], 2)[0].Trim();
-        return double.TryParse(delay, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) ? seconds : null;
+        var match = RefreshContent.Match(content);
+        return match.Success && double.TryParse(match.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var seconds) ? seconds : null;
     }
+
+    private static readonly Regex RefreshContent = new("^[\\t\\n\\f\\r ]*([0-9]+)[0-9.]*(?:$|[;,\\t\\n\\f\\r ])", RegexOptions.CultureInvariant);
+
+    private static bool IsRefresh(RazorElement e) =>
+        e.LowerName == "meta" && string.Equals(e.Static("http-equiv")?.Trim(), "refresh", StringComparison.OrdinalIgnoreCase) && e.Static("content") is { } content && RefreshDelay(content) is not null;
 
     private static string NormalizeText(string text) =>
         Regex.Replace(WebUtility.HtmlDecode(text), "\\s+", " ").Trim();

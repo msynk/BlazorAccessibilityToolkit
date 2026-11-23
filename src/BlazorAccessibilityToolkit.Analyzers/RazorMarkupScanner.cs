@@ -73,6 +73,23 @@ internal sealed class RazorElement
     /// <summary>Static text that assistive technologies can read (not inside aria-hidden content).</summary>
     public bool HasText { get; set; }
 
+    /// <summary>
+    /// Rendered static text (also aria-hidden text, which is still shown) whose closest lang attribute is this element's
+    /// or an ancestor's: text inside a descendant with its own lang does not count.
+    /// </summary>
+    public bool HasLanguageText { get; set; }
+
+    private bool? _styleHidden;
+
+    /// <summary>Whether the static inline style hides the element (cached <see cref="RazorMarkupScanner.StyleHides"/>).</summary>
+    public bool StyleHidden => _styleHidden ??= RazorMarkupScanner.StyleHides(this);
+
+    /// <summary>Any static text in the content, hidden or not.</summary>
+    public bool HasAnyText { get; set; }
+
+    /// <summary>Set when every element that aria-labelledby references is known to be empty (or, in a static document, missing).</summary>
+    public bool LabelledByEmpty { get; set; }
+
     /// <summary>Content rendered by a Razor expression (unknown at compile time).</summary>
     public bool HasDynamicContent { get; set; }
 
@@ -347,7 +364,7 @@ internal static class RazorMarkupScanner
                             open.HasChildComponent = true;
                         }
                     }
-                    else if (element.LowerName == "img" && !string.IsNullOrWhiteSpace(element.Attribute("alt")?.Value) && !IsHiddenAttribute(element))
+                    else if (element.LowerName == "img" && IsNamedImage(element) && !IsHiddenAttribute(element))
                     {
                         MarkUntilHidden(stack, e => e.HasNamedImage = true);
                     }
@@ -426,7 +443,73 @@ internal static class RazorMarkupScanner
     }
 
     private static bool IsHiddenAttribute(RazorElement element) =>
-        string.Equals(element.Static("aria-hidden"), "true", StringComparison.OrdinalIgnoreCase) || element.Static("hidden") is not null;
+        string.Equals(element.Static("aria-hidden"), "true", StringComparison.OrdinalIgnoreCase) || element.Static("hidden") is not null || element.StyleHidden;
+
+    /// <summary>
+    /// Sets <see cref="RazorElement.HasNamedImage"/> again after <see cref="RazorElement.LabelledByEmpty"/> is known: an
+    /// image named only by aria-labelledby that references empty elements does not name its container.
+    /// </summary>
+    internal static void UpdateNamedImages(IReadOnlyList<RazorElement> elements)
+    {
+        foreach (var element in elements)
+        {
+            element.HasNamedImage = false;
+        }
+
+        foreach (var image in elements)
+        {
+            // As in the first pass: mapped components are not counted as images here.
+            if (image.LowerName == "img" && !image.IsComponent && !image.IsMapped && IsNamedImage(image) && !IsHiddenAttribute(image) && !image.Ancestors().Any(IsHiddenAttribute))
+            {
+                foreach (var ancestor in image.Ancestors())
+                {
+                    ancestor.HasNamedImage = true;
+                }
+            }
+        }
+    }
+
+    // An image that gives its container a name: alt text, aria-label, aria-labelledby or title, unless a presentational
+    // role removes it (which a focusable image ignores).
+    private static bool IsNamedImage(RazorElement image)
+    {
+        var named = !string.IsNullOrWhiteSpace(image.Attribute("alt")?.Value)
+            || (image.Attribute("aria-label") is { } label && (label.IsDynamic || !string.IsNullOrWhiteSpace(label.Value)))
+            || (image.Has("aria-labelledby") && !image.LabelledByEmpty)
+            || (image.Attribute("title") is { } title && (title.IsDynamic || !string.IsNullOrWhiteSpace(title.Value)));
+        var role = image.Static("role")?.Trim().Split(' ')[0].ToLowerInvariant();
+        return named && !(role is "presentation" or "none" && image.Attribute("tabindex") is null);
+    }
+
+    /// <summary>
+    /// Whether the element's static inline style removes it from rendering (<c>display: none</c>) or hides it
+    /// (<c>visibility: hidden</c> or <c>collapse</c>). Style sheets are not read.
+    /// </summary>
+    internal static bool StyleHides(RazorElement element)
+    {
+        if (element.Static("style") is not { Length: > 0 } style)
+        {
+            return false;
+        }
+
+        foreach (var declaration in style.Split(';'))
+        {
+            var colon = declaration.IndexOf(':');
+            if (colon < 0)
+            {
+                continue;
+            }
+
+            var property = declaration.Substring(0, colon).Trim().ToLowerInvariant();
+            var value = declaration.Substring(colon + 1).Replace("!important", string.Empty).Trim().ToLowerInvariant();
+            if ((property == "display" && value == "none") || (property == "visibility" && value is "hidden" or "collapse"))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     // Text inside an aria-hidden element is not part of the accessible name of its ancestors.
     private static void MarkUntilHidden(List<RazorElement> stack, Action<RazorElement> mark)
@@ -445,11 +528,33 @@ internal static class RazorMarkupScanner
         }
     }
 
-    private static void MarkText(List<RazorElement> stack, string text) => MarkUntilHidden(stack, e =>
+    private static void MarkText(List<RazorElement> stack, string text)
     {
-        e.HasText = true;
-        e.Text.Append(text);
-    });
+        foreach (var element in stack)
+        {
+            element.HasAnyText = true;
+        }
+
+        MarkUntilHidden(stack, e =>
+        {
+            e.HasText = true;
+            e.Text.Append(text);
+        });
+
+        // The language of rendered text (aria-hidden text is still shown on screen) comes from the closest element with a
+        // lang attribute, so the text belongs to that element and the ones in between, not to its other ancestors.
+        if (!stack.Any(e => e.Static("hidden") is not null || e.StyleHidden))
+        {
+            for (var k = stack.Count - 1; k >= 0; k--)
+            {
+                stack[k].HasLanguageText = true;
+                if (stack[k].Has("lang"))
+                {
+                    break;
+                }
+            }
+        }
+    }
 
     private static void MarkDynamic(List<RazorElement> stack)
     {

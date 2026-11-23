@@ -72,10 +72,9 @@ public sealed class DevOverlayTests(BrowserFixture browser, DevOverlayHostFixtur
     [Fact]
     public async Task Overlay_lists_violations_and_works_with_the_keyboard()
     {
-        await using var session = await OpenAsync("overlay-page");
+        var messages = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        await using var session = await OpenAsync("overlay-page", page => page.Console += (_, message) => messages.Enqueue(message.Text));
         var page = session.Page;
-        var messages = new List<string>();
-        page.Console += (_, message) => messages.Add(message.Text);
 
         // The image inside #ignored is excluded, so exactly one element fails.
         var badge = page.GetByRole(AriaRole.Button, new() { Name = "1 a11y issue", Exact = true });
@@ -225,10 +224,12 @@ public sealed class DevOverlayTests(BrowserFixture browser, DevOverlayHostFixtur
     private string Url(string path) => new Uri(fixture.Host.BaseAddress, path).ToString();
 
     // Turns the overlay on despite browser automation, as a developer would with localStorage.
-    private async Task<BrowserSession> OpenAsync(string path)
+    // beforeNavigation subscribes to page events (such as console messages) before the overlay can raise them.
+    private async Task<BrowserSession> OpenAsync(string path, Action<IPage>? beforeNavigation = null)
     {
         var session = await browser.Browser.NewSessionAsync();
         await session.Context.AddInitScriptAsync("localStorage.setItem('blazor-a11y-devtools', 'on')");
+        beforeNavigation?.Invoke(session.Page);
         await session.Page.GotoAsync(Url(path));
         return session;
     }

@@ -102,6 +102,7 @@ Engine `blazor-a11y`. Environments: *markup* means bUnit markup without a browse
 | `blazor-redundant-entry` | Potential | 3.3.7 | markup, browser | a second field for information already asked for (`ConfirmEmail`, `EmailConfirmation`, `repeat-phone` ...); repeated passwords are exempt |
 | `blazor-markup-image-alt`, `-control-name`, `-form-label`, `-aria-hidden-focusable`, `-invalid-aria-attribute`, `-invalid-role`, `-positive-tabindex` | mostly Violation | various | markup (fallback only) | conservative browserless equivalents of axe rules, only when no browser engine runs |
 | `blazor-focus-*` | Potential | 2.1.2, 2.4.3, 2.4.7, 2.4.11, 1.3.2 | browser | see [focus order](interactive-testing.md#focus-order), including `blazor-focus-order-visual-mismatch` |
+| `blazor-focus-not-visible`, `blazor-focus-appearance` | Violation | 2.4.7, 2.4.13 (AAA) | browser | opt-in screenshot measurement of focus indicators; see [measuring focus indicators](interactive-testing.md#measuring-focus-indicators) |
 | `blazor-live-region-*` | Potential | 4.1.3 | browser | see [live regions](interactive-testing.md#live-regions) |
 
 The full metadata (descriptions and remediation) is in `ToolkitRules.All`; `blazor-a11y rules` prints it. Compile-time checks of `.razor` files (`BA11Y001` to `BA11Y038`) are described in [Razor analyzers](analyzers.md).

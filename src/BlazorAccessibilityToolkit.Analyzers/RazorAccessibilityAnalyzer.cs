@@ -44,7 +44,9 @@ public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
     public static readonly DiagnosticDescriptor AriaHiddenFocusable = Rule("BA11Y006", "Focusable element is hidden from assistive technologies", "<{0}> can receive keyboard focus but is inside aria-hidden=\"true\" content; remove aria-hidden or make it unfocusable (tabindex=\"-1\", disabled or inert)", "4.1.2");
 
     /// <summary>Form field without a label.</summary>
-    public static readonly DiagnosticDescriptor FormFieldLabel = Rule("BA11Y007", "Form field has no label", "<{0}> has no label: wrap it in a <label>, or give it an id referenced by <label for>, or an aria-label", "1.3.1, 4.1.2");
+    public static readonly DiagnosticDescriptor FormFieldLabel = Rule("BA11Y007", "Form field has no label", "<{0}> has no label: {1}", "1.3.1, 4.1.2");
+
+    private const string LabelAdvice = "wrap it in a <label>, or give it an id referenced by <label for>, or an aria-label";
 
     /// <summary>Button or link without a name.</summary>
     public static readonly DiagnosticDescriptor ControlName = Rule("BA11Y008", "Button or link has no accessible name", "<{0}> has no text content and no aria-label, aria-labelledby or title, so screen readers announce it without a name", "4.1.2, 2.4.4");
@@ -168,6 +170,7 @@ public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
         }
 
         var file = new FileFacts(markup, elements);
+        ResolveLabelledBy(markup, elements);
 
         // Labels that wrap a checkbox, radio button or button: activating the control with the keyboard dispatches a click
         // that bubbles to the label, so a click handler on the label is reachable.
@@ -229,7 +232,7 @@ public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
         {
             if (BlazorInputs.Contains(e.Name) && !splatted && !IsLabelled(e, settings) && !IsHidden(e))
             {
-                yield return (FormFieldLabel, e, tag, [e.Name]);
+                yield return (FormFieldLabel, e, tag, [e.Name, LabelAdvice]);
             }
 
             yield break;
@@ -283,13 +286,26 @@ public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
             yield return (LinkAsButton, e, tag, [href]);
         }
 
-        if (e.LowerName == "img" && !splatted && !hidden && !e.Has("alt") && role is not ("presentation" or "none") && !HasNameAttribute(e, settings))
+        // A presentational role on a focusable element is ignored (WAI-ARIA conflict resolution), so the element keeps
+        // its implicit role and still needs a name.
+        var namedRole = role is "presentation" or "none" && IsFocusable(e) ? null : role;
+        var alt = e.Attribute("alt");
+
+        if (e.LowerName == "img" && !splatted && !hidden && namedRole is not ("presentation" or "none") && !HasNameAttribute(e, settings)
+            && (alt is null || (!alt.IsDynamic && alt.Value is { Length: > 0 } blank && blank.Trim().Length == 0)))
         {
-            yield return (ImageAlt, e, tag, ["<img> has no alt attribute"]);
+            // alt=" " is neither the empty alt of a decorative image nor a text alternative.
+            yield return (ImageAlt, e, tag, [alt is null ? "<img> has no alt attribute" : "<img> has an alt attribute with only spaces"]);
         }
-        else if (e.LowerName == "input" && string.Equals(e.Static("type")?.Trim(), "image", StringComparison.OrdinalIgnoreCase) && !splatted && !hidden && !e.Has("alt") && !HasNameAttribute(e, settings))
+        else if (e.LowerName == "input" && string.Equals(e.Static("type")?.Trim(), "image", StringComparison.OrdinalIgnoreCase) && !splatted && !hidden && !HasNameAttribute(e, settings)
+            && (alt is null || (!alt.IsDynamic && string.IsNullOrWhiteSpace(alt.Value))))
         {
-            yield return (ImageAlt, e, tag, ["<input type=\"image\"> has no alt attribute"]);
+            // An image button always needs a name: alt="" does not make it decorative.
+            yield return (ImageAlt, e, tag, [alt is null ? "<input type=\"image\"> has no alt attribute" : "<input type=\"image\"> has an empty alt attribute"]);
+        }
+        else if (role == "img" && e.LowerName is not ("img" or "svg") && !splatted && !hidden && !HasNameAttribute(e, settings))
+        {
+            yield return (ImageAlt, e, tag, [$"<{e.Name} role=\"img\"> has no aria-label or aria-labelledby"]);
         }
         else if (e.LowerName == "area" && e.Has("href") && !splatted && !hidden && !e.Has("alt") && !HasNameAttribute(e, settings))
         {
@@ -300,25 +316,35 @@ public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
             yield return (ImageAlt, e, tag, ["<svg role=\"img\"> has no <title>, aria-label or aria-labelledby"]);
         }
 
-        if (IsFocusable(e) && (hidden || e.Ancestors().Any(a => string.Equals(a.Static("aria-hidden"), "true", StringComparison.OrdinalIgnoreCase)))
-            && !e.Ancestors().Any(a => a.Static("inert") is not null || a.Static("hidden") is not null))
+        // The hidden attribute, inert and display: none or visibility: hidden also take an element out of the focus order.
+        if (IsFocusable(e) && new[] { e }.Concat(e.Ancestors()).Any(a => string.Equals(a.Static("aria-hidden"), "true", StringComparison.OrdinalIgnoreCase))
+            && !new[] { e }.Concat(e.Ancestors()).Any(a => a.Static("inert") is not null || a.Static("hidden") is not null || a.StyleHidden))
         {
             yield return (AriaHiddenFocusable, e, tag, [e.Name]);
         }
 
-        if (IsLabelable(e) && !splatted && !hidden && !IsLabelled(e, settings))
+        // A disabled field with a presentational role is not a form field (the role applies, because it cannot be focused).
+        if (IsLabelable(e) && !splatted && !hidden && !IsLabelled(e, settings) && namedRole is not ("presentation" or "none"))
         {
-            yield return (FormFieldLabel, e, tag, [e.Name]);
+            yield return (FormFieldLabel, e, tag, [e.Name, LabelAdvice]);
+        }
+        else if (role is not null && FieldRoles.Contains(role) && e.LowerName is not ("input" or "select" or "textarea") && !e.IsMapped && !splatted && !hidden && !HasNameAttribute(e, settings)
+            && !(NameFromContentRoles.Contains(role) && HasContentOrName(e, settings)))
+        {
+            // A <label> cannot name a <div role="textbox">: only aria-label or aria-labelledby (or content, for a checkbox) can.
+            yield return (FormFieldLabel, e, tag, [$"{e.Name} role=\"{role}\"", NameFromContentRoles.Contains(role)
+                ? "a <label> cannot name it, so give it text content, an aria-label or aria-labelledby"
+                : "a <label> cannot name it, so add aria-label or aria-labelledby"]);
         }
 
-        var isButton = (e.LowerName == "button" && role is null) || role == "button";
-        var isLink = (e.LowerName == "a" && e.Has("href") && role is null) || role == "link";
+        var isButton = (e.LowerName == "button" && namedRole is null) || namedRole == "button";
+        var isLink = (e.LowerName == "a" && e.Has("href") && namedRole is null) || namedRole is "link" or "doc-backlink" or "doc-biblioref" or "doc-glossref" or "doc-noteref";
         if ((isButton || isLink) && !splatted && !hidden && !HasContentOrName(e, settings))
         {
             yield return (ControlName, e, tag, [e.Name]);
         }
 
-        if (e.LowerName is "h1" or "h2" or "h3" or "h4" or "h5" or "h6" && !splatted && !hidden && !HasContentOrName(e, settings))
+        if ((e.LowerName is "h1" or "h2" or "h3" or "h4" or "h5" or "h6" || role == "heading") && !splatted && !hidden && !HasContentOrName(e, settings))
         {
             yield return (EmptyHeading, e, tag, [e.Name]);
         }
@@ -328,7 +354,10 @@ public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
             yield return (HtmlLang, e, tag, []);
         }
 
-        if (e.LowerName == "iframe" && !splatted && !hidden && !e.Has("title") && !HasNameAttribute(e, settings))
+        // HasNameAttribute accepts a non-blank title. A frame removed from the tab order (tabindex="-1") or made
+        // presentational is not announced as a frame, so its title does not matter.
+        if (e.LowerName == "iframe" && !splatted && !hidden && !HasNameAttribute(e, settings) && role is not ("presentation" or "none")
+            && !(e.Static("tabindex") is { } frameTabIndex && frameTabIndex.Trim().StartsWith("-", StringComparison.Ordinal)))
         {
             yield return (FrameTitle, e, tag, []);
         }
@@ -341,9 +370,59 @@ public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
 
     private static bool HasNameAttribute(RazorElement e, AnalyzerSettings? settings = null) =>
         (e.Attribute("aria-label") is { } label && (label.IsDynamic || !string.IsNullOrWhiteSpace(label.Value)))
-        || e.Has("aria-labelledby")
+        || (e.Has("aria-labelledby") && !e.LabelledByEmpty)
         || (e.Attribute("title") is { } title && (title.IsDynamic || !string.IsNullOrWhiteSpace(title.Value)))
         || (e.IsMapped && settings is not null && e.Attributes.Any(a => settings.LabelAttributes.Contains(a.Name) && (a.IsDynamic || !string.IsNullOrWhiteSpace(a.Value))));
+
+    // aria-labelledby gives no name when every element it references is empty. A reference is trusted when its target is
+    // not in this file (another component may render it), except in a static HTML document, where nothing else can.
+    private static void ResolveLabelledBy(string markup, IReadOnlyList<RazorElement> elements)
+    {
+        var byId = new Dictionary<string, List<RazorElement>>(StringComparer.Ordinal);
+        foreach (var element in elements)
+        {
+            if (element.Static("id")?.Trim() is { Length: > 0 } id)
+            {
+                if (!byId.TryGetValue(id, out var list))
+                {
+                    byId[id] = list = [];
+                }
+
+                list.Add(element);
+            }
+        }
+
+        // A static document: an <html> element and no Razor at all (no directive, expression, tag helper or component).
+        var standalone = elements.Any(x => x.LowerName == "html" && !x.IsComponent)
+            && ScriptOrStyle.Replace(markup, string.Empty).IndexOf('@') < 0
+            && !elements.Any(x => x.IsComponent || x.IsMapped || x.Name.IndexOf(':') >= 0 || x.LowerName is "partial" or "component");
+        foreach (var element in elements)
+        {
+            if (element.Static("aria-labelledby") is { } value)
+            {
+                var ids = value.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+                element.LabelledByEmpty = ids.Length > 0 && ids.All(id => byId.TryGetValue(id, out var targets) ? targets.All(IsEmptyLabel) : standalone);
+            }
+        }
+
+        if (elements.Any(x => x.LabelledByEmpty))
+        {
+            RazorMarkupScanner.UpdateNamedImages(elements);
+        }
+    }
+
+    // Empty even for aria-labelledby, which also reads hidden content and the alt, title and value of the element: a
+    // plain element without text, children, Razor content, naming attributes, @ref or @attributes (script may fill it).
+    private static bool IsEmptyLabel(RazorElement e) =>
+        !e.IsComponent && !e.IsMapped
+        && e.LowerName is not ("input" or "select" or "textarea" or "img" or "area" or "svg" or "object" or "button" or "meter" or "progress" or "output")
+        && !e.HasAnyText && e.Children.Count == 0 && !e.HasDynamicContent && !e.HasChildComponent
+        && !e.Attributes.Any(a => a.IsDynamic || a.Name.StartsWith("@", StringComparison.Ordinal)
+            || (a.Name.ToLowerInvariant() is "aria-label" or "title" or "alt" or "aria-labelledby" or "value" && !string.IsNullOrWhiteSpace(a.Value)));
+
+    private static readonly System.Text.RegularExpressions.Regex ScriptOrStyle = new(
+        "<(script|style)\\b[^>]*>.*?</\\1\\s*>",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     private static bool IsLabelled(RazorElement e, AnalyzerSettings settings)
     {
@@ -383,7 +462,16 @@ public sealed partial class RazorAccessibilityAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool IsHidden(RazorElement e) =>
-        new[] { e }.Concat(e.Ancestors()).Any(x => string.Equals(x.Static("aria-hidden"), "true", StringComparison.OrdinalIgnoreCase) || x.Static("hidden") is not null || x.Static("inert") is not null);
+        new[] { e }.Concat(e.Ancestors()).Any(x => string.Equals(x.Static("aria-hidden"), "true", StringComparison.OrdinalIgnoreCase) || x.Static("hidden") is not null || x.Static("inert") is not null || x.StyleHidden);
+
+    // Roles of form fields that need an accessible name (as in the ACT rule "Form field has non-empty accessible name").
+    private static readonly HashSet<string> FieldRoles = new(StringComparer.Ordinal)
+    {
+        "checkbox", "combobox", "listbox", "menuitemcheckbox", "menuitemradio", "radio", "searchbox", "slider", "spinbutton", "switch", "textbox",
+    };
+
+    // Of those, the roles that take their name from their content.
+    private static readonly HashSet<string> NameFromContentRoles = new(StringComparer.Ordinal) { "checkbox", "menuitemcheckbox", "menuitemradio", "radio", "switch" };
 
     private static bool IsFocusable(RazorElement e)
     {

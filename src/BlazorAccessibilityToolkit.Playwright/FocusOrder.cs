@@ -26,6 +26,23 @@ public sealed record FocusOrderOptions
     public bool ReportMissingFocusIndicator { get; init; }
 
     /// <summary>
+    /// After the capture, measure the focus indicator of every stop from screenshots
+    /// (<see cref="FocusAppearance.MeasureFocusAppearanceAsync"/>), record it in <see cref="FocusStop.Appearance"/> and
+    /// report <see cref="ToolkitRules.FocusNotVisible"/> (WCAG 2.4.7) for stops where nothing changes on screen.
+    /// Default <c>false</c>: each stop takes two screenshots.
+    /// </summary>
+    public bool MeasureFocusAppearance { get; init; }
+
+    /// <summary>
+    /// With <see cref="MeasureFocusAppearance"/>, also report <see cref="ToolkitRules.FocusAppearance"/> (WCAG 2.4.13,
+    /// AAA) for indicators that are smaller than a 2 CSS pixel perimeter or change contrast by less than 3:1.
+    /// </summary>
+    public bool ReportFocusAppearance { get; init; }
+
+    /// <summary>Settings for <see cref="MeasureFocusAppearance"/>.</summary>
+    public FocusAppearanceOptions? FocusAppearance { get; init; }
+
+    /// <summary>
     /// Report <see cref="ToolkitRules.FocusObscured"/> for stops that are entirely covered by other content (sticky
     /// headers, banners, non-modal overlays). Default <c>true</c>.
     /// </summary>
@@ -87,6 +104,9 @@ public sealed record FocusStop
 
     /// <summary>The element's box in page coordinates when it had focus.</summary>
     public FocusBounds? Bounds { get; init; }
+
+    /// <summary>The measured focus indicator, with <see cref="FocusOrderOptions.MeasureFocusAppearance"/>.</summary>
+    public FocusAppearanceMeasurement? Appearance { get; init; }
 
     /// <inheritdoc />
     public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"{Index + 1}. {Element}");
@@ -364,6 +384,30 @@ public static class FocusOrder
         if (options.ReportVisualOrderMismatch)
         {
             findings.AddRange(VisualOrderMismatches(options.Reverse ? stops.AsEnumerable().Reverse().ToList() : stops, rightToLeft));
+        }
+
+        if (options.MeasureFocusAppearance)
+        {
+            // Measured after the capture, so that blurring and refocusing elements cannot change the sequence.
+            var measured = new Dictionary<int, FocusAppearanceMeasurement?>();
+            for (var i = 0; i < stops.Count; i++)
+            {
+                var element = stops[i].Element;
+                if (!measured.TryGetValue(element.ElementKey, out var measurement))
+                {
+                    var locator = element.Selector is { } selector ? page.Locator(selector) : null;
+                    measurement = locator is not null && await locator.CountAsync().ConfigureAwait(false) == 1
+                        ? await locator.MeasureFocusAppearanceAsync(options.FocusAppearance).ConfigureAwait(false)
+                        : null;
+                    measured[element.ElementKey] = measurement;
+                    if (measurement is not null && element.Visible && stops[i].Obscuration != FocusObscuration.EntirelyObscured)
+                    {
+                        findings.AddRange(FocusAppearance.Findings(measurement, Target(element), options.ReportFocusAppearance));
+                    }
+                }
+
+                stops[i] = stops[i] with { Appearance = measurement };
+            }
         }
 
         var reached = stops.Select(s => s.Element.ElementKey).ToHashSet();

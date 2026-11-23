@@ -12,8 +12,6 @@ We have compared the toolkit with accessibility tools in other stacks twice. [AD
 ## Considered, not planned yet
 
 - **A second rule engine** (IBM Equal Access or Siteimprove Alfa) next to axe-core. Results would need deduplication, and a second engine doubles the maintenance of the engine contract.
-- **ACT rules implementation report.** Run the toolkit's own rules against the W3C ACT test cases and publish an EARL report.
-- **Screenshot-based checks** for focus appearance (2.4.13, AAA) and indicator contrast. They depend on fonts and rendering, so they are hard to make deterministic across browsers.
 - **APCA contrast** as information next to WCAG 2 contrast. axe-core does not support it, and APCA is not part of WCAG 2.
 - **Blazor Hybrid and native hosts** (MAUI, WPF, WinForms) through Axe.Windows or Appium.
 - **Focus lost when `<Virtualize>` recycles the focused row.** It happens only when a pointer user scrolls the focused row out of view, and the result depends on the browser's sequential focus starting point. A check would be noisy, and the fix (keeping the focused item rendered) belongs in the component. Keyboard navigation through a virtualized list keeps the focused row in view and is not affected.
@@ -24,6 +22,8 @@ We have compared the toolkit with accessibility tools in other stacks twice. [AD
 - Code fixes for the analyzer findings that have one safe edit, in the IDE and with `blazor-a11y fix` ([Razor analyzers](analyzers.md#fixes)).
 - A development overlay that runs axe-core in the running app and lists the violations ([Development overlay](dev-overlay.md)).
 - An MCP server that gives coding agents the analyzer, its fixes, the test results and the rule catalog ([MCP server](mcp-server.md)).
+- Focus indicators measured from screenshots: invisible focus (2.4.7) and focus appearance (2.4.13, AAA) ([measuring focus indicators](interactive-testing.md#measuring-focus-indicators)).
+- An ACT rules implementation report for the Razor analyzer, in the EARL format the ACT Task Force collects ([ACT rules implementation report](act-rules.md)). Submitting it to the ACT implementations page is a separate step for the maintainers.
 
 ## Done in the second survey
 

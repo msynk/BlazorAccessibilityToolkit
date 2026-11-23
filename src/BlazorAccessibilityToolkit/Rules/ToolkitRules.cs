@@ -609,6 +609,34 @@ public static class ToolkitRules
         Environments = [Browser],
     };
 
+    /// <summary>Nothing on screen changed when the element received keyboard focus (measured from screenshots).</summary>
+    public static AccessibilityRule FocusNotVisible { get; } = new()
+    {
+        Id = "blazor-focus-not-visible",
+        Description = "Keyboard focus must be visible: the focused element, or the area around it, must look different from its unfocused state.",
+        Help = "No pixel near the element changed when it received keyboard focus",
+        Remediation = "Do not remove the browser's focus outline (outline: none) without a replacement. Style :focus-visible, for example with outline: 2px solid currentColor; outline-offset: 2px.",
+        Status = FindingStatus.Violation,
+        Impact = AccessibilityImpact.Serious,
+        Wcag = ["2.4.7"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html",
+        Environments = [Browser],
+    };
+
+    /// <summary>The focus indicator is smaller than a 2 CSS pixel perimeter or does not change contrast by 3:1 (AAA).</summary>
+    public static AccessibilityRule FocusAppearance { get; } = new()
+    {
+        Id = "blazor-focus-appearance",
+        Description = "A focus indicator should be at least as large as a 2 CSS pixel thick perimeter of the unfocused element, and its pixels should change by a contrast of at least 3:1 between the unfocused and focused states.",
+        Help = "The focus indicator is too small or too faint for WCAG 2.4.13",
+        Remediation = "Use a solid outline of at least 2 CSS pixels around the element in a color with 3:1 contrast against both the element and its background, for example outline: 2px solid; outline-offset: 2px. Thin, dotted, light or partial indicators fall short.",
+        Status = FindingStatus.Violation,
+        Impact = AccessibilityImpact.Moderate,
+        Wcag = ["2.4.13"],
+        HelpUrl = "https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html",
+        Environments = [Browser],
+    };
+
     /// <summary>Same element reached twice within one Tab cycle.</summary>
     public static AccessibilityRule FocusRepeated { get; } = new()
     {
@@ -672,7 +700,7 @@ public static class ToolkitRules
         IdReferenceMissing, RadioGroupUngrouped, FieldsetMissingLegend, ExpandedStateMismatch, TabSelectionMismatch,
         NavLinkCurrent, InputPurposeMissing, RequiredNotExposed, ErrorUiNotAccessible, PasteBlocked, DraggingAlternative, RedundantEntry, FragmentLinkLeavesPage, AmbiguousLinkName, RoleInName, ReconnectUiNotAccessible, HelpInconsistent, VirtualizedSetSize, DuplicateClickableBounds,
         MarkupImageAlt, MarkupControlName, MarkupFormLabel, MarkupAriaHiddenFocusable, MarkupInvalidAriaAttribute, MarkupInvalidRole, MarkupPositiveTabIndex,
-        FocusStuck, FocusTrap, FocusHiddenTarget, FocusIndicatorNotDetected, FocusRepeated, FocusObscured, FocusOrderVisualMismatch,
+        FocusStuck, FocusTrap, FocusHiddenTarget, FocusIndicatorNotDetected, FocusNotVisible, FocusAppearance, FocusRepeated, FocusObscured, FocusOrderVisualMismatch,
         ReflowHorizontalScroll, TextSpacingClipped, MotionNotReduced, OrientationLocked, TargetSizeEnhanced,
         LiveRegionInsertedWithContent, LiveRegionHiddenUpdate, LiveRegionPolitenessConflict,
     ];

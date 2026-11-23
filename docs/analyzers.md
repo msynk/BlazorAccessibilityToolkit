@@ -14,19 +14,21 @@ Pages/Cart.razor(14,6): warning BA11Y001: <div> has a Blazor @onclick handler, b
 
 ## Rules
 
+Fifteen of these rules are tested against the test cases of 18 W3C ACT Rules; see the [ACT rules implementation report](act-rules.md).
+
 | Id | Title | WCAG |
 | --- | --- | --- |
 | <a id="ba11y001"></a>`BA11Y001` | Clickable element is not keyboard accessible: `@onclick`, `@onmousedown`, `@onmouseup`, `@onpointerdown`, `@onpointerup` or `@ondblclick` on an element that is not a button, link or form control, without an interactive role, `tabindex` or `@onkeydown`/`@onkeyup`. Items of a composite widget whose container manages focus and keys (an `option` in a `listbox`, a `gridcell` in a `grid`, or an item in `ActiveDescendantGroup` or `RovingFocusGroup`) are accepted | 2.1.1, 4.1.2 |
-| <a id="ba11y002"></a>`BA11Y002` | `<img>`, `<input type="image">` or `<area href>` without `alt`, or `<svg role="img">` without `<title>` or `aria-label` (use `alt=""` for decorative images) | 1.1.1 |
+| <a id="ba11y002"></a>`BA11Y002` | `<img>`, `<input type="image">` or `<area href>` without `alt`, `<svg role="img">` without `<title>` or `aria-label`, or another element with `role="img"` and no `aria-label` or `aria-labelledby`. Also an `alt` of only spaces, and an image button with an empty `alt`, which never makes it decorative. Use `alt=""` for decorative images | 1.1.1 |
 | <a id="ba11y003"></a>`BA11Y003` | Positive `tabindex` | 2.4.3 |
 | <a id="ba11y004"></a>`BA11Y004` | Unknown `aria-*` attribute, with a suggestion for typos such as `aria-labeledby` | 4.1.2 |
 | <a id="ba11y005"></a>`BA11Y005` | `role` without any valid WAI-ARIA role | 4.1.2 |
 | <a id="ba11y006"></a>`BA11Y006` | Focusable element inside `aria-hidden="true"` | 4.1.2 |
-| <a id="ba11y007"></a>`BA11Y007` | `<input>`, `<select>`, `<textarea>` or Blazor's `InputText`, `InputTextArea`, `InputNumber`, `InputDate`, `InputSelect`, `InputCheckbox` or `InputFile` without a label: not inside a `<label>`, no `id` for a `<label for>`, no `aria-label`, `aria-labelledby`, `title` or `placeholder` | 1.3.1, 4.1.2 |
-| <a id="ba11y008"></a>`BA11Y008` | `<button>` or `<a href>` without content or name (for example only an icon font element) | 4.1.2, 2.4.4 |
-| <a id="ba11y009"></a>`BA11Y009` | Empty heading | 1.3.1, 2.4.6 |
+| <a id="ba11y007"></a>`BA11Y007` | `<input>`, `<select>`, `<textarea>` or Blazor's `InputText`, `InputTextArea`, `InputNumber`, `InputDate`, `InputSelect`, `InputCheckbox` or `InputFile` without a label: not inside a `<label>`, no `id` for a `<label for>`, no `aria-label`, `aria-labelledby`, `title` or `placeholder`. Also an element with a form field role (`textbox`, `combobox`, `listbox`, `searchbox`, `slider`, `spinbutton`; `checkbox`, `radio`, `switch`, `menuitemcheckbox` and `menuitemradio` without text) and no `aria-label`, `aria-labelledby` or `title`, which a `<label>` cannot provide | 1.3.1, 4.1.2 |
+| <a id="ba11y008"></a>`BA11Y008` | `<button>`, `<a href>` or an element with a link role (also `doc-biblioref` and the other DPUB link roles) without content or name, for example only an icon font element. `role="none"` does not remove the requirement from a focusable element, because browsers ignore it there | 4.1.2, 2.4.4 |
+| <a id="ba11y009"></a>`BA11Y009` | Empty heading (`<h1>` to `<h6>`, or `role="heading"`). An image with `role="presentation"` gives a heading no text | 1.3.1, 2.4.6 |
 | <a id="ba11y010"></a>`BA11Y010` | `<html>` without `lang`, or with an empty one (in `App.razor`) | 3.1.1 |
-| <a id="ba11y011"></a>`BA11Y011` | `<iframe>` without `title` | 4.1.2 |
+| <a id="ba11y011"></a>`BA11Y011` | `<iframe>` without a `title` (or with a blank one) or other name. Frames with `tabindex="-1"` or a presentational role are not reported | 4.1.2 |
 | <a id="ba11y012"></a>`BA11Y012` | `<a href="#">` or `javascript:` link with `@onclick`: an action that should be a `<button>` | 4.1.2 |
 | <a id="ba11y013"></a>`BA11Y013` | Element with an interactive role (`button`, `checkbox`, `tab` ...) and no `tabindex` | 2.1.1 |
 | <a id="ba11y014"></a>`BA11Y014` | `autofocus` (info). Move focus deliberately instead, for example with `ElementReference.FocusAsync()` when a dialog opens | best practice |
@@ -34,18 +36,18 @@ Pages/Cart.razor(14,6): warning BA11Y001: <div> has a Blazor @onclick handler, b
 | <a id="ba11y016"></a>`BA11Y016` | `<marquee>` or `<blink>` | 2.2.2 |
 | <a id="ba11y017"></a>`BA11Y017` | `<video>` without `<track kind="captions">`, unless `muted` | 1.2.2 |
 | <a id="ba11y018"></a>`BA11Y018` | `scope` on an element other than `<th>`, or a value other than `row`, `col`, `rowgroup` or `colgroup` | 1.3.1 |
-| <a id="ba11y019"></a>`BA11Y019` | `autocomplete` value that is not a valid autofill token list (for example `e-mail`, or `work` before a non-contact field) | 1.3.5 |
+| <a id="ba11y019"></a>`BA11Y019` | `autocomplete` value that is not a valid autofill token list (for example `e-mail`, or `work` before a non-contact field). Disabled and hidden fields are not reported | 1.3.5 |
 | <a id="ba11y020"></a>`BA11Y020` | `aria-activedescendant` on an element without `tabindex` that cannot receive focus | 2.1.1, 4.1.2 |
-| <a id="ba11y021"></a>`BA11Y021` | Role without its required states. `checkbox`, `radio`, `switch`, `menuitemcheckbox` and `menuitemradio` need `aria-checked`. `slider` and `meter` need `aria-valuenow`. `scrollbar` needs `aria-controls` and `aria-valuenow`. `combobox` needs `aria-expanded`. (`heading` needs no `aria-level`: ARIA 1.2 defaults it to 2.) Native elements that provide the state, such as `<input type="checkbox" role="switch">`, are accepted | 4.1.2 |
+| <a id="ba11y021"></a>`BA11Y021` | Role without its required states. `checkbox`, `radio`, `switch`, `menuitemcheckbox` and `menuitemradio` need `aria-checked`. `slider` and `meter` need `aria-valuenow`. `scrollbar` needs `aria-controls` and `aria-valuenow`. `combobox` needs `aria-expanded`, also on an `<input>`. `heading` needs `aria-level` (WAI-ARIA 1.2 removed its default of 2). A focusable `separator` needs `aria-valuenow`. Native elements that provide the state, such as `<input type="checkbox" role="switch">` or `<h2 role="heading">`, are accepted | 4.1.2 |
 | <a id="ba11y022"></a>`BA11Y022` | ARIA attribute with a value its type does not allow, for example `aria-pressed="yes"`, `aria-hidden="hidden"`, `aria-live="loud"` or `aria-level="two"` | 4.1.2 |
 | <a id="ba11y023"></a>`BA11Y023` | Role that repeats the element's implicit role, such as `<button role="button">` (info). `<ul role="list">`, which restores list semantics in Safari, and `<nav role="navigation">` are accepted | best practice |
 | <a id="ba11y024"></a>`BA11Y024` | `tabindex="0"` or higher on a non-interactive element without an interactive role, handler or accessible name (info). A named scrollable region is accepted | best practice |
 | <a id="ba11y025"></a>`BA11Y025` | `@onmouseover` or `@onmouseenter` without `@onfocus`/`@onfocusin`, or `@onmouseout` or `@onmouseleave` without `@onblur`/`@onfocusout` | 2.1.1, 1.4.13 |
 | <a id="ba11y026"></a>`BA11Y026` | Interactive control nested in a `<button>`, an `<a href>` or an element with a control role | 4.1.2 |
 | <a id="ba11y027"></a>`BA11Y027` | Link whose whole text is "click here", "here", "read more", "learn more", "more" ... (info) | 2.4.4 |
-| <a id="ba11y028"></a>`BA11Y028` | `lang` value that is not a well-formed BCP 47 tag, such as `en_US` or `english` | 3.1.1, 3.1.2 |
-| <a id="ba11y029"></a>`BA11Y029` | Viewport meta tag with `user-scalable=no` or a `maximum-scale` below 2 | 1.4.4 |
-| <a id="ba11y030"></a>`BA11Y030` | `<meta http-equiv="refresh">` with a delay | 2.2.1, 3.2.5 |
+| <a id="ba11y028"></a>`BA11Y028` | `lang` value whose primary language subtag is not in the IANA Language Subtag Registry, such as `en_US`, `english`, `eng` (English is `en`) or `i-lux`, or that has only spaces. Assistive technologies use only the primary subtag, so `en-US-GB` is accepted. On elements other than `<html>`, only `lang` values that apply to some content are reported | 3.1.1, 3.1.2 |
+| <a id="ba11y029"></a>`BA11Y029` | Viewport meta tag that turns off zooming (`user-scalable=no`, or a value between -1 and 1) or sets a `maximum-scale` below 2. Values are read as browsers read them: `yes` is 1, and a value that is not a number counts as 0 | 1.4.4 |
+| <a id="ba11y030"></a>`BA11Y030` | `<meta http-equiv="refresh">` with a delay of up to 20 hours. Browsers use the first refresh tag whose delay they can read, so only that one is reported | 2.2.1, 3.2.5 |
 | <a id="ba11y031"></a>`BA11Y031` | Routable component (`@page` or `@attribute [Route]`) without `<PageTitle>` | 2.4.2 |
 | <a id="ba11y032"></a>`BA11Y032` | `<Router>` without `<FocusOnNavigate>` (or the toolkit's [`<NavigationFocus>`](runtime-components.md#navigationfocus)), so focus stays on the clicked link after client-side navigation | 2.4.3 |
 | <a id="ba11y033"></a>`BA11Y033` | Paste blocked with `@onpaste:preventDefault` (static, not `="@condition"`) or `onpaste="return false"`, or a password field with `autocomplete="off"` | 3.3.8 |
@@ -115,6 +117,8 @@ The rules read the markup as written, so they only report what the markup states
 - Elements with `@attributes` splatting are not checked for missing attributes, because the dictionary may supply them.
 - Content rendered by a Razor expression (`@Label`) or a child component counts as an accessible name.
 - Dynamic boolean attributes (`hidden="@(!open)"`, `disabled="@busy"`) count as absent, because Blazor only renders them when true.
+- Content hidden with the `hidden` attribute, `aria-hidden="true"`, `inert`, or an inline `style` with `display: none` or `visibility: hidden` is not checked for names. Style sheets and CSS classes are not read. A static `style="display: none"` on content that a script shows later (a dialog, a collapsed panel) therefore leaves that content unchecked; the browser audits check it once it is shown.
+- `aria-labelledby` provides a name unless every element it references is in the same file and empty. A reference to an element that is not in the file is trusted, because another component may render it; only in a static HTML document (no components or Razor code) does a missing element mean no name.
 - A field with an `id` is assumed to be labelled by a `<label for>`, possibly in another component.
 - Components are not expanded. `<MyButton>` is checked by the toolkit's [rendered-markup audits](component-testing.md), not here, unless you [map it to a native element](#component-libraries).
 

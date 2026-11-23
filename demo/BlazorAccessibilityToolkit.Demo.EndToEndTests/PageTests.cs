@@ -152,6 +152,21 @@ public sealed class PageTests(AppFixture app)
         Assert.DoesNotContain(order.Findings, f => f.RuleId == "blazor-focus-hidden-target");
     }
 
+    [Theory]
+    [InlineData("light")]
+    [InlineData("dark")]
+    public async Task Every_tab_stop_has_a_focus_indicator_that_meets_focus_appearance(string scheme)
+    {
+        await using var session = await app.OpenAsync("/manual-review");
+        await session.Page.EmulateMediaAsync(new() { ColorScheme = scheme == "dark" ? ColorScheme.Dark : ColorScheme.Light });
+
+        var order = await session.Page.CaptureFocusOrderAsync(new FocusOrderOptions { MeasureFocusAppearance = true, ReportFocusAppearance = true });
+
+        Assert.NotEmpty(order.Stops);
+        Assert.All(order.Stops, s => Assert.NotNull(s.Appearance));
+        Assert.Empty(order.Findings.Where(f => f.RuleId is "blazor-focus-not-visible" or "blazor-focus-appearance").Select(f => $"{f.Target.Selector}: {f.Remediation}"));
+    }
+
     [Fact]
     public async Task Navigation_moves_focus_to_the_new_page_heading()
     {

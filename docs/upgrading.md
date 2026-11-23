@@ -28,6 +28,18 @@ Procedure for upgrading axe-core or Playwright:
 5. Regenerate baselines when rule output changed. New rules can add findings, which will show up as new.
 6. Record the changes in `CHANGELOG.md`: new or removed rules and changed impacts.
 
+## W3C ACT Rules test cases and the language subtag registry
+
+The analyzer's ACT rules implementation report ([act-rules.md](act-rules.md)) runs on a snapshot of the W3C test cases, and `BA11Y028` uses a copy of the IANA Language Subtag Registry. Refresh them deliberately:
+
+```bash
+BLAZOR_A11Y_UPDATE_ACT_TESTCASES=1 dotnet test tests/BlazorAccessibilityToolkit.Analyzers.Tests --filter Update_the_test_case_snapshot
+BLAZOR_A11Y_UPDATE_LANGUAGE_SUBTAGS=1 dotnet test tests/BlazorAccessibilityToolkit.Analyzers.Tests --filter Update_the_language_subtags
+BLAZOR_A11Y_UPDATE_SNAPSHOTS=1 dotnet test tests/BlazorAccessibilityToolkit.Analyzers.Tests --filter ActRulesTests
+```
+
+The first command downloads only new test cases and waits between requests, because the W3C server limits them. Review the changed report: a new difference from the expected outcome is either an analyzer bug to fix or needs an explanation in `ActRuleImplementation.KnownDifferences`.
+
 ## Fingerprints and report schema
 
 - The fingerprint algorithm is versioned (`FindingFingerprint.Version`, currently `v1`). Baselines store the version, and loading a baseline with a different version fails with instructions to regenerate it.

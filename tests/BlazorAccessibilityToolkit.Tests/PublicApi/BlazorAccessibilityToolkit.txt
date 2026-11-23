@@ -511,8 +511,10 @@ static class BlazorAccessibilityToolkit.Rules.ToolkitRules
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule ExpandedStateMismatch { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FieldsetMissingLegend { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule Find(System.String id)
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusAppearance { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusHiddenTarget { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusIndicatorNotDetected { get; }
+  static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusNotVisible { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusObscured { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusOrderVisualMismatch { get; }
   static BlazorAccessibilityToolkit.Rules.AccessibilityRule FocusRepeated { get; }

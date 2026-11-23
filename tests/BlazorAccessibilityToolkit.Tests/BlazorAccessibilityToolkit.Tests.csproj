@@ -9,7 +9,6 @@
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Cli\BlazorAccessibilityToolkit.Cli.csproj" />
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Components\BlazorAccessibilityToolkit.Components.csproj" />
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.DevTools\BlazorAccessibilityToolkit.DevTools.csproj" />
-    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.DevTools\BlazorAccessibilityToolkit.DevTools.csproj" />
     <!-- Referenced only to snapshot their public API surface. -->
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.ComponentTesting\BlazorAccessibilityToolkit.ComponentTesting.csproj" />
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Playwright\BlazorAccessibilityToolkit.Playwright.csproj" />

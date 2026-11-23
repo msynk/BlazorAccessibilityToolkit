@@ -18,12 +18,12 @@ We have compared the toolkit with accessibility tools in other stacks twice. [AD
 - **Blazor Hybrid and native hosts** (MAUI, WPF, WinForms) through Axe.Windows or Appium.
 - **Focus lost when `<Virtualize>` recycles the focused row.** It happens only when a pointer user scrolls the focused row out of view, and the result depends on the browser's sequential focus starting point. A check would be noisy, and the fix (keeping the focused item rendered) belongs in the component. Keyboard navigation through a virtualized list keeps the focused row in view and is not affected.
 - **Real screen-reader automation** (Guidepup with NVDA or VoiceOver in CI), beyond the virtual transcripts.
-- **An MCP server** that exposes findings and fixes to coding agents.
 
 ## Done after the second survey
 
 - Code fixes for the analyzer findings that have one safe edit, in the IDE and with `blazor-a11y fix` ([Razor analyzers](analyzers.md#fixes)).
 - A development overlay that runs axe-core in the running app and lists the violations ([Development overlay](dev-overlay.md)).
+- An MCP server that gives coding agents the analyzer, its fixes, the test results and the rule catalog ([MCP server](mcp-server.md)).
 
 ## Done in the second survey
 

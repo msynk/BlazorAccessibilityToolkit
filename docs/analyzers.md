@@ -79,7 +79,7 @@ Some findings have one edit that is always right. The analyzer attaches that edi
 - **From the command line**, with `blazor-a11y fix` from the [CLI tool](ci-integration.md#the-cli). It works in any editor and in CI. `dotnet format` does not help here: it only fixes C# files.
 
 ```bash
-blazor-a11y fix src                       # apply every safe fix under src (bin and obj are skipped)
+blazor-a11y fix src                       # apply every safe fix under src (bin, obj and links are skipped)
 blazor-a11y fix src --rule BA11Y004       # only one rule (repeatable, or comma-separated)
 blazor-a11y fix src --dry-run             # list the fixes; exit code 1 when there is something to fix
 ```

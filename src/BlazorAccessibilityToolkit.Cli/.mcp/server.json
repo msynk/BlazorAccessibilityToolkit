@@ -1,0 +1,29 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "io.github.msynk/blazor-a11y",
+  "title": "Blazor Accessibility Toolkit",
+  "description": "Checks and fixes Blazor markup accessibility, reads accessibility test results, explains rules.",
+  "version": "__PACKAGE_VERSION__",
+  "packages": [
+    {
+      "registryType": "nuget",
+      "registryBaseUrl": "https://api.nuget.org",
+      "identifier": "BlazorAccessibilityToolkit.Cli",
+      "version": "__PACKAGE_VERSION__",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ],
+      "environmentVariables": []
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/msynk/BlazorAccessibilityToolkit",
+    "source": "github"
+  }
+}

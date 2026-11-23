@@ -1,9 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <Description>Command-line tool for CI: aggregates Blazor Accessibility Toolkit audit results, compares them with a baseline, applies failure thresholds and writes console, JSON, JUnit, SARIF and HTML reports with meaningful exit codes. Also applies the Razor analyzer's safe fixes to .razor files (blazor-a11y fix).</Description>
+    <Description>Command-line tool for CI: aggregates Blazor Accessibility Toolkit audit results, compares them with a baseline, applies failure thresholds and writes console, JSON, JUnit, SARIF and HTML reports with meaningful exit codes. Also applies the Razor analyzer's safe fixes to .razor files (blazor-a11y fix) and runs an MCP server that gives coding agents the analyzer, its fixes, the test results and the rule catalog (blazor-a11y mcp).</Description>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>blazor-a11y</ToolCommandName>
+    <!-- Also an MCP server (blazor-a11y mcp): NuGet.org lists it as one and offers the client configuration. -->
+    <PackageType>DotnetTool;McpServer</PackageType>
     <PackageId>BlazorAccessibilityToolkit.Cli</PackageId>
     <RootNamespace>BlazorAccessibilityToolkit.Cli</RootNamespace>
     <!-- Microsoft.CodeAnalysis (for the fix command) ships resources for 13 languages; the tool prints English only. -->
@@ -14,5 +16,19 @@
     <!-- The fix command runs the Razor analyzer's rules and fixes on .razor files. -->
     <ProjectReference Include="..\BlazorAccessibilityToolkit.Analyzers\BlazorAccessibilityToolkit.Analyzers.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common" />
+    <PackageReference Include="ModelContextProtocol.Core" />
+    <!-- The MCP server's tests drive the internal server over in-memory streams. -->
+    <InternalsVisibleTo Include="BlazorAccessibilityToolkit.Tests" />
   </ItemGroup>
+  <!-- .mcp/server.json describes the MCP server to NuGet.org; the package version is filled in when packing. -->
+  <Target Name="IncludeMcpServerJson" BeforeTargets="GenerateNuspec" DependsOnTargets="$(GenerateNuspecDependsOn)">
+    <PropertyGroup>
+      <_McpServerJson>$(IntermediateOutputPath)mcp/server.json</_McpServerJson>
+      <_McpServerJsonText>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory).mcp/server.json').Replace('__PACKAGE_VERSION__', '$(PackageVersion)'))</_McpServerJsonText>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_McpServerJson)" Lines="$([MSBuild]::Escape($(_McpServerJsonText)))" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <_PackageFiles Include="$(_McpServerJson)" PackagePath=".mcp/server.json" BuildAction="None" />
+    </ItemGroup>
+  </Target>
 </Project>

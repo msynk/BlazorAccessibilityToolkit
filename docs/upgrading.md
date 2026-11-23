@@ -9,6 +9,7 @@ Pinned runtime dependencies are listed in `Directory.Packages.props`:
 | Deque.AxeCore.Playwright | 4.14.0 (axe-core 4.14) | which rules exist, impacts, messages, selectors |
 | Deque.AxeCore.Commons | 4.14.0 | the axe-core script the development overlay serves; keep it at the Deque.AxeCore.Playwright version |
 | Microsoft.Playwright | 1.64.1 | browser versions, ARIA snapshot format, keyboard behavior |
+| ModelContextProtocol.Core | 2.4.0 | the MCP protocol versions `blazor-a11y mcp` speaks; run `McpServerTests` after upgrading |
 | bunit | 2.13.3 | markup and render tree used by component audits |
 | Microsoft.CodeAnalysis.CSharp | 4.8.0 | the oldest compiler that loads the Razor analyzer (.NET 8 SDK and later); raise it only when an analyzer API needs it |
 

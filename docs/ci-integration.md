@@ -42,6 +42,7 @@ blazor-a11y manual init --name "Site" --template wcag22aa --output a11y/manual/w
 blazor-a11y manual validate a11y/manual/*.json                            # exit 1 when entries are incompletely recorded
 blazor-a11y rules                                                         # the toolkit's own rules with status, impact and WCAG
 blazor-a11y fix src --dry-run                                             # Razor analyzer fixes, see analyzers.md#fixes; without --dry-run, applies them
+blazor-a11y mcp                                                           # MCP server for coding agents, see mcp-server.md
 blazor-a11y report --input a11y-results --format openacr,statement --product "Contoso Shop"   # conformance drafts, see below
 ```
 

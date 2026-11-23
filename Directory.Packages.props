@@ -10,6 +10,8 @@
     <PackageVersion Include="Deque.AxeCore.Commons" Version="4.14.0" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.64.1" />
     <PackageVersion Include="bunit" Version="2.13.3" />
+    <!-- The MCP server of the CLI tool (blazor-a11y mcp): the official C# SDK, without the hosting package. -->
+    <PackageVersion Include="ModelContextProtocol.Core" Version="2.4.0" />
     <!-- The Razor analyzer targets Roslyn 4.8 so that it loads in every .NET 8 and later SDK. -->
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0" />

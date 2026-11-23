@@ -28,7 +28,7 @@ dotnet run --project demo/BlazorAccessibilityToolkit.Demo.WebApp   # http://loca
 | `BlazorAccessibilityToolkit` | Core model, assertions, baselines, suppressions, quality gates, manual review and reports (console, JSON, JUnit, SARIF, HTML). No dependencies. |
 | `BlazorAccessibilityToolkit.ComponentTesting` | bUnit component fixtures, Razor markup rules and component attribution. Works without a browser. |
 | `BlazorAccessibilityToolkit.Playwright` | axe-core audits, keyboard scenarios, focus order, live regions, ARIA snapshots, ARIA pattern checks, a browser engine for bUnit markup, and an in-process interactive component host. |
-| `BlazorAccessibilityToolkit.Cli` | The `blazor-a11y` dotnet tool: aggregates results, compares them with a baseline, applies the failure policy and writes reports (including a Markdown job summary) with CI exit codes. `blazor-a11y fix` applies the Razor analyzer's safe fixes. |
+| `BlazorAccessibilityToolkit.Cli` | The `blazor-a11y` dotnet tool: aggregates results, compares them with a baseline, applies the failure policy and writes reports (including a Markdown job summary) with CI exit codes. `blazor-a11y fix` applies the Razor analyzer's safe fixes, and `blazor-a11y mcp` serves the toolkit to coding agents. |
 | `BlazorAccessibilityToolkit.Components` | Runtime helpers for your app: a live announcer service, a skip link that works with `<base href="/">`, focus traps with focus restoration, a route announcer and visually hidden text. |
 | `BlazorAccessibilityToolkit.DevTools` | A development overlay for your app: axe-core checks each page as it changes and lists the violations in a panel and the browser console, like `@axe-core/react`. |
 | `BlazorAccessibilityToolkit.Analyzers` | Compile-time checks of `.razor` markup: clickable `div`s, images without `alt`, unlabeled fields, unnamed buttons, invalid ARIA, missing page titles and more (38 rules), with component-library mapping. Warnings with the Razor file and line, and fixes for findings with one safe edit. |
@@ -98,7 +98,7 @@ blazor-a11y report --input a11y-results --baseline a11y-baseline.json --output a
   - active navigation links without `aria-current`, required fields marked only visually, personal-data fields without `autocomplete` (1.3.5),
   - an inaccessible Blazor error notification (`#blazor-error-ui`).
 - **Compile-time Razor checks.** 38 analyzer rules with Razor file and line, configurable in `.editorconfig`, ignorable per element with a Razor comment, and able to check component libraries mapped to native elements (`MudIconButton:button`).
-- **While you develop.** A development overlay runs axe-core in the running app after each change and lists the violations, and `blazor-a11y fix` applies the analyzer's safe fixes.
+- **While you develop.** A development overlay runs axe-core in the running app after each change and lists the violations, and `blazor-a11y fix` applies the analyzer's safe fixes. Coding agents use the same checks, fixes and test results through the MCP server.
 - **Queries and assertions on bUnit markup.** `FindByRole("button", "Save")`, `FindByLabelText`, `ShouldHaveAccessibleName`, `ShouldHaveAccessibleDescription`, `ShouldHaveAccessibleErrorMessage` and state assertions, on an accname 1.2 implementation.
 - **Virtual screen-reader transcripts** of bUnit markup and browser pages (`heading, Settings, level 2` / `button, Bold, not pressed`), for diffable regression tests of semantics.
 - **Keyboard and focus:**
@@ -131,6 +131,7 @@ blazor-a11y report --input a11y-results --baseline a11y-baseline.json --output a
 - [Razor analyzers](docs/analyzers.md): compile-time checks of `.razor` files
 - [Runtime components](docs/runtime-components.md): live announcer, skip link, focus trap, route announcer
 - [Development overlay](docs/dev-overlay.md): axe-core findings in the running app while you work
+- [MCP server](docs/mcp-server.md): checks, fixes and test results for coding agents
 - [CI integration](docs/ci-integration.md): results, the CLI, baselines, suppressions, GitHub Actions and Azure Pipelines
 - [Manual review](docs/manual-review.md)
 - [Extending the toolkit](docs/extending.md): custom rules, engines and fixtures

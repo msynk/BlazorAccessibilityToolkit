@@ -4,7 +4,11 @@
 
 ### Added
 
-- **Blazor Hybrid apps on Windows.** `BlazorHybridApp.LaunchAsync(exe)` starts a WPF, Windows Forms or .NET MAUI app with WebView2 remote debugging turned on. It waits for the BlazorWebView and connects Playwright to it, so the app's `Page` works with every audit, keyboard scenario and focus check. Each run gets its own WebView2 user data folder. `ConnectAsync(endpoint)` connects to an app that is already running. A Windows Forms test app in `tests/Hybrid` is audited on a new `windows-latest` CI job. The native window around the web view is not covered. See [Blazor Hybrid apps](docs/blazor-hybrid.md).
+- **Blazor Hybrid apps on Windows.** `BlazorHybridApp.LaunchAsync(exe)` starts a WPF, Windows Forms or .NET MAUI app with WebView2 remote debugging turned on. It waits for the BlazorWebView and connects Playwright to it, so the app's `Page` works with every audit, keyboard scenario and focus check. Each run gets its own WebView2 user data folder. `ConnectAsync(endpoint)` connects to an app that is already running. A Windows Forms test app in `tests/Hybrid` is audited on a new `windows-latest` CI job. See [Blazor Hybrid apps](docs/blazor-hybrid.md).
+- **Native window audits** in the new `BlazorAccessibilityToolkit.Windows` package.
+  - `app.AuditNativeWindowAsync()` (or `NativeAudits.AuditProcessAsync(processId)`, for any Windows app) scans the app's native windows with Axe.Windows 2.4.2.
+  - It reports each error as a violation with the `axe-windows` engine, the element's path, and the WCAG criterion of the rule's group.
+  - Findings inside WebView2 are left to the browser audits.
 - **IBM Equal Access as a second rule engine** next to axe-core. Turn it on with `AccessibilityAuditOptions.IbmEqualAccess`.
   - The bundled accessibility-checker-engine 4.0.34 (Apache-2.0) runs after axe-core in page and region audits.
   - Its rule set follows the audit's WCAG version, or uses the IBM Accessibility rule set with `IncludeBestPractices`.

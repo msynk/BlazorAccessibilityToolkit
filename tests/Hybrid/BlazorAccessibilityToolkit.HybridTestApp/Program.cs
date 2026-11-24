@@ -24,6 +24,10 @@ internal static class Program
         };
         view.RootComponents.Add<Main>("#app");
         form.Controls.Add(view);
+
+        // A native toolbar button with an icon only and no accessible name: a deliberate defect for the native audit.
+        var refresh = new Button { Name = "refreshButton", Text = string.Empty, Width = 40, Height = 32, Dock = DockStyle.Top };
+        form.Controls.Add(refresh);
         Application.Run(form);
     }
 }

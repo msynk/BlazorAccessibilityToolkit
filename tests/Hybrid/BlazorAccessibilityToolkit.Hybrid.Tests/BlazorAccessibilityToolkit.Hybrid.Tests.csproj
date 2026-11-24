@@ -7,6 +7,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\BlazorAccessibilityToolkit.Playwright\BlazorAccessibilityToolkit.Playwright.csproj" />
+    <ProjectReference Include="..\..\..\src\BlazorAccessibilityToolkit.Windows\BlazorAccessibilityToolkit.Windows.csproj" />
     <!-- Built first, not referenced: the tests start its executable. -->
     <ProjectReference Include="..\BlazorAccessibilityToolkit.HybridTestApp\BlazorAccessibilityToolkit.HybridTestApp.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
   </ItemGroup>

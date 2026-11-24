@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Windows UI Automation audits for the native parts of Blazor Hybrid apps (WPF, Windows Forms, .NET MAUI on Windows) with Axe.Windows: the window, menus, dialogs and native controls around the BlazorWebView.</Description>
+    <RootNamespace>BlazorAccessibilityToolkit.Windows</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Axe.Windows" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorAccessibilityToolkit.Playwright\BlazorAccessibilityToolkit.Playwright.csproj" />
+  </ItemGroup>
+</Project>

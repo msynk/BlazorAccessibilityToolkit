@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using BlazorAccessibilityToolkit.Playwright;
 using Microsoft.Playwright;
 
@@ -14,8 +13,8 @@ public sealed class BlazorHybridAppTests
     [Fact]
     public async Task Audits_the_blazor_content_of_a_hybrid_app()
     {
-        SkipUnlessWebView2();
-        await using var app = await BlazorHybridApp.LaunchAsync(TestAppPath());
+        TestApp.SkipUnlessWebView2();
+        await using var app = await BlazorHybridApp.LaunchAsync(TestApp.Path());
         await app.Page.GetByRole(AriaRole.Heading, new() { Name = "Orders" }).WaitForAsync();
 
         var audit = await app.Page.AuditAccessibilityAsync(label: new AuditLabel { Name = "hybrid orders", Scenario = "hybrid" });
@@ -30,8 +29,8 @@ public sealed class BlazorHybridAppTests
     [Fact]
     public async Task Keyboard_scenarios_and_focus_order_work_in_the_webview()
     {
-        SkipUnlessWebView2();
-        await using var app = await BlazorHybridApp.LaunchAsync(TestAppPath());
+        TestApp.SkipUnlessWebView2();
+        await using var app = await BlazorHybridApp.LaunchAsync(TestApp.Path());
         var page = app.Page;
         await page.GetByRole(AriaRole.Button, new() { Name = "Add order" }).WaitForAsync();
 
@@ -49,10 +48,10 @@ public sealed class BlazorHybridAppTests
     [Fact]
     public async Task Connects_to_an_app_that_is_already_running_and_leaves_it_running()
     {
-        SkipUnlessWebView2();
+        TestApp.SkipUnlessWebView2();
         var port = 9400 + Random.Shared.Next(500);
         var userData = Path.Combine(Path.GetTempPath(), "blazor-a11y-hybrid-" + Guid.NewGuid().ToString("N"));
-        var start = new ProcessStartInfo(TestAppPath()) { UseShellExecute = false };
+        var start = new ProcessStartInfo(TestApp.Path()) { UseShellExecute = false };
         start.Environment[BlazorHybridApp.AdditionalArgumentsVariable] = $"--remote-debugging-port={port}";
         start.Environment["WEBVIEW2_USER_DATA_FOLDER"] = userData;
         using var process = Process.Start(start)!;
@@ -103,32 +102,5 @@ public sealed class BlazorHybridAppTests
         }
 
         await Assert.ThrowsAsync<FileNotFoundException>(() => BlazorHybridApp.LaunchAsync(Path.Combine(Path.GetTempPath(), "missing-hybrid-app.exe")));
-    }
-
-    private static void SkipUnlessWebView2()
-    {
-        if (!OperatingSystem.IsWindows())
-        {
-            Assert.Skip("Blazor Hybrid apps run in WebView2, which is Windows only.");
-        }
-        else if (!WebView2RuntimeInstalled())
-        {
-            Assert.Skip("The WebView2 runtime is not installed.");
-        }
-    }
-
-    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private static bool WebView2RuntimeInstalled()
-    {
-        const string client = @"SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}";
-        using var machine = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(client) ?? Microsoft.Win32.Registry.CurrentUser.OpenSubKey(client.Replace(@"WOW6432Node\", string.Empty, StringComparison.Ordinal));
-        return machine?.GetValue("pv") is string version && version != "0.0.0.0";
-    }
-
-    // The app is built with the tests (same configuration), in its own output folder.
-    private static string TestAppPath([CallerFilePath] string source = "")
-    {
-        var configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
-        return Path.Combine(Path.GetDirectoryName(source)!, "..", "BlazorAccessibilityToolkit.HybridTestApp", "bin", configuration, "net10.0-windows", "BlazorAccessibilityToolkit.HybridTestApp.exe");
     }
 }

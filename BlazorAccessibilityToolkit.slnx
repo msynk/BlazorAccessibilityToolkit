@@ -13,6 +13,7 @@
     <Project Path="src/BlazorAccessibilityToolkit.ComponentTesting/BlazorAccessibilityToolkit.ComponentTesting.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit.DevTools/BlazorAccessibilityToolkit.DevTools.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit.Playwright/BlazorAccessibilityToolkit.Playwright.csproj" />
+    <Project Path="src/BlazorAccessibilityToolkit.Windows/BlazorAccessibilityToolkit.Windows.csproj" />
     <Project Path="src/BlazorAccessibilityToolkit/BlazorAccessibilityToolkit.csproj" />
   </Folder>
   <Folder Name="/tests/">

@@ -7,5 +7,6 @@
     <InternalsVisibleTo Include="BlazorAccessibilityToolkit.ComponentTesting" />
     <InternalsVisibleTo Include="BlazorAccessibilityToolkit.Playwright" />
     <InternalsVisibleTo Include="BlazorAccessibilityToolkit.Cli" />
+    <InternalsVisibleTo Include="BlazorAccessibilityToolkit.Windows" />
   </ItemGroup>
 </Project>

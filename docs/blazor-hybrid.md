@@ -23,7 +23,31 @@ await KeyboardScenario.For(app.Page).StartFromDocument().PressTab().ExpectFocuse
 
 Everything inside the web view: the Razor components, their HTML, styles, focus and live regions. The audits are the same as for a Blazor Server or WebAssembly app, because the content is the same.
 
-It does not cover the native window around the web view: the title bar, native menus and dialogs, and controls outside the BlazorWebView. Those are exposed through Windows UI Automation, not the DOM. Check them with [Accessibility Insights for Windows](https://accessibilityinsights.io/docs/windows/overview/) or Axe.Windows.
+The native window around the web view (the title bar, native menus and dialogs, and controls outside the BlazorWebView) is not part of the page. Windows exposes it through UI Automation instead; see the next section.
+
+## The native window
+
+`BlazorAccessibilityToolkit.Windows` audits the native part with [Axe.Windows](https://github.com/microsoft/axe-windows), the engine of Accessibility Insights for Windows:
+
+```xml
+<PackageReference Include="BlazorAccessibilityToolkit.Windows" Version="0.1.0-preview.1" />
+```
+
+```csharp
+await using var app = await BlazorHybridApp.LaunchAsync(@"bin\Release\net10.0-windows\Orders.exe");
+
+var web = await app.Page.AuditAccessibilityAsync();       // the Razor components, in the web view
+var native = await app.AuditNativeWindowAsync();          // the window and native controls around it
+native.ShouldHaveNoViolations();
+```
+
+- The audit scans every top-level window of the app's process. Each Axe.Windows error becomes a violation with the engine `axe-windows` and the Axe.Windows rule id, such as `NameNotNull` for a native button without a name. The finding gives the element's path, for example `window "Orders" > button #refreshButton`, with its control type, automation id and framework. Axe.Windows groups its rules by the criteria they serve, and the findings carry the matching WCAG success criterion: 1.3.1, 2.1.1 or 4.1.2.
+- Findings inside WebView2 are skipped and counted in a warning. The web content is audited in the browser, which knows the DOM, and WebView2's internal views are not the app's to fix. `NativeAuditOptions.IncludeWebContent` includes them.
+- `DisabledRules` in `NativeAuditOptions.AuditOptions` skips Axe.Windows rules, and its results are saved and reported like any other audit.
+- For an app you connected to with `ConnectAsync`, pass its process id to `NativeAudits.AuditProcessAsync(processId)`. The method works for any Windows desktop app, not only Blazor Hybrid apps.
+- A scan that fails, for example because the process has no window, fails the audit; it never passes it.
+
+The package depends on Axe.Windows 2.4.2 (MIT), and through it on `System.Drawing.Common`, which is why it is separate from the cross-platform Playwright package. Automated checks find only part of the problems in a native window: also tab through it, and use Accessibility Insights for Windows' FastPass and assessment.
 
 ## Platforms
 
@@ -36,4 +60,4 @@ The debugging port gives full control of the web view to any process on the same
 
 ## In CI
 
-The toolkit's own hybrid tests run on a `windows-latest` GitHub Actions runner, which has the WebView2 runtime. They build a Windows Forms test app (`tests/Hybrid`), start it and audit it. A Linux job builds the app too (`EnableWindowsTargeting`) and skips the tests.
+The toolkit's own hybrid tests run on a `windows-latest` GitHub Actions runner, which has the WebView2 runtime. They build a Windows Forms test app (`tests/Hybrid`), start it, and audit both its web view and its native window. A Linux job builds the app too (`EnableWindowsTargeting`) and skips the tests.

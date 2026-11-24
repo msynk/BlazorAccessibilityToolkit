@@ -12,6 +12,7 @@
     <!-- Referenced only to snapshot their public API surface. -->
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.ComponentTesting\BlazorAccessibilityToolkit.ComponentTesting.csproj" />
     <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Playwright\BlazorAccessibilityToolkit.Playwright.csproj" />
+    <ProjectReference Include="..\..\src\BlazorAccessibilityToolkit.Windows\BlazorAccessibilityToolkit.Windows.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

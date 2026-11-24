@@ -1,0 +1,8 @@
+sealed class BlazorAccessibilityToolkit.Windows.NativeAuditOptions
+  BlazorAccessibilityToolkit.AccessibilityAuditOptions AuditOptions { get; init; }
+  System.Boolean IncludeWebContent { get; init; }
+  ctor()
+static class BlazorAccessibilityToolkit.Windows.NativeAudits
+  const System.String EngineName
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditNativeWindowAsync(BlazorAccessibilityToolkit.Playwright.BlazorHybridApp app, BlazorAccessibilityToolkit.Windows.NativeAuditOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)
+  static System.Threading.Tasks.Task<BlazorAccessibilityToolkit.AccessibilityAudit> AuditProcessAsync(System.Int32 processId, BlazorAccessibilityToolkit.Windows.NativeAuditOptions options = null, BlazorAccessibilityToolkit.Playwright.AuditLabel label = null)

@@ -127,6 +127,15 @@ public sealed record AccessibilityAuditOptions
     public bool ToolkitDiagnostics { get; init; } = true;
 
     /// <summary>
+    /// Also run the IBM Equal Access accessibility checker engine next to axe-core in browser audits. It finds some
+    /// problems axe-core does not, and the other way round. Findings that repeat an axe-core violation on the same
+    /// element and WCAG success criterion are recorded on the axe-core finding (<c>confirmedBy</c>) rather than reported
+    /// twice. The rule set follows <see cref="Tags"/> (WCAG 2.0, 2.1 or 2.2), or the IBM Accessibility rule set with
+    /// recommendations when <see cref="IncludeBestPractices"/> is set. Default <c>false</c>.
+    /// </summary>
+    public bool IbmEqualAccess { get; init; }
+
+    /// <summary>
     /// Keep page-level rules (landmarks, <c>page-has-heading-one</c>, <c>bypass</c> ...) when auditing an isolated component.
     /// Default <c>false</c>: an isolated component is not a page, so those rules would only produce noise.
     /// </summary>

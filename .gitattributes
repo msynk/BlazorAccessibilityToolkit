@@ -1,2 +1,4 @@
 # The W3C ACT Rules test cases are kept byte for byte as published.
 tests/BlazorAccessibilityToolkit.Analyzers.Tests/ActRules/testcases/** -text
+# The vendored IBM Equal Access engine is kept byte for byte as published (its SHA-256 is recorded).
+src/BlazorAccessibilityToolkit.Playwright/Scripts/EqualAccess/ace.js -text

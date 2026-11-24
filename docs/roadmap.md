@@ -11,9 +11,8 @@ We have compared the toolkit with accessibility tools in other stacks twice. [AD
 
 ## Considered, not planned yet
 
-- **A second rule engine** (IBM Equal Access or Siteimprove Alfa) next to axe-core. Results would need deduplication, and a second engine doubles the maintenance of the engine contract.
-- **APCA contrast** as information next to WCAG 2 contrast. axe-core does not support it, and APCA is not part of WCAG 2.
-- **Blazor Hybrid and native hosts** (MAUI, WPF, WinForms) through Axe.Windows or Appium.
+- **Siteimprove Alfa** as a third engine. Alfa is a set of TypeScript packages built to run in Node.js, not a script for the page, so it would need a Node.js process next to the .NET tests.
+- **Native parts of hybrid apps** (window chrome, native dialogs) through UI Automation (Axe.Windows), and Blazor Hybrid on macOS, iOS and Android, whose web views Playwright cannot automate.
 - **Focus lost when `<Virtualize>` recycles the focused row.** It happens only when a pointer user scrolls the focused row out of view, and the result depends on the browser's sequential focus starting point. A check would be noisy, and the fix (keeping the focused item rendered) belongs in the component. Keyboard navigation through a virtualized list keeps the focused row in view and is not affected.
 - **Real screen-reader automation** (Guidepup with NVDA or VoiceOver in CI), beyond the virtual transcripts.
 
@@ -22,6 +21,9 @@ We have compared the toolkit with accessibility tools in other stacks twice. [AD
 - Code fixes for the analyzer findings that have one safe edit, in the IDE and with `blazor-a11y fix` ([Razor analyzers](analyzers.md#fixes)).
 - A development overlay that runs axe-core in the running app and lists the violations ([Development overlay](dev-overlay.md)).
 - An MCP server that gives coding agents the analyzer, its fixes, the test results and the rule catalog ([MCP server](mcp-server.md)).
+- Blazor Hybrid apps on Windows (WPF, Windows Forms, .NET MAUI): the BlazorWebView's content audited through WebView2 ([Blazor Hybrid apps](blazor-hybrid.md)).
+- IBM Equal Access as an optional second rule engine next to axe-core, with findings on the same element and success criterion merged ([A second rule engine](interactive-testing.md#a-second-rule-engine-ibm-equal-access)).
+- APCA contrast as information next to WCAG 2 contrast ([APCA contrast](interactive-testing.md#apca-contrast)).
 - Focus indicators measured from screenshots: invisible focus (2.4.7) and focus appearance (2.4.13, AAA) ([measuring focus indicators](interactive-testing.md#measuring-focus-indicators)).
 - An ACT rules implementation report for the Razor analyzer, in the EARL format the ACT Task Force collects ([ACT rules implementation report](act-rules.md)). Submitting it to the ACT implementations page is a separate step for the maintainers.
 

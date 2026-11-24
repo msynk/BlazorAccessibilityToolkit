@@ -31,6 +31,25 @@ var region = await page.GetByRole(AriaRole.Navigation).AuditAccessibilityAsync()
 - Audits never pass silently. They fail with an execution error when the engine fails or times out (`AccessibilityAuditOptions.Timeout`, default 60 s), when the scope matches zero or several elements, when tags or rules are unknown, or when the page is closed.
 - Interactive Server pages are prerendered, and key presses sent before the circuit connects are lost. Expose readiness (the demo app's layout sets `data-interactive="true"` from `RendererInfo.IsInteractive`) and wait for it instead of sleeping.
 
+### A second rule engine: IBM Equal Access
+
+```csharp
+var audit = await page.AuditAccessibilityAsync(new AccessibilityAuditOptions { IbmEqualAccess = true });
+```
+
+Each engine finds problems the other misses. With `IbmEqualAccess`, the [IBM Equal Access accessibility checker engine](https://github.com/IBMa/equal-access) runs after axe-core in page and region audits.
+
+- **Findings:**
+  - IBM findings have the engine `ibm-equal-access` and IBM's rule ids, such as `aria_navigation_label_unique`. IBM's help pages are linked.
+  - Violations count as violations, and potential violations as potential issues.
+  - Recommendations count as best practices, and are reported only with `IncludeBestPractices`.
+  - Checks that only a person can make are counted in a warning, not listed.
+- **Rule set:** it follows `Tags`: WCAG 2.2, 2.1 or 2.0 (A and AA). With `IncludeBestPractices`, the IBM Accessibility rule set is used instead. It also covers EN 301 549 and Section 508 and includes recommendations.
+- **Duplicates:** the same problem is not reported twice. When IBM finds a problem on an element that axe-core reports as a violation of the same WCAG success criterion, the axe-core finding records `confirmedBy` (for example `ibm-equal-access:img_alt_valid`) instead. A warning gives the number of such merges.
+- **Settings:** `DisabledRules`, `ExcludeSelectors` and `MaxNodesPerRule` apply to IBM rule ids and findings too.
+- **Version:** the engine is accessibility-checker-engine 4.0.34 (Apache-2.0), bundled in the package. It runs inside its own scope, so a page that uses the Ace code editor keeps its `window.ace`.
+- **Not supported:** bUnit markup audits through the browser engine run axe-core only. The engine does not look into iframes.
+
 ## Inspecting accessible names, roles and states
 
 ```csharp
@@ -165,6 +184,7 @@ await page.EmulateDisplayConditionsAsync(DisplayConditions.MoreContrast);       
 var motion = await page.AuditMotionAsync();                         // prefers-reduced-motion: reduce, then restored
 var orientation = await page.AuditOrientationAsync();               // portrait and landscape, then the viewport is restored
 var targets = await page.AuditTargetSizeAsync();                    // 44 x 44 CSS px (2.5.5); new TargetSizeOptions { Minimum = 48 } for Material
+var apca = await page.AuditApcaContrastAsync();                     // APCA lightness contrast, as information (not WCAG 2)
 ```
 
 | Rule | WCAG | What it reports |
@@ -173,6 +193,25 @@ var targets = await page.AuditTargetSizeAsync();                    // 44 x 44 C
 | `blazor-text-spacing-clipped` | 1.4.12 | With line height 1.5, paragraph spacing 2, letter spacing 0.12 and word spacing 0.16 times the font size, the element's text overflows a container that hides overflow (or line clamping). Elements that clipped before the change are not reported. |
 | `blazor-motion-not-reduced` | 2.2.2, 2.3.3 | With `prefers-reduced-motion: reduce`, an animation still moves content (transform, position, size, background position) or runs longer than five seconds, or media keeps playing for longer than five seconds. Loading indicators (`role="progressbar"`, `role="status"`, `aria-busy`, spinner and loader classes) are not reported. |
 | `blazor-target-size-enhanced` | 2.5.5 | A pointer target is smaller than `TargetSizeOptions.Minimum` (44 CSS pixels) in either dimension: the AAA criterion and the iOS, Android and Flutter touch guidelines. Inline links in text are exempt, and a label that wraps a checkbox or radio button counts as its target. axe-core already checks the 24 pixel minimum (2.5.8). |
+| `blazor-apca-contrast` | none (best practice) | Text whose APCA lightness contrast is below the level its font size and weight call for; see [APCA contrast](#apca-contrast). |
+
+### APCA contrast
+
+APCA (the Accessible Perceptual Contrast Algorithm) is the contrast method proposed for WCAG 3. It models how people perceive lightness contrast better than the WCAG 2 ratio does, especially for thin text and dark themes. It is not a WCAG 2 requirement: the WCAG 2 ratio, which axe-core's `color-contrast` checks, remains the conformance test. `AuditApcaContrastAsync` adds APCA as information next to it:
+
+```csharp
+var apca = await page.AuditApcaContrastAsync();
+var content = await page.AuditApcaContrastAsync(new ApcaContrastOptions { MinimumLc = 60 });   // one level for all text
+double lc = Apca.Contrast("#777777", "#ffffff");                                              // 71.1: dark text on light
+int needed = Apca.RequiredLc(fontSizePx: 16, fontWeight: 400, out var tooSmall);              // 90
+```
+
+- The text and background colors come from axe-core's `color-contrast` rule, for every text element it measures, passing or failing. Text that axe-core cannot measure (on background images or gradients, or under other elements) is skipped, and a warning gives the number.
+- The contrast is computed with APCA 0.0.98G-4g, as apca-w3 0.1.9 implements it. The port reproduces the published apca-w3 test values exactly. Lc is positive for dark text on a light background and negative for light text on a dark background.
+- The required level comes from the font size and weight, following [APCA in a Nutshell](https://github.com/Myndex/SAPC-APCA/blob/master/documentation/APCA_in_a_Nutshell.md). The text needs the lowest of Lc 45, 60, 75 and 90 whose minimum font size it reaches: for example 36 px at weight 400 needs Lc 45, 24 px Lc 60, 18 px Lc 75, and 16 px Lc 90. Text smaller than 14 px at weight 400 (18 px at 300) is below every level, and the finding says so. `MinimumLc` sets one level for all text instead, for example 60 for content text that is not body text.
+- Findings are best-practice potential issues with no WCAG reference, so the default quality gate does not fail on them unless you fail on potential issues.
+
+**License.** APCA's reference implementation, apca-w3, is not open source. Its [license](https://github.com/Myndex/apca-w3/blob/master/LICENSE.md) permits use for predicting the contrast of web content and requires a license from Myndex Research for commercial use. The toolkit's MIT license does not cover APCA: check that your use is permitted before you rely on these results.
 | `blazor-orientation-locked` | 1.3.4 | In portrait or landscape (390 x 844 CSS pixels by default), the page is rotated by 90 degrees, a "rotate your device" message appears, or less than a quarter of the text of the other orientation is shown. |
 
 These are potential issues: they show where content overflows, which usually means lost content, but whether content is really lost or exempt needs a person. Display conditions matter because contrast, `box-shadow` focus rings and background-image icons often fail only in dark mode or with forced colors. Forced colors emulation is supported by Chromium only.

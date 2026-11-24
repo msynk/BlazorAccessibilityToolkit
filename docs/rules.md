@@ -35,6 +35,7 @@ new AccessibilityAuditOptions
     DisabledRules = ["color-contrast"],
     ExcludeSelectors = ["#third-party-widget"],
     ToolkitDiagnostics = true,
+    IbmEqualAccess = false,                       // also run the IBM Equal Access engine (browser audits)
     PageLevelRulesForComponents = false,          // region, landmark-one-main, page-has-heading-one ... off for components
     Timeout = TimeSpan.FromSeconds(60),
     MaxEvidenceLength = 1000, MaxNodesPerRule = 50, RedactFormValues = true,   // 0 or less: no limit
@@ -98,6 +99,7 @@ Engine `blazor-a11y`. Environments: *markup* means bUnit markup without a browse
 | `blazor-ambiguous-link-name` | Potential | 2.4.4, 2.4.9 | browser | links with the same accessible name that lead to different destinations ("Read more", "Edit"); one finding per name |
 | `blazor-role-in-name` | Potential (best practice) | — | browser | button names ending in "button", link names starting with "Link to" or ending in "link" |
 | `blazor-reconnect-ui-not-accessible` | Potential | 4.1.2, 4.1.3 | browser | `#components-reconnect-modal` (the .NET reconnect dialog) has no accessible name, or its status messages are not in a live region |
+| `blazor-apca-contrast` | Potential (best practice) | none | browser | `page.AuditApcaContrastAsync()`: text below the APCA lightness contrast its size and weight call for; information next to WCAG 2, see [APCA contrast](interactive-testing.md#apca-contrast) |
 | `blazor-target-size-enhanced` | Potential | 2.5.5 | browser | `page.AuditTargetSizeAsync()`: pointer targets smaller than 44 by 44 CSS pixels (configurable, for example 48 for Material), except inline links; axe-core covers the 24 pixel minimum of 2.5.8 |
 | `blazor-redundant-entry` | Potential | 3.3.7 | markup, browser | a second field for information already asked for (`ConfirmEmail`, `EmailConfirmation`, `repeat-phone` ...); repeated passwords are exempt |
 | `blazor-markup-image-alt`, `-control-name`, `-form-label`, `-aria-hidden-focusable`, `-invalid-aria-attribute`, `-invalid-role`, `-positive-tabindex` | mostly Violation | various | markup (fallback only) | conservative browserless equivalents of axe rules, only when no browser engine runs |

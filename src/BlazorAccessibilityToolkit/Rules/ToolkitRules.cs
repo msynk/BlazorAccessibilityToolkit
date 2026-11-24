@@ -370,6 +370,20 @@ public static class ToolkitRules
         Environments = [Browser],
     };
 
+    /// <summary>Text below the APCA lightness contrast its size and weight call for (information, not WCAG 2).</summary>
+    public static AccessibilityRule ApcaContrast { get; } = new()
+    {
+        Id = "blazor-apca-contrast",
+        Description = "Text should have the APCA lightness contrast (Lc) that its font size and weight call for. APCA is a candidate contrast method for WCAG 3, not a WCAG 2 requirement; the WCAG 2 contrast ratio (axe-core's color-contrast) remains the conformance check.",
+        Help = "Text contrast is below the APCA guidance for its size and weight",
+        Remediation = "Darken dark text or lighten light text (or the background), or make the text larger or bolder. APCA is more demanding than WCAG 2 for thin, small text and for dark backgrounds.",
+        Status = FindingStatus.PotentialIssue,
+        Impact = AccessibilityImpact.Minor,
+        IsBestPractice = true,
+        HelpUrl = "https://github.com/Myndex/SAPC-APCA/blob/master/documentation/APCA_in_a_Nutshell.md",
+        Environments = [Browser],
+    };
+
     /// <summary>An in-page link that navigates to another page because of the base URL.</summary>
     public static AccessibilityRule FragmentLinkLeavesPage { get; } = new()
     {
@@ -701,7 +715,7 @@ public static class ToolkitRules
         NavLinkCurrent, InputPurposeMissing, RequiredNotExposed, ErrorUiNotAccessible, PasteBlocked, DraggingAlternative, RedundantEntry, FragmentLinkLeavesPage, AmbiguousLinkName, RoleInName, ReconnectUiNotAccessible, HelpInconsistent, VirtualizedSetSize, DuplicateClickableBounds,
         MarkupImageAlt, MarkupControlName, MarkupFormLabel, MarkupAriaHiddenFocusable, MarkupInvalidAriaAttribute, MarkupInvalidRole, MarkupPositiveTabIndex,
         FocusStuck, FocusTrap, FocusHiddenTarget, FocusIndicatorNotDetected, FocusNotVisible, FocusAppearance, FocusRepeated, FocusObscured, FocusOrderVisualMismatch,
-        ReflowHorizontalScroll, TextSpacingClipped, MotionNotReduced, OrientationLocked, TargetSizeEnhanced,
+        ReflowHorizontalScroll, TextSpacingClipped, MotionNotReduced, OrientationLocked, TargetSizeEnhanced, ApcaContrast,
         LiveRegionInsertedWithContent, LiveRegionHiddenUpdate, LiveRegionPolitenessConflict,
     ];
 

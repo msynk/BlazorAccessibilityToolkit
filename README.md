@@ -27,7 +27,7 @@ dotnet run --project demo/BlazorAccessibilityToolkit.Demo.WebApp   # http://loca
 | --- | --- |
 | `BlazorAccessibilityToolkit` | Core model, assertions, baselines, suppressions, quality gates, manual review and reports (console, JSON, JUnit, SARIF, HTML). No dependencies. |
 | `BlazorAccessibilityToolkit.ComponentTesting` | bUnit component fixtures, Razor markup rules and component attribution. Works without a browser. |
-| `BlazorAccessibilityToolkit.Playwright` | axe-core audits, keyboard scenarios, focus order, live regions, ARIA snapshots, ARIA pattern checks, a browser engine for bUnit markup, and an in-process interactive component host. |
+| `BlazorAccessibilityToolkit.Playwright` | axe-core audits (optionally with IBM Equal Access as a second engine), keyboard scenarios, focus order, live regions, ARIA snapshots, ARIA pattern checks, a browser engine for bUnit markup, and an in-process interactive component host. |
 | `BlazorAccessibilityToolkit.Cli` | The `blazor-a11y` dotnet tool: aggregates results, compares them with a baseline, applies the failure policy and writes reports (including a Markdown job summary) with CI exit codes. `blazor-a11y fix` applies the Razor analyzer's safe fixes, and `blazor-a11y mcp` serves the toolkit to coding agents. |
 | `BlazorAccessibilityToolkit.Components` | Runtime helpers for your app: a live announcer service, a skip link that works with `<base href="/">`, focus traps with focus restoration, a route announcer and visually hidden text. |
 | `BlazorAccessibilityToolkit.DevTools` | A development overlay for your app: axe-core checks each page as it changes and lists the violations in a panel and the browser console, like `@axe-core/react`. |
@@ -133,6 +133,7 @@ blazor-a11y report --input a11y-results --baseline a11y-baseline.json --output a
 - [Runtime components](docs/runtime-components.md): live announcer, skip link, focus trap, route announcer
 - [Development overlay](docs/dev-overlay.md): axe-core findings in the running app while you work
 - [MCP server](docs/mcp-server.md): checks, fixes and test results for coding agents
+- [Blazor Hybrid apps](docs/blazor-hybrid.md): audits of WPF, Windows Forms and MAUI apps through WebView2
 - [CI integration](docs/ci-integration.md): results, the CLI, baselines, suppressions, GitHub Actions and Azure Pipelines
 - [Manual review](docs/manual-review.md)
 - [Extending the toolkit](docs/extending.md): custom rules, engines and fixtures

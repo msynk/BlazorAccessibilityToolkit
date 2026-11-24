@@ -4,6 +4,19 @@
 
 ### Added
 
+- **Blazor Hybrid apps on Windows.** `BlazorHybridApp.LaunchAsync(exe)` starts a WPF, Windows Forms or .NET MAUI app with WebView2 remote debugging turned on. It waits for the BlazorWebView and connects Playwright to it, so the app's `Page` works with every audit, keyboard scenario and focus check. Each run gets its own WebView2 user data folder. `ConnectAsync(endpoint)` connects to an app that is already running. A Windows Forms test app in `tests/Hybrid` is audited on a new `windows-latest` CI job. The native window around the web view is not covered. See [Blazor Hybrid apps](docs/blazor-hybrid.md).
+- **IBM Equal Access as a second rule engine** next to axe-core. Turn it on with `AccessibilityAuditOptions.IbmEqualAccess`.
+  - The bundled accessibility-checker-engine 4.0.34 (Apache-2.0) runs after axe-core in page and region audits.
+  - Its rule set follows the audit's WCAG version, or uses the IBM Accessibility rule set with `IncludeBestPractices`.
+  - Its findings use IBM's rule ids and help pages; for example, IBM reports navigation landmarks without unique labels as a 1.3.1 violation.
+  - A problem both engines find on the same element and success criterion is reported once, by axe-core, with `confirmedBy` naming the IBM rule. A gate never fails twice for it.
+  - `DisabledRules`, `ExcludeSelectors` and `MaxNodesPerRule` apply to it, and it leaves a page's own `window.ace` (the Ace code editor) alone.
+  - The demo's pages pass both engines. See [A second rule engine](docs/interactive-testing.md#a-second-rule-engine-ibm-equal-access).
+- **APCA contrast, as information next to WCAG 2.** APCA is the contrast method proposed for WCAG 3.
+  - `Apca.Contrast(text, background)` computes the lightness contrast (Lc) with APCA 0.0.98G-4g. It is a port of apca-w3 0.1.9 that reproduces its published test values exactly.
+  - `Apca.RequiredLc(size, weight)` gives the level that the APCA guidance asks for at a font size and weight.
+  - `page.AuditApcaContrastAsync()` reports text below that level as `blazor-apca-contrast`, a best-practice potential issue with no WCAG reference. It reuses the colors that axe-core's `color-contrast` rule measures for every text element.
+  - APCA's license differs from the toolkit's: it requires a license from Myndex Research for commercial use. See [APCA contrast](docs/interactive-testing.md#apca-contrast).
 - **Focus indicators measured from screenshots** (WCAG 2.4.7 and 2.4.13). The toolkit screenshots an element unfocused, focuses it as the keyboard would and screenshots it again. It then counts the pixels that changed and those whose color changed by a contrast of at least 3:1. The images are decoded in the browser, so there is no new dependency.
   - `locator.MeasureFocusAppearanceAsync()` returns a `FocusAppearanceMeasurement` with `ChangedArea`, `ContrastingArea`, `RequiredArea` (a 2 CSS pixel perimeter) and `UserAgentIndicator`.
   - `FocusOrderOptions.MeasureFocusAppearance` measures every tab stop (`FocusStop.Appearance`). It reports `blazor-focus-not-visible` (2.4.7, a violation) when nothing changes on screen, and with `ReportFocusAppearance` also `blazor-focus-appearance` (2.4.13, AAA). The browser's own focus ring is exempt from 2.4.13, as the success criterion says.

@@ -28,6 +28,19 @@ public sealed class PageTests(AppFixture app)
         audit.ShouldHaveNoViolations();
     }
 
+    /// <summary>The same pages checked by a second rule engine, IBM Equal Access, next to axe-core.</summary>
+    [Theory]
+    [MemberData(nameof(ShowcasePages))]
+    public async Task Showcase_pages_have_no_violations_with_the_ibm_engine_too(string path)
+    {
+        await using var session = await app.OpenAsync(path);
+
+        var audit = await session.Page.AuditAccessibilityAsync(ShowcaseAudit with { IbmEqualAccess = true }, new AuditLabel { Scenario = "page", State = "two engines" });
+
+        Assert.Contains(audit.Engines, e => e.Name == "ibm-equal-access");
+        audit.ShouldHaveNoViolations();
+    }
+
     /// <summary>
     /// The same pages in the dark theme. The theme follows the operating system by default, so emulating a dark color
     /// scheme is enough; every color has a dark value that must meet the same contrast requirements.

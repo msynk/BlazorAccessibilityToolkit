@@ -152,7 +152,7 @@ public sealed record DisplayConditions
 /// <see cref="FindingStatus.PotentialIssue"/>: they show where content overflows or is clipped, which usually means
 /// lost content, but the decision whether content is lost or exempt needs a person.
 /// </summary>
-public static class AdaptationAudits
+public static partial class AdaptationAudits
 {
     /// <summary>
     /// Resizes the viewport to <see cref="ReflowOptions.Width"/> (320 CSS pixels by default), reports content that makes

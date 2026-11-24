@@ -188,6 +188,19 @@ public static class PlaywrightAccessibility
 
         var output = new EngineOutput();
         await AxeRunner.RunAsync(page, scopeSelector, options, kind, output).ConfigureAwait(false);
+        if (options.IbmEqualAccess)
+        {
+            await ToolkitScript.EnsureAsync(page, includeAxe: false).ConfigureAwait(false);
+            try
+            {
+                await EqualAccessRunner.RunAsync(page, scopeSelector, options, output).ConfigureAwait(false);
+            }
+            catch (PlaywrightException ex) when (!page.IsClosed && !ex.Message.Contains("closed", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("IBM Equal Access failed: " + ex.Message, ex);
+            }
+        }
+
         if (options.ToolkitDiagnostics)
         {
             await ToolkitScript.EnsureAsync(page).ConfigureAwait(false);

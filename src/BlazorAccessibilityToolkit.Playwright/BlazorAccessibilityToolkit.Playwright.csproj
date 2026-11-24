@@ -13,5 +13,8 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\toolkit.js" LogicalName="BlazorAccessibilityToolkit.toolkit.js" />
+    <!-- IBM Equal Access accessibility-checker-engine (Apache-2.0), pinned; see Scripts/EqualAccess/README.md. -->
+    <EmbeddedResource Include="Scripts\EqualAccess\ace.js" LogicalName="BlazorAccessibilityToolkit.ace.js" />
+    <None Include="Scripts\EqualAccess\LICENSE-2.0.txt;Scripts\EqualAccess\ace.js.LICENSE.txt;Scripts\EqualAccess\README.md" Pack="true" PackagePath="licenses/ibm-equal-access/" />
   </ItemGroup>
 </Project>

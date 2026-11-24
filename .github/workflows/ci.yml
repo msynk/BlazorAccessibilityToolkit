@@ -88,6 +88,30 @@ jobs:
           path: a11y-report
           if-no-files-found: warn
 
+  hybrid:
+    # Blazor Hybrid apps render in WebView2, which only runs on Windows (the test job skips these tests on Linux).
+    name: Blazor Hybrid (Windows, WebView2)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Hybrid tests
+        run: >
+          dotnet test tests/Hybrid/BlazorAccessibilityToolkit.Hybrid.Tests -c Release
+          --logger "trx;LogFilePrefix=hybrid" --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-hybrid
+          path: TestResults
+          if-no-files-found: warn
+
   pack:
     name: Pack
     runs-on: ubuntu-latest

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <!--
+    A Blazor Hybrid app (BlazorWebView in Windows Forms) that the hybrid tests start and audit through WebView2.
+    It builds on every OS (EnableWindowsTargeting) and runs on Windows only. It is not a test project itself.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <IsTestProject>false</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <!-- Microsoft.Web.WebView2 also references its WPF assembly, whose WindowsBase version differs from Windows Forms'. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" />
+  </ItemGroup>
+</Project>
